@@ -1,0 +1,18 @@
+
+services:
+  vastu_app:
+    container_name: vastu_app
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/data
+      # We do NOT mount /app code here to avoid overwriting the built static files with local source
+      # If you want to dev on backend, we can mount backend only:
+      #- ./backend:/app/app 
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite+aiosqlite:///../data/vastu.db
+      SECRET_KEY: ${SECRET_KEY:-simple_secret_key}
+ 
