@@ -154,4 +154,3 @@ async def download_client_bill(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
- 

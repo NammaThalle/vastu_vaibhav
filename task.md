@@ -41,4 +41,3 @@
 - [ ] Verification & Polish <!-- id: 31 -->
     - [ ] End-to-end Testing <!-- id: 32 -->
     - [ ] UI Polish (Mobile Responsiveness) <!-- id: 33 -->
- 

@@ -19,4 +19,3 @@ class ServiceEntry(Base):
 
     # Relationships
     client = relationship("Client")
- 

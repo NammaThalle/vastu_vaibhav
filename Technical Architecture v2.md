@@ -277,4 +277,3 @@ Mitigations documented above.
 
 Version 2.0 - Deep Technical Specification
 Ready for build phase.
- 

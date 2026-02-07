@@ -30,4 +30,3 @@ if os.path.exists(static_dir):
 def read_root():
     # Fallback if static mount doesn't catch root (it should with html=True)
     return {"message": f"Welcome to {settings.PROJECT_NAME} API. Frontend should be serving here."}
- 

@@ -23,4 +23,3 @@ class User(UserInDBBase):
 
 class UserInDB(UserInDBBase):
     hashed_password: str
- 

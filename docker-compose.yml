@@ -15,4 +15,3 @@ services:
     environment:
       DATABASE_URL: sqlite+aiosqlite:///../data/vastu.db
       SECRET_KEY: ${SECRET_KEY:-simple_secret_key}
- 

@@ -19,4 +19,3 @@ class Visit(Base):
 
     # Relationships
     client = relationship("Client", back_populates="visits")
- 

@@ -31,4 +31,3 @@ def render_to_pdf(template_name: str, context: dict):
         
     result.seek(0)
     return result
- 

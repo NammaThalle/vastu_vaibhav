@@ -29,4 +29,3 @@ class Visit(VisitInDBBase):
 
 class VisitInDB(VisitInDBBase):
     pass
- 

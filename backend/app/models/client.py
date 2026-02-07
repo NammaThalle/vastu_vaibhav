@@ -21,4 +21,3 @@ class Client(Base):
     # Relationships
     visits = relationship("Visit", back_populates="client", cascade="all, delete-orphan")
     # payments = relationship("Payment", back_populates="client", cascade="all, delete-orphan")
- 

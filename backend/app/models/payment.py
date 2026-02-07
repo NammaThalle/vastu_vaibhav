@@ -20,4 +20,3 @@ class Payment(Base):
 
     # Relationships
     client = relationship("Client")
- 

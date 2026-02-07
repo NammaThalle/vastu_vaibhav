@@ -91,4 +91,3 @@ async def delete_visit(
     await db.delete(visit)
     await db.commit()
     return visit
- 

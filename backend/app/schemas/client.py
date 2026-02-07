@@ -30,4 +30,3 @@ class Client(ClientInDBBase):
 
 class ClientInDB(ClientInDBBase):
     pass
- 

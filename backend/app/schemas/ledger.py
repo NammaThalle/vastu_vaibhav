@@ -54,4 +54,3 @@ class ClientLedger(BaseModel):
     total_billed: float
     total_paid: float
     current_balance: float
- 
