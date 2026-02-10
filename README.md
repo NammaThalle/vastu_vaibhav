@@ -45,14 +45,16 @@ Vastu Vaibhav is a specialized CRM and Financial Ledger application designed for
 3. Start the development server: `npm run dev`.
 
 ## 📈 Development History
-The project was developed in 7 logical phases:
-1. **Infra**: Docker and environment setup.
-2. **Backend Core**: FastAPI, Security, and DB scaffolding.
-3. **Frontend Core**: Next.js architecture and UI theme.
-4. **CRM**: Client and Visit management modules.
-5. **Ledger**: Financial tracking and balance logic.
-6. **Invoicing**: PDF generation and bill templates.
-7. **Refinement**: UI/UX polish, Dark mode, and final verification.
+The project was developed in 7 logical phases. For a detailed breakdown of the technical progression, feature releases, and engineering milestones, please refer to the [**Development Progression Log**](./DEVELOPMENT_LOG.md).
+
+### Summary of Phases:
+1. **Infra**: Docker orchestration and environmental configuration.
+2. **Backend Core**: Secure API scaffolding and DB architecture.
+3. **Frontend Core**: Modern UI design system and theme implementation.
+4. **CRM**: Comprehensive client and visit life-cycle management.
+5. **Ledger**: Advanced financial tracking and running balance logic.
+6. **Invoicing**: Automated PDF billing and consultant reporting.
+7. **Refinement**: UI/UX modernization and operational dashboard.
 
 ## ⚖️ License
 MIT License.
