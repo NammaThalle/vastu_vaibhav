@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
     DropdownMenu,
@@ -31,14 +32,42 @@ const navItems = [
     { path: "/clients", label: "Clients", icon: Users },
 ]
 
+const authPages = ["/login", "/register"]
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
+    const router = useRouter()
     const { theme, setTheme } = useTheme()
     const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
+    const [isCheckingAuth, setIsCheckingAuth] = React.useState(true)
+
+    const isAuthPage = authPages.includes(pathname)
+
+    React.useEffect(() => {
+        const token = localStorage.getItem("token")
+        if (!token && !isAuthPage) {
+            router.push("/login")
+        } else if (token && isAuthPage) {
+            router.push("/")
+        }
+        setIsCheckingAuth(false)
+    }, [pathname, isAuthPage, router])
 
     const handleLogout = () => {
         localStorage.removeItem("token")
-        window.location.href = "/login"
+        router.push("/login")
+    }
+
+    if (isCheckingAuth) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        )
+    }
+
+    if (isAuthPage) {
+        return <>{children}</>
     }
 
     return (
