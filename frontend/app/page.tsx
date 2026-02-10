@@ -193,35 +193,82 @@ export default function Dashboard() {
                     </CardFooter>
                 </Card>
 
-                {/* Quick Insights */}
+                {/* Operational Insights */}
                 <div className="lg:col-span-3 space-y-6">
-                    <Card className="border-primary/20 bg-primary/5">
+                    <Card className="border-none shadow-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/5">
                         <CardHeader className="pb-3">
-                            <CardTitle className="text-lg">Consultant Insight</CardTitle>
+                            <CardTitle className="text-lg flex items-center justify-between">
+                                Upcoming Visits
+                                <Calendar className="h-4 w-4 text-indigo-500" />
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-start gap-3">
-                                <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                                <p className="text-sm">
-                                    You have <span className="font-bold">4 clients</span> with high outstanding balances. Generating a ledger reminder is recommended.
-                                </p>
+                            <div className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
+                                <div className="h-10 w-10 rounded bg-indigo-500/10 flex flex-col items-center justify-center shrink-0 border border-indigo-500/20">
+                                    <span className="text-[10px] uppercase font-bold text-indigo-500">Feb</span>
+                                    <span className="text-lg font-bold leading-none">18</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold truncate">Patel Corporate Office</p>
+                                    <p className="text-xs text-muted-foreground truncate">Full Floor Site Audit</p>
+                                </div>
+                                <Button size="icon" variant="ghost" className="h-8 w-8">
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
                             </div>
-                            <Button size="sm" className="w-full">Action Recommendations</Button>
+                            <div className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border/50 opacity-60">
+                                <div className="h-10 w-10 rounded bg-indigo-500/10 flex flex-col items-center justify-center shrink-0 border border-indigo-500/20">
+                                    <span className="text-[10px] uppercase font-bold text-indigo-500">Feb</span>
+                                    <span className="text-lg font-bold leading-none">22</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold truncate">Mehta Residency</p>
+                                    <p className="text-xs text-muted-foreground truncate">Remedy Verification</p>
+                                </div>
+                                <Button size="icon" variant="ghost" className="h-8 w-8">
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            <Button variant="outline" size="sm" className="w-full border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/5">
+                                <Plus className="mr-2 h-3.5 w-3.5" />
+                                Schedule New Visit
+                            </Button>
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="border-emerald-500/20 bg-emerald-500/[0.02]">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-base">Efficiency Goal</CardTitle>
-                            <CardDescription>Monthly visit conversion</CardDescription>
+                            <CardTitle className="text-base flex items-center gap-2">
+                                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                Revenue Collection
+                            </CardTitle>
+                            <CardDescription>Target vs. Actuals</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-3">
-                            <div className="flex items-center justify-between text-sm">
-                                <span>Progress</span>
-                                <span className="font-bold">75%</span>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-end justify-between">
+                                <div className="space-y-1">
+                                    <span className="text-2xl font-bold">₹1.2L</span>
+                                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Collected this Month</p>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-blue-600 font-bold">85%</span>
+                                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter text-right">Of Goal</p>
+                                </div>
                             </div>
-                            <Progress value={75} className="h-2" />
-                            <p className="text-xs text-muted-foreground">Keep it up! You're on track for your targets.</p>
+                            <div className="h-2 w-full bg-muted rounded-full overflow-hidden flex">
+                                <div className="h-full bg-emerald-500 w-[85%]" />
+                                <div className="h-full bg-blue-400 w-[5%]" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="p-2 rounded bg-background border border-border/50">
+                                    <span className="text-[10px] text-muted-foreground block font-bold uppercase">Pending</span>
+                                    <span className="text-sm font-bold text-orange-600">₹45,000</span>
+                                </div>
+                                <div className="p-2 rounded bg-background border border-border/50">
+                                    <span className="text-[10px] text-muted-foreground block font-bold uppercase">Overdue</span>
+                                    <span className="text-sm font-bold text-destructive">₹12,400</span>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
