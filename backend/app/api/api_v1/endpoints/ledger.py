@@ -7,7 +7,11 @@ from app.api import deps
 from app.models.service import ServiceEntry as ServiceModel
 from app.models.payment import Payment as PaymentModel
 from app.models.client import Client as ClientModel
-from app.schemas.ledger import ServiceEntry, ServiceEntryCreate, Payment, PaymentCreate, ClientLedger, LedgerEntry
+from app.schemas.ledger import (
+    ServiceEntry, ServiceEntryCreate, ServiceEntryUpdate,
+    Payment, PaymentCreate, PaymentUpdate,
+    ClientLedger, LedgerEntry
+)
 
 router = APIRouter()
 
@@ -26,6 +30,47 @@ async def create_service_entry(
     await db.refresh(entry)
     return entry
 
+@router.put("/services/{id}", response_model=ServiceEntry)
+async def update_service_entry(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    id: str,
+    entry_in: ServiceEntryUpdate,
+) -> Any:
+    """
+    Update a service charge.
+    """
+    result = await db.execute(select(ServiceModel).where(ServiceModel.id == id))
+    entry = result.scalars().first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Service entry not found")
+    
+    update_data = entry_in.dict(exclude_unset=True)
+    for field in update_data:
+        setattr(entry, field, update_data[field])
+    
+    db.add(entry)
+    await db.commit()
+    await db.refresh(entry)
+    return entry
+
+@router.delete("/services/{id}", response_model=ServiceEntry)
+async def delete_service_entry(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    id: str,
+) -> Any:
+    """
+    Delete a service charge.
+    """
+    result = await db.execute(select(ServiceModel).where(ServiceModel.id == id))
+    entry = result.scalars().first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Service entry not found")
+    await db.delete(entry)
+    await db.commit()
+    return entry
+
 @router.post("/payments", response_model=Payment)
 async def create_payment(
     *,
@@ -39,6 +84,47 @@ async def create_payment(
     db.add(payment)
     await db.commit()
     await db.refresh(payment)
+    return payment
+
+@router.put("/payments/{id}", response_model=Payment)
+async def update_payment(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    id: str,
+    payment_in: PaymentUpdate,
+) -> Any:
+    """
+    Update a payment.
+    """
+    result = await db.execute(select(PaymentModel).where(PaymentModel.id == id))
+    payment = result.scalars().first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    update_data = payment_in.dict(exclude_unset=True)
+    for field in update_data:
+        setattr(payment, field, update_data[field])
+    
+    db.add(payment)
+    await db.commit()
+    await db.refresh(payment)
+    return payment
+
+@router.delete("/payments/{id}", response_model=Payment)
+async def delete_payment(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    id: str,
+) -> Any:
+    """
+    Delete a payment.
+    """
+    result = await db.execute(select(PaymentModel).where(PaymentModel.id == id))
+    payment = result.scalars().first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    await db.delete(payment)
+    await db.commit()
     return payment
 
 @router.get("/client/{client_id}", response_model=ClientLedger)

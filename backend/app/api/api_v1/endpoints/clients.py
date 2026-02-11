@@ -91,3 +91,63 @@ async def delete_client(
     await db.delete(client)
     await db.commit()
     return client
+
+# --- CRM Specific Endpoints ---
+
+from app.models.client_service import ClientService as ClientServiceModel
+from app.schemas.client_service import ClientService, ClientServiceCreate
+from sqlalchemy.orm import selectinload
+
+@router.post("/{id}/services", response_model=ClientService)
+async def add_service_to_client(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    id: str,
+    service_in: ClientServiceCreate,
+) -> Any:
+    """
+    Attach a new service (from the catalog) to a specific client.
+    """
+    # Verify client exists
+    result = await db.execute(select(ClientModel).where(ClientModel.id == id))
+    client = result.scalars().first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+        
+    client_service = ClientServiceModel(**service_in.dict())
+    client_service.client_id = id # Ensure safety
+    db.add(client_service)
+    
+    # Update Client's total_fees_fixed for quick summary
+    client.total_fees_fixed += service_in.calculated_fee
+    
+    await db.commit()
+    await db.refresh(client_service)
+    return client_service
+
+@router.get("/{id}/history")
+async def get_client_history(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    id: str,
+) -> Any:
+    """
+    Fetch comprehensive client history including all attached services, visits, and payments.
+    """
+    # Use selectinload to eagerly fetch related data
+    stmt = (
+        select(ClientModel)
+        .where(ClientModel.id == id)
+        .options(
+            selectinload(ClientModel.services).selectinload(ClientServiceModel.service_catalog),
+            selectinload(ClientModel.services).selectinload(ClientServiceModel.visits),
+            selectinload(ClientModel.services).selectinload(ClientServiceModel.payments)
+        )
+    )
+    result = await db.execute(stmt)
+    client = result.scalars().first()
+    
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+        
+    return client
