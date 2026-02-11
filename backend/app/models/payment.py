@@ -19,4 +19,4 @@ class Payment(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    client = relationship("Client")
+    client = relationship("Client", back_populates="payments")

@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Boolean, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
@@ -13,6 +13,10 @@ class Visit(Base):
     date = Column(DateTime(timezone=True), server_default=func.now())
     purpose = Column(String, nullable=True)
     observations = Column(Text, nullable=True)
+    
+    # For tracking supplementary visits (e.g. ₹ 500 charge)
+    is_supplementary = Column(Boolean, default=False)
+    fee_incurred = Column(Float, default=0.0)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

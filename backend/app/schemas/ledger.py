@@ -21,6 +21,11 @@ class ServiceEntry(ServiceEntryBase):
     class Config:
         from_attributes = True
 
+class ServiceEntryUpdate(BaseModel):
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    date: Optional[datetime] = None
+
 # Payment Schemas
 class PaymentBase(BaseModel):
     amount: float
@@ -38,6 +43,12 @@ class Payment(PaymentBase):
 
     class Config:
         from_attributes = True
+
+class PaymentUpdate(BaseModel):
+    amount: Optional[float] = None
+    method: Optional[str] = None
+    date: Optional[datetime] = None
+    notes: Optional[str] = None
 
 # Aggregated Ledger Schemas
 class LedgerEntry(BaseModel):

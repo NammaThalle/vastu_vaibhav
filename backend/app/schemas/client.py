@@ -6,9 +6,11 @@ import uuid
 
 class ClientBase(BaseModel):
     full_name: str
-    address: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
+    project_address: Optional[str] = None
+    location_type: str = "Goa"
+    lead_status: str = "Inquiry"
     total_fees_fixed: float = 0.0
 
 class ClientCreate(ClientBase):
