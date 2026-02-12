@@ -88,6 +88,20 @@ export const ledgerApi = {
         method: 'POST',
         body: JSON.stringify(data),
     }),
+    updateService: (id: string, data: any) => apiFetch(`/api/v1/ledger/services/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    }),
+    updatePayment: (id: string, data: any) => apiFetch(`/api/v1/ledger/payments/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    }),
+    deleteService: (id: string) => apiFetch(`/api/v1/ledger/services/${id}`, {
+        method: 'DELETE',
+    }),
+    deletePayment: (id: string) => apiFetch(`/api/v1/ledger/payments/${id}`, {
+        method: 'DELETE',
+    }),
     downloadBill: (clientId: string) => {
         const token = localStorage.getItem('token');
         return fetch(`${API_BASE_URL}/api/v1/ledger/client/${clientId}/bill`, {
@@ -97,4 +111,12 @@ export const ledgerApi = {
             return res.blob();
         });
     },
+};
+
+export const servicesApi = {
+    getCatalog: () => apiFetch('/api/v1/services/catalog'),
+    calculateFee: (calculationData: any) => apiFetch('/api/v1/services/calculate', {
+        method: 'POST',
+        body: JSON.stringify(calculationData),
+    }),
 };
