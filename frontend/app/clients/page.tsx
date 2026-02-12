@@ -185,9 +185,12 @@ export default function ClientsPage() {
                                                 </Badge>
                                             </div>
                                             <CardTitle className="mt-4 line-clamp-1">{client.full_name}</CardTitle>
-                                            <CardDescription className="flex items-center gap-1">
-                                                <MapPin className="h-3 w-3" />
-                                                <span className="line-clamp-1">{client.address || "No address listed"}</span>
+                                            <CardDescription className="flex items-center justify-between gap-1 mt-2">
+                                                <div className="flex items-center gap-1">
+                                                    <MapPin className="h-3 w-3" />
+                                                    <span className="line-clamp-1">{client.project_address || "No address listed"}</span>
+                                                </div>
+                                                <Badge variant="outline" className="text-[10px]">{client.lead_status || "Inquiry"}</Badge>
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent className="space-y-4 pb-6 font-medium text-sm">
@@ -260,7 +263,7 @@ export default function ClientsPage() {
                                                 <TableCell className="hidden lg:table-cell text-xs text-muted-foreground italic">
                                                     <div className="flex items-center gap-1 max-w-[300px]">
                                                         <MapPin className="h-3 w-3 shrink-0" />
-                                                        <span className="truncate">{client.address || "N/A"}</span>
+                                                        <span className="truncate">{client.project_address || "N/A"}</span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right">

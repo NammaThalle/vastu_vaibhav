@@ -195,47 +195,6 @@ export default function Dashboard() {
 
                 {/* Operational Insights */}
                 <div className="lg:col-span-3 space-y-6">
-                    <Card className="border-none shadow-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/5">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-lg flex items-center justify-between">
-                                Upcoming Visits
-                                <Calendar className="h-4 w-4 text-indigo-500" />
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
-                                <div className="h-10 w-10 rounded bg-indigo-500/10 flex flex-col items-center justify-center shrink-0 border border-indigo-500/20">
-                                    <span className="text-[10px] uppercase font-bold text-indigo-500">Feb</span>
-                                    <span className="text-lg font-bold leading-none">18</span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold truncate">Patel Corporate Office</p>
-                                    <p className="text-xs text-muted-foreground truncate">Full Floor Site Audit</p>
-                                </div>
-                                <Button size="icon" variant="ghost" className="h-8 w-8">
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <div className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border/50 opacity-60">
-                                <div className="h-10 w-10 rounded bg-indigo-500/10 flex flex-col items-center justify-center shrink-0 border border-indigo-500/20">
-                                    <span className="text-[10px] uppercase font-bold text-indigo-500">Feb</span>
-                                    <span className="text-lg font-bold leading-none">22</span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold truncate">Mehta Residency</p>
-                                    <p className="text-xs text-muted-foreground truncate">Remedy Verification</p>
-                                </div>
-                                <Button size="icon" variant="ghost" className="h-8 w-8">
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <Button variant="outline" size="sm" className="w-full border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/5">
-                                <Plus className="mr-2 h-3.5 w-3.5" />
-                                Schedule New Visit
-                            </Button>
-                        </CardContent>
-                    </Card>
-
                     <Card className="border-emerald-500/20 bg-emerald-500/[0.02]">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base flex items-center gap-2">

@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator"
 import { clientsApi } from "@/services/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { ServiceCalculator } from "@/components/ServiceCalculator"
 
 export default function NewClientPage() {
     const router = useRouter()
@@ -31,9 +32,11 @@ export default function NewClientPage() {
 
     const [formData, setFormData] = React.useState({
         full_name: "",
-        address: "",
+        project_address: "",
         phone: "",
         email: "",
+        location_type: "Goa",
+        lead_status: "Inquiry",
         total_fees_fixed: 0
     })
 
@@ -122,17 +125,31 @@ export default function NewClientPage() {
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <Label htmlFor="address" className="text-sm font-semibold">Site / Property Address</Label>
+                                    <Label htmlFor="project_address" className="text-sm font-semibold">Site / Project Address</Label>
                                     <div className="relative">
                                         <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                         <textarea
-                                            id="address"
+                                            id="project_address"
                                             className="flex min-h-[100px] w-full rounded-md border border-input bg-muted/20 px-3 py-2 pl-9 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                             placeholder="Enter full property address for Vastu analysis..."
-                                            value={formData.address}
-                                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                            value={formData.project_address}
+                                            onChange={(e) => setFormData({ ...formData, project_address: e.target.value })}
                                         />
                                     </div>
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="location_type" className="text-sm font-semibold">Location Region</Label>
+                                    <select
+                                        id="location_type"
+                                        className="flex h-10 w-full rounded-md border border-input bg-muted/20 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        value={formData.location_type}
+                                        onChange={e => setFormData({ ...formData, location_type: e.target.value })}
+                                    >
+                                        <option value="Goa">Goa (Standard)</option>
+                                        <option value="Maharashtra">Maharashtra (Subject to Travel Add-ons)</option>
+                                        <option value="Karnataka">Karnataka (Subject to Travel Add-ons)</option>
+                                    </select>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -194,6 +211,9 @@ export default function NewClientPage() {
                                         />
                                     </div>
                                 </div>
+
+                                <Separator className="my-2" />
+                                <ServiceCalculator onCalculated={(val) => setFormData({ ...formData, total_fees_fixed: val })} initialFee={formData.total_fees_fixed} />
                             </div>
                         </CardContent>
                         <CardFooter className="bg-muted/10 border-t p-6 flex justify-end gap-3">
