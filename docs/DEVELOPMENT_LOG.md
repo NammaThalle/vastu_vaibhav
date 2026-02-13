@@ -43,5 +43,11 @@ This document tracks the systematic engineering phases of the Vastu Vaibhav appl
 *   Implemented authentication guards and session persistence.
 *   Finalized repository cleanup and documentation parity.
 
+## 🟢 Phase 8: Advanced CRM & Dynamic Pricing (Feb 11 - Feb 13)
+*   Implemented `service_catalog` schema and seed scripts for dynamically quoting services (e.g., Residential, Commercial, Bundles).
+*   Built the interactive `ServiceCalculator` on the frontend with logical property scaling adjustments.
+*   Implemented full cascade-delete mechanisms and `PUT`/`DELETE` capabilities across Client profiles, Visits, and running Ledger Transactions.
+*   Standardized AI agent git compliance with structured repository commit strategy configuration.
+
 ---
-**Current Status**: Production-Ready v1.0
+**Current Status**: Production-Ready v1.1

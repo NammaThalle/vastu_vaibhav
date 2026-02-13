@@ -92,6 +92,15 @@ Editable ledger.
 * created_at TIMESTAMP
 * updated_at TIMESTAMP
 
+### service_catalog
+
+* id UUID PK
+* name VARCHAR NOT NULL
+* base_price NUMERIC(12,2)
+* description TEXT
+* created_at TIMESTAMP
+* updated_at TIMESTAMP
+
 ### service_entries
 
 * id UUID PK
