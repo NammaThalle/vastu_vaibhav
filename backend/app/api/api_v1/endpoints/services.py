@@ -4,13 +4,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.api import deps
 from app.models.service_catalog import ServiceCatalog as ServiceCatalogModel
-from app.schemas.service_catalog import ServiceCatalog, ServiceCatalogCreate, ServiceCatalogUpdate
+from app.schemas.service_catalog import ServiceCatalog, ServiceCatalogCreate, ServiceCatalogUpdate, ServiceCatalogWithAddons
+from app.models.service_addon import ServiceAddon as ServiceAddonModel
+from app.schemas.service_addon import ServiceAddon, ServiceAddonCreate, ServiceAddonUpdate
 from pydantic import BaseModel
 import json
 
 router = APIRouter()
 
-@router.get("/catalog", response_model=List[ServiceCatalog])
+@router.get("/catalog", response_model=List[ServiceCatalogWithAddons])
 async def read_service_catalog(
     db: AsyncSession = Depends(deps.get_db),
     skip: int = 0,
@@ -19,8 +21,35 @@ async def read_service_catalog(
     """
     Retrieve all available services from the catalog.
     """
-    result = await db.execute(select(ServiceCatalogModel).where(ServiceCatalogModel.is_active == True).offset(skip).limit(limit))
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(
+        select(ServiceCatalogModel)
+        .options(selectinload(ServiceCatalogModel.addons))
+        .where(ServiceCatalogModel.is_active == True)
+        .offset(skip)
+        .limit(limit)
+    )
     return result.scalars().all()
+
+@router.get("/catalog/{id}", response_model=ServiceCatalogWithAddons)
+async def read_service_catalog_item(
+    id: str,
+    db: AsyncSession = Depends(deps.get_db),
+) -> Any:
+    """
+    Retrieve a specific service catalog item and its configured addons.
+    """
+    # Eager load addons or just query normally? Let's use selectinload
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(
+        select(ServiceCatalogModel)
+        .options(selectinload(ServiceCatalogModel.addons))
+        .where(ServiceCatalogModel.id == id)
+    )
+    item = result.scalars().first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Service Catalog not found")
+    return item
 
 @router.post("/catalog", response_model=ServiceCatalog)
 async def create_service_catalog(
@@ -36,6 +65,113 @@ async def create_service_catalog(
     await db.commit()
     await db.refresh(catalog_item)
     return catalog_item
+
+@router.put("/catalog/{id}", response_model=ServiceCatalog)
+async def update_service_catalog(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    id: str,
+    catalog_in: ServiceCatalogUpdate,
+) -> Any:
+    """
+    Update a service in the catalog (Admin only).
+    """
+    result = await db.execute(select(ServiceCatalogModel).where(ServiceCatalogModel.id == id))
+    catalog_item = result.scalars().first()
+    if not catalog_item:
+        raise HTTPException(status_code=404, detail="Service Catalog not found")
+    
+    update_data = catalog_in.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(catalog_item, field, value)
+        
+    db.add(catalog_item)
+    await db.commit()
+    await db.refresh(catalog_item)
+    return catalog_item
+
+@router.delete("/catalog/{id}")
+async def delete_service_catalog(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    id: str,
+) -> Any:
+    """
+    Soft delete a service from the catalog (Admin only).
+    """
+    result = await db.execute(select(ServiceCatalogModel).where(ServiceCatalogModel.id == id))
+    catalog_item = result.scalars().first()
+    if not catalog_item:
+        raise HTTPException(status_code=404, detail="Service Catalog not found")
+    
+    catalog_item.is_active = False
+    db.add(catalog_item)
+    await db.commit()
+    return {"message": "Service successfully deleted/deactivated"}
+
+# --- Addon Management ---
+
+@router.post("/catalog/{catalog_id}/addons", response_model=ServiceAddon)
+async def create_service_addon(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    catalog_id: str,
+    addon_in: ServiceAddonCreate,
+) -> Any:
+    """
+    Create a new sub-charge addon for a specific service.
+    """
+    result = await db.execute(select(ServiceCatalogModel).where(ServiceCatalogModel.id == catalog_id))
+    if not result.scalars().first():
+        raise HTTPException(status_code=404, detail="Parent Service Catalog not found")
+
+    addon_item = ServiceAddonModel(**addon_in.dict(), service_catalog_id=catalog_id)
+    db.add(addon_item)
+    await db.commit()
+    await db.refresh(addon_item)
+    return addon_item
+
+@router.put("/addons/{id}", response_model=ServiceAddon)
+async def update_service_addon(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    id: str,
+    addon_in: ServiceAddonUpdate,
+) -> Any:
+    """
+    Update a specific addon's name or price.
+    """
+    result = await db.execute(select(ServiceAddonModel).where(ServiceAddonModel.id == id))
+    addon_item = result.scalars().first()
+    if not addon_item:
+        raise HTTPException(status_code=404, detail="Service Addon not found")
+    
+    update_data = addon_in.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(addon_item, field, value)
+        
+    db.add(addon_item)
+    await db.commit()
+    await db.refresh(addon_item)
+    return addon_item
+
+@router.delete("/addons/{id}")
+async def delete_service_addon(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    id: str,
+) -> Any:
+    """
+    Delete a specific addon.
+    """
+    result = await db.execute(select(ServiceAddonModel).where(ServiceAddonModel.id == id))
+    addon_item = result.scalars().first()
+    if not addon_item:
+        raise HTTPException(status_code=404, detail="Service Addon not found")
+    
+    await db.delete(addon_item)
+    await db.commit()
+    return {"message": "Addon successfully deleted"}
 
 # --- Dynamic Calculator Models ---
 class CalculateRequest(BaseModel):
