@@ -7,6 +7,7 @@ class ServiceCatalogBase(BaseModel):
     description: Optional[str] = None
     base_price: float = 0.0
     pricing_type: str = "Fixed"
+    max_free_visits: int = 1
     is_active: bool = True
 
 class ServiceCatalogCreate(ServiceCatalogBase):
@@ -15,6 +16,7 @@ class ServiceCatalogCreate(ServiceCatalogBase):
 class ServiceCatalogUpdate(ServiceCatalogBase):
     name: Optional[str] = None
     pricing_type: Optional[str] = None
+    max_free_visits: Optional[int] = None
 
 class ServiceCatalogInDBBase(ServiceCatalogBase):
     id: str
@@ -26,3 +28,8 @@ class ServiceCatalogInDBBase(ServiceCatalogBase):
 
 class ServiceCatalog(ServiceCatalogInDBBase):
     pass
+
+from .service_addon import ServiceAddon
+
+class ServiceCatalogWithAddons(ServiceCatalog):
+    addons: list[ServiceAddon] = []

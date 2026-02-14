@@ -12,6 +12,7 @@ class ClientBase(BaseModel):
     location_type: str = "Goa"
     lead_status: str = "Inquiry"
     total_fees_fixed: float = 0.0
+    service_id: Optional[str] = None
 
 class ClientCreate(ClientBase):
     pass
