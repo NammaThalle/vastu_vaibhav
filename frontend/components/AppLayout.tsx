@@ -30,6 +30,7 @@ import {
 const navItems = [
     { path: "/", label: "Dashboard", icon: LayoutDashboard },
     { path: "/clients", label: "Clients", icon: Users },
+    { path: "/settings/services", label: "Settings", icon: Settings },
 ]
 
 const authPages = ["/login", "/register"]
