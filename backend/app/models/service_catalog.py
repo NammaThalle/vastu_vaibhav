@@ -14,7 +14,9 @@ class ServiceCatalog(Base):
     base_price = Column(Float, nullable=False, default=0.0)
     
     # Pricing type decides how the final fee is calculated (Fixed, Per-Item, Bundle)
+    # Pricing type decides how the final fee is calculated (Fixed, Per-Item, Bundle)
     pricing_type = Column(String, nullable=False, default="Fixed") 
+    max_free_visits = Column(Float, nullable=False, default=1)
     
     is_active = Column(Boolean, default=True)
 
@@ -23,3 +25,4 @@ class ServiceCatalog(Base):
 
     # Relationships
     client_services = relationship("ClientService", back_populates="service_catalog")
+    addons = relationship("ServiceAddon", back_populates="service_catalog", cascade="all, delete-orphan")

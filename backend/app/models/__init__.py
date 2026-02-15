@@ -5,3 +5,4 @@ from .service_catalog import ServiceCatalog
 from .client_service import ClientService
 from .service import ServiceEntry
 from .payment import Payment
+from .service_addon import ServiceAddon

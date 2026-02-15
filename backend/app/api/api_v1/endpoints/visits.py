@@ -5,7 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.api import deps
 from app.models.visit import Visit as VisitModel
+from app.models.client import Client as ClientModel
+from app.models.service_catalog import ServiceCatalog as CatalogModel
+from app.models.service_addon import ServiceAddon as AddonModel
+from app.models.service import ServiceEntry as LedgerModel
 from app.schemas.visit import Visit, VisitCreate, VisitUpdate
+from sqlalchemy import func
 
 router = APIRouter()
 
@@ -28,10 +33,55 @@ async def create_visit(
     visit_in: VisitCreate,
 ) -> Any:
     """
-    Create new visit.
+    Create new visit and calculate dynamic overdraft billing if applicable.
     """
+    # 1. Fetch Client to determine their Service Type
+    result = await db.execute(select(ClientModel).where(ClientModel.id == visit_in.client_id))
+    client = result.scalars().first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+        
+    # 2. Add the physical Visit Record
     visit = VisitModel(**visit_in.dict())
     db.add(visit)
+    await db.flush() # Secure the ID but don't commit fully yet
+    
+    # 3. Handle Auto-Billing if Client belongs to a Service Strategy
+    if client.service_id:
+        # A. Fetch the rules for their exact package
+        res_cat = await db.execute(select(CatalogModel).where(CatalogModel.id == client.service_id))
+        service_catalog = res_cat.scalars().first()
+        
+        if service_catalog:
+            # B. Count their CURRENT visits (including the one we just flushed)
+            count_res = await db.execute(select(func.count(VisitModel.id)).where(VisitModel.client_id == client.id))
+            current_visit_count = count_res.scalar_one()
+            
+            # C. Check Threshold Limit
+            if current_visit_count > service_catalog.max_free_visits:
+                # D. Fetch the actual Addon pricing dynamically instead of hardcoding ₹500
+                addon_res = await db.execute(
+                    select(AddonModel)
+                    .where(
+                        (AddonModel.service_catalog_id == client.service_id) & 
+                        (AddonModel.name == "Supplementary Site Visit")
+                    )
+                )
+                visit_addon = addon_res.scalars().first()
+                
+                charge_amount = 500.0 # Fallback failsafe
+                if visit_addon:
+                    charge_amount = visit_addon.price
+                
+                # E. Inject Charge into Ledger
+                auto_charge = LedgerModel(
+                    client_id=client.id,
+                    visit_id=visit.id,
+                    description=f"Auto-Billed: Supplementary Site Visit (#{current_visit_count})",
+                    amount=charge_amount,
+                )
+                db.add(auto_charge)
+
     await db.commit()
     await db.refresh(visit)
     return visit

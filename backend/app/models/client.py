@@ -17,6 +17,7 @@ class Client(Base):
     project_address = Column(String, nullable=True)
     location_type = Column(String, default="Goa") # Goa, Karnataka, Maharashtra, etc.
     lead_status = Column(String, default="Inquiry") # Inquiry, Active, Completed, Inactive
+    service_id = Column(String, ForeignKey("service_catalog.id"), nullable=True)
     
     # Totals (can be calculated dynamically, but good for caching)
     total_fees_fixed = Column(Float, default=0.0)
@@ -25,6 +26,7 @@ class Client(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
+    core_service = relationship("ServiceCatalog", foreign_keys=[service_id])
     services = relationship("ClientService", back_populates="client", cascade="all, delete-orphan")
     visits = relationship("Visit", back_populates="client", cascade="all, delete-orphan")
     payments = relationship("Payment", back_populates="client", cascade="all, delete-orphan")
