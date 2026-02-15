@@ -6,25 +6,38 @@ import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import {
+    Activity,
     ArrowLeft,
-    IndianRupee,
-    FileDown,
-    PlusCircle,
-    CreditCard,
+    ArrowUpRight,
     Calendar,
+    CalendarCheck,
+    ChevronLeft,
+    ChevronRight,
+    ClipboardList,
+    Clock,
+    CreditCard,
+    DollarSign,
+    Edit3,
+    FileDown,
+    FileText,
+    Filter,
+    History,
+    IndianRupee,
+    LayoutDashboard,
+    Mail,
     MapPin,
     Phone,
-    Mail,
-    User,
-    ChevronLeft,
     Plus,
-    History,
+    PlusCircle,
     Receipt,
-    ClipboardList,
+    Search,
+    Settings,
+    Trash2,
     TrendingDown,
     TrendingUp,
-    Edit3,
-    Trash2
+    User,
+    Users,
+    AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -705,8 +718,19 @@ function ClientDetailContent() {
                                                     value={chargeForm.addon_type}
                                                     onValueChange={(value) => onAddonSelect(value)}
                                                 >
-                                                    <SelectTrigger className="w-full bg-background border-muted-foreground/20 focus:ring-orange-500/20 rounded-xl h-11">
-                                                        <SelectValue placeholder="Choose a standard charge..." />
+                                                    <SelectTrigger className="w-full bg-background border-muted-foreground/20 focus:ring-orange-500/20 rounded-xl h-11 overflow-hidden">
+                                                        <AnimatePresence mode="wait">
+                                                            <motion.div
+                                                                key={chargeForm.addon_type}
+                                                                initial={{ opacity: 0, y: 5 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                exit={{ opacity: 0, y: -5 }}
+                                                                transition={{ duration: 0.15 }}
+                                                                className="w-full flex items-center"
+                                                            >
+                                                                <SelectValue placeholder="Choose a standard charge..." />
+                                                            </motion.div>
+                                                        </AnimatePresence>
                                                     </SelectTrigger>
                                                     <SelectContent className="rounded-xl border-orange-500/10 shadow-2xl">
                                                         <SelectGroup>
@@ -720,10 +744,12 @@ function ClientDetailContent() {
                                                                         {client.service_id ? "Recommended for Project" : "Standard Catalog Addons"}
                                                                     </SelectLabel>
                                                                     {availableAddons.map(addon => (
-                                                                        <SelectItem key={addon.id} value={addon.id} className="py-3">
-                                                                            <div className="flex flex-col gap-0.5">
-                                                                                <span className="font-medium">{addon.name}</span>
-                                                                                <span className="text-xs text-orange-600 font-mono font-bold">₹{addon.price.toLocaleString()}</span>
+                                                                        <SelectItem key={addon.id} value={addon.id} className="py-2.5">
+                                                                            <div className="flex items-center justify-between w-full gap-3">
+                                                                                <span className="font-medium truncate">{addon.name}</span>
+                                                                                <span className="text-xs text-orange-600 font-mono font-bold bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100 flex-shrink-0">
+                                                                                    ₹{addon.price.toLocaleString()}
+                                                                                </span>
                                                                             </div>
                                                                         </SelectItem>
                                                                     ))}
