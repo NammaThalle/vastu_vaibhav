@@ -37,7 +37,8 @@ export default function NewClientPage() {
         email: "",
         location_type: "Goa",
         lead_status: "Inquiry",
-        total_fees_fixed: 0
+        total_fees_fixed: 0,
+        service_id: ""
     })
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -49,7 +50,11 @@ export default function NewClientPage() {
 
         setLoading(true)
         try {
-            await clientsApi.create(formData)
+            const payload = { ...formData }
+            if (!payload.service_id) {
+                delete (payload as any).service_id
+            }
+            await clientsApi.create(payload)
             setSuccess(true)
             toast.success("Client registered successfully")
             setTimeout(() => {
@@ -213,7 +218,10 @@ export default function NewClientPage() {
                                 </div>
 
                                 <Separator className="my-2" />
-                                <ServiceCalculator onCalculated={(val) => setFormData({ ...formData, total_fees_fixed: val })} initialFee={formData.total_fees_fixed} />
+                                <ServiceCalculator
+                                    onCalculated={(val, serviceId) => setFormData({ ...formData, total_fees_fixed: val, service_id: serviceId || "" })}
+                                    initialFee={formData.total_fees_fixed}
+                                />
                             </div>
                         </CardContent>
                         <CardFooter className="bg-muted/10 border-t p-6 flex justify-end gap-3">

@@ -41,7 +41,17 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { clientsApi, visitsApi, ledgerApi } from "@/services/api"
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectSeparator,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { clientsApi, visitsApi, ledgerApi, servicesApi } from "@/services/api"
 import { formatCurrency, cn } from "@/lib/utils"
 import { toast } from "sonner"
 
@@ -53,6 +63,9 @@ function ClientDetailContent() {
     const [client, setClient] = useState<any>(null);
     const [visits, setVisits] = useState<any[]>([]);
     const [ledger, setLedger] = useState<any>(null);
+    // New State for dynamic forms
+    const [availableAddons, setAvailableAddons] = useState<any[]>([]);
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -68,7 +81,13 @@ function ClientDetailContent() {
     // Forms State
     const [clientForm, setClientForm] = useState({ full_name: '', phone: '', email: '', project_address: '', location_type: '', lead_status: '' });
     const [visitForm, setVisitForm] = useState({ purpose: '', observations: '' });
-    const [chargeForm, setChargeForm] = useState({ description: '', amount: 0 });
+
+    // Updated Charge Form
+    const [chargeForm, setChargeForm] = useState({
+        description: '', amount: 0,
+        addon_type: 'custom' // 'custom' or the ID of a specific addon
+    });
+
     const [paymentForm, setPaymentForm] = useState({ amount: 0, method: 'Cash', notes: '' });
 
     useEffect(() => {
@@ -87,6 +106,28 @@ function ClientDetailContent() {
             setClient(clientData);
             setVisits(allVisits.filter((v: any) => v.client_id === id));
             setLedger(ledgerData);
+
+            // Fetch full catalog to provide all potential charges as addons
+            const fullCatalog = await servicesApi.getCatalog();
+
+            let addonsToShow = [];
+            if (clientData.service_id) {
+                const currentService = fullCatalog.find((s: any) => s.id === clientData.service_id);
+                if (currentService) {
+                    addonsToShow = currentService.addons || [];
+                }
+            }
+
+            // If no specific service or no addons in current service, aggregate others as "General"
+            if (addonsToShow.length === 0) {
+                const allOtherAddons = fullCatalog.flatMap((s: any) => s.addons || []);
+                // deduplicate by name to keep it clean
+                const uniqueAddons = Array.from(new Map(allOtherAddons.map((a: any) => [a.name, a])).values());
+                addonsToShow = uniqueAddons;
+            }
+
+            setAvailableAddons(addonsToShow);
+
         } catch (err: any) {
             setError(err.message || 'Failed to load data');
         } finally {
@@ -137,10 +178,14 @@ function ClientDetailContent() {
                 await ledgerApi.updateService(editingCharge.id, chargeForm);
                 toast.success('Service charge updated');
             } else {
-                await ledgerApi.addService({ ...chargeForm, client_id: id as string });
+                await ledgerApi.addService({
+                    description: chargeForm.description,
+                    amount: chargeForm.amount,
+                    client_id: id as string
+                });
                 toast.success('Service charge added');
             }
-            setChargeForm({ description: '', amount: 0 });
+            setChargeForm({ description: '', amount: 0, addon_type: 'custom' });
             setShowAddCharge(false);
             setEditingCharge(null);
             loadData();
@@ -162,8 +207,20 @@ function ClientDetailContent() {
 
     const startEditCharge = (entry: any) => {
         setEditingCharge(entry);
-        setChargeForm({ description: entry.description, amount: entry.amount });
+        setChargeForm({ description: entry.description, amount: entry.amount, addon_type: 'custom' });
         setShowAddCharge(true);
+    };
+
+    // Helper for Addon dropdown change
+    const onAddonSelect = (addonId: string) => {
+        if (addonId === 'custom') {
+            setChargeForm({ ...chargeForm, addon_type: 'custom', description: '', amount: 0 });
+        } else {
+            const addon = availableAddons.find(a => a.id === addonId);
+            if (addon) {
+                setChargeForm({ ...chargeForm, addon_type: addonId, description: addon.name, amount: addon.price });
+            }
+        }
     };
 
     const handleAddPayment = async (e: React.FormEvent) => {
@@ -640,6 +697,47 @@ function ClientDetailContent() {
                                 </CardHeader>
                                 <form onSubmit={handleAddCharge}>
                                     <CardContent className="space-y-4 pt-4">
+
+                                        {!editingCharge && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="addon_type">Select Charge Type</Label>
+                                                <Select
+                                                    value={chargeForm.addon_type}
+                                                    onValueChange={(value) => onAddonSelect(value)}
+                                                >
+                                                    <SelectTrigger className="w-full bg-background border-muted-foreground/20 focus:ring-orange-500/20 rounded-xl h-11">
+                                                        <SelectValue placeholder="Choose a standard charge..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-xl border-orange-500/10 shadow-2xl">
+                                                        <SelectGroup>
+                                                            <SelectItem value="custom" className="font-semibold text-orange-600 focus:text-orange-700 focus:bg-orange-50">
+                                                                ✨ Custom Manual Entry
+                                                            </SelectItem>
+                                                            {availableAddons.length > 0 && (
+                                                                <>
+                                                                    <SelectSeparator className="bg-orange-500/10" />
+                                                                    <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground pt-3">
+                                                                        {client.service_id ? "Recommended for Project" : "Standard Catalog Addons"}
+                                                                    </SelectLabel>
+                                                                    {availableAddons.map(addon => (
+                                                                        <SelectItem key={addon.id} value={addon.id} className="py-3">
+                                                                            <div className="flex flex-col gap-0.5">
+                                                                                <span className="font-medium">{addon.name}</span>
+                                                                                <span className="text-xs text-orange-600 font-mono font-bold">₹{addon.price.toLocaleString()}</span>
+                                                                            </div>
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </>
+                                                            )}
+                                                        </SelectGroup>
+                                                    </SelectContent>
+                                                </Select>
+                                                <p className="text-[10px] text-muted-foreground italic mt-1 px-1">
+                                                    Professional consulting rates pre-configured in your service catalog.
+                                                </p>
+                                            </div>
+                                        )}
+
                                         <div className="space-y-2">
                                             <Label htmlFor="description">Service Description</Label>
                                             <Input
@@ -647,6 +745,7 @@ function ClientDetailContent() {
                                                 placeholder="e.g. Vastu Remedy Installation"
                                                 value={chargeForm.description}
                                                 onChange={e => setChargeForm({ ...chargeForm, description: e.target.value })}
+                                                disabled={chargeForm.addon_type !== 'custom'}
                                                 required
                                             />
                                         </div>
@@ -660,6 +759,7 @@ function ClientDetailContent() {
                                                     className="pl-9 font-mono"
                                                     value={chargeForm.amount}
                                                     onChange={e => setChargeForm({ ...chargeForm, amount: parseFloat(e.target.value) })}
+                                                    disabled={chargeForm.addon_type !== 'custom'}
                                                     required
                                                 />
                                             </div>
