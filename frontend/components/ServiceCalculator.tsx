@@ -13,7 +13,7 @@ import { formatCurrency } from "@/lib/utils"
 import { toast } from "sonner"
 
 interface ServiceCalculatorProps {
-    onCalculated: (fee: number) => void;
+    onCalculated: (fee: number, serviceId?: string) => void;
     initialFee?: number;
 }
 
@@ -71,7 +71,7 @@ export function ServiceCalculator({ onCalculated, initialFee = 0 }: ServiceCalcu
 
     const applyFee = () => {
         if (result) {
-            onCalculated(result.total)
+            onCalculated(result.total, selectedServiceId)
             toast.success(`Fee of ${formatCurrency(result.total)} applied to client form.`)
         }
     }

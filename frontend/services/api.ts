@@ -115,6 +115,32 @@ export const ledgerApi = {
 
 export const servicesApi = {
     getCatalog: () => apiFetch('/api/v1/services/catalog'),
+    getCatalogItem: (id: string) => apiFetch(`/api/v1/services/catalog/${id}`),
+    createCatalog: (data: any) => apiFetch('/api/v1/services/catalog', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    }),
+    updateCatalog: (id: string, data: any) => apiFetch(`/api/v1/services/catalog/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    }),
+    deleteCatalog: (id: string) => apiFetch(`/api/v1/services/catalog/${id}`, {
+        method: 'DELETE',
+    }),
+
+    // Addons
+    createAddon: (catalogId: string, data: any) => apiFetch(`/api/v1/services/catalog/${catalogId}/addons`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+    }),
+    updateAddon: (id: string, data: any) => apiFetch(`/api/v1/services/addons/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    }),
+    deleteAddon: (id: string) => apiFetch(`/api/v1/services/addons/${id}`, {
+        method: 'DELETE',
+    }),
+
     calculateFee: (calculationData: any) => apiFetch('/api/v1/services/calculate', {
         method: 'POST',
         body: JSON.stringify(calculationData),
