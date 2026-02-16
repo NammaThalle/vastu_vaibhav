@@ -1,8 +1,8 @@
-
 from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from app.api import deps
 from app.models.client import Client as ClientModel
 from app.schemas.client import Client, ClientCreate, ClientUpdate
