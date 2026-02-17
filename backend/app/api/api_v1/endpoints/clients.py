@@ -60,9 +60,6 @@ async def update_client(
     id: str,
     client_in: ClientUpdate,
 ) -> Any:
-    """
-    Update a client.
-    """
     result = await db.execute(select(ClientModel).where(ClientModel.id == id))
     client = result.scalars().first()
     if not client:
