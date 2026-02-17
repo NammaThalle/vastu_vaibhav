@@ -16,10 +16,30 @@ async def read_clients(
     limit: int = 100,
 ) -> Any:
     """
-    Retrieve clients.
+    Retrieve clients with computed balances.
     """
-    result = await db.execute(select(ClientModel).offset(skip).limit(limit))
-    return result.scalars().all()
+    stmt = select(ClientModel).options(
+        selectinload(ClientModel.service_entries),
+        selectinload(ClientModel.payments)
+    ).offset(skip).limit(limit)
+    result = await db.execute(stmt)
+    clients_db = result.scalars().all()
+    
+    response_list = []
+    for c in clients_db:
+        total_billed = c.total_fees_fixed or 0.0
+        for s in c.service_entries:
+            total_billed += getattr(s, "amount", 0.0)
+            
+        total_paid = 0.0
+        for p in c.payments:
+            total_paid += getattr(p, "amount", 0.0)
+            
+        c.total_billed = total_billed
+        c.current_balance = total_billed - total_paid
+        response_list.append(c)
+        
+    return response_list
 
 @router.post("/", response_model=Client)
 async def create_client(
