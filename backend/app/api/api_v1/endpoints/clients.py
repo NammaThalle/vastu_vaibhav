@@ -80,9 +80,6 @@ async def read_client(
     db: AsyncSession = Depends(deps.get_db),
     id: str,
 ) -> Any:
-    """
-    Get client by ID.
-    """
     result = await db.execute(select(ClientModel).where(ClientModel.id == id))
     client = result.scalars().first()
     if not client:
