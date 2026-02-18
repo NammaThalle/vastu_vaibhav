@@ -117,13 +117,17 @@ async def create_visit(
                     charge_amount = visit_addon.price
                 
                 # E. Inject Charge into Ledger
-                auto_charge = LedgerModel(
-                    client_id=client.id,
-                    visit_id=visit.id,
-                    description=f"Auto-Billed: Supplementary Site Visit (#{current_visit_count})",
-                    amount=charge_amount,
+                visit.is_supplementary = True
+                visit.fee_incurred = charge_amount
+                db.add(
+                    LedgerModel(
+                        client_id=client.id,
+                        visit_id=visit.id,
+                        description=f"Auto-Billed: Supplementary Site Visit (#{current_visit_count})",
+                        amount=charge_amount,
+                        date=visit.date or visit.created_at,
+                    )
                 )
-                db.add(auto_charge)
 
     await db.commit()
     await db.refresh(visit)
