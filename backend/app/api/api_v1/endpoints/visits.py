@@ -86,8 +86,11 @@ async def create_visit(
     db.add(visit)
     await db.flush() # Secure the ID but don't commit fully yet
     
-    # 3. Handle Auto-Billing if Client belongs to a Service Strategy
-    if client.service_id:
+    # 3. Manual visit amount owns the visit-linked charge for this visit.
+    if visit.amount is not None and visit.amount > 0:
+        await sync_visit_charge(db, visit)
+    # 4. Only fall back to supplementary auto-billing when no manual amount is provided.
+    elif client.service_id:
         # A. Fetch the rules for their exact package
         res_cat = await db.execute(select(CatalogModel).where(CatalogModel.id == client.service_id))
         service_catalog = res_cat.scalars().first()
