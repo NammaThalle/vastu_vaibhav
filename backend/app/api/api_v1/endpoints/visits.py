@@ -14,6 +14,46 @@ from sqlalchemy import func
 
 router = APIRouter()
 
+
+def build_visit_charge_description(visit: VisitModel) -> str:
+    purpose = (visit.purpose or "").strip()
+    return f"Visit Charge: {purpose}" if purpose else "Visit Charge"
+
+
+async def get_visit_charge_entry(db: AsyncSession, visit_id: str) -> LedgerModel | None:
+    result = await db.execute(select(LedgerModel).where(LedgerModel.visit_id == visit_id))
+    return result.scalars().first()
+
+
+async def sync_visit_charge(db: AsyncSession, visit: VisitModel) -> None:
+    existing_entry = await get_visit_charge_entry(db, visit.id)
+    has_amount = visit.amount is not None and visit.amount > 0
+
+    if not has_amount:
+        if existing_entry:
+            await db.delete(existing_entry)
+        return
+
+    charge_date = visit.date or visit.created_at
+    description = build_visit_charge_description(visit)
+
+    if existing_entry:
+        existing_entry.amount = visit.amount
+        existing_entry.date = charge_date
+        existing_entry.description = description
+        db.add(existing_entry)
+        return
+
+    db.add(
+        LedgerModel(
+            client_id=visit.client_id,
+            visit_id=visit.id,
+            description=description,
+            amount=visit.amount,
+            date=charge_date,
+        )
+    )
+
 @router.get("/", response_model=List[Visit])
 async def read_visits(
     db: AsyncSession = Depends(deps.get_db),
