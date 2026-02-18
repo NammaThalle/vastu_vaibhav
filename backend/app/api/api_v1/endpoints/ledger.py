@@ -192,7 +192,8 @@ async def get_client_ledger(
             description=event["desc"],
             amount=event["amount"],
             date=event["date"],
-            balance_after=current_running_balance
+            balance_after=current_running_balance,
+            visit_id=event.get("visit_id")
         ))
 
     return ClientLedger(
