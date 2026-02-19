@@ -200,6 +200,9 @@ async def delete_visit(
     visit = result.scalars().first()
     if not visit:
         raise HTTPException(status_code=404, detail="Visit not found")
+    linked_entry = await get_visit_charge_entry(db, visit.id)
+    if linked_entry:
+        await db.delete(linked_entry)
     await db.delete(visit)
     await db.commit()
     return visit
