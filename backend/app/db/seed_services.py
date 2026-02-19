@@ -13,31 +13,29 @@ from app.models.service_addon import ServiceAddon
 
 SERVICES = [
     {
-        "name": "Plot Selection Analysis",
-        "description": "Assessment of raw land or plot. Determines suitability and directional coordinates.",
-        "base_price": 3000.0,  # Residential baseline
-        "pricing_type": "Variant_Fixed",
+        "name": "Initial Property Audit & Case Study",
+        "description": "Phase 1: Preliminary site visit, overall Vastu assessment, and estimation of scope. Mandatory entry point.",
+        "base_price": 2000.0,
+        "pricing_type": "Fixed",
         "max_free_visits": 1,
         "addons": [
-            {"name": "Commercial/Agricultural Variant", "price": 5000.0},
-            {"name": "Industrial Variant", "price": 10000.0},
+            {"name": "Plot/Land Variant", "price": 2500.0},
             {"name": "Supplementary Site Visit", "price": 500.0}
         ]
     },
     {
         "name": "New Plan Study",
-        "description": "Comprehensive Vastu analysis of a client-provided architectural plan.",
+        "description": "Phase 2: Comprehensive Vastu analysis of an architectural plan.",
         "base_price": 2500.0,
         "pricing_type": "Fixed",
         "max_free_visits": 2,
         "addons": [
-            {"name": "Commercial Variant", "price": 2500.0},
             {"name": "Supplementary Site Visit", "price": 500.0}
         ]
     },
     {
         "name": "Plan Modification & Remedial Solutions",
-        "description": "Actionable solutions to neutralize spatial defects via Vastu remedies or structural shifts.",
+        "description": "Phase 2: Actionable solutions to neutralize spatial defects via Vastu remedies or structural shifts.",
         "base_price": 1500.0,  # Room/Zone baseline
         "pricing_type": "Per-Item",
         "max_free_visits": 1,
