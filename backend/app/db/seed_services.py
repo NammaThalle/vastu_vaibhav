@@ -60,26 +60,15 @@ SERVICES = [
         ]
     },
     {
-        "name": "House Vastu Analysis",
-        "description": "Pre-purchase complete Vastu check for ready-to-move-in properties.",
-        "base_price": 2500.0,
-        "pricing_type": "Fixed",
-        "max_free_visits": 1,
-        "addons": [
-            {"name": "Commercial Variant", "price": 2500.0},
-            {"name": "Supplementary Site Visit", "price": 500.0}
-        ]
-    },
-    {
         "name": "Bundled Packages",
-        "description": "Comprehensive end-to-end Vastu consulting bundles.",
+        "description": "Phase 2: Comprehensive end-to-end Vastu consulting bundles (pricing tailored after Initial Audit).",
         "base_price": 0.0,
         "pricing_type": "Custom_Bundle",
         "max_free_visits": 3,
         "addons": [
             {"name": "Pre-Construction Bundle", "price": 5500.0},
             {"name": "Post-Construction Bundle", "price": 7000.0},
-            {"name": "Complete Vastu Bundle", "price": 10500.0},
+            {"name": "Complete Vastu Master Bundle", "price": 10500.0},
             {"name": "Supplementary Site Visit", "price": 500.0}
         ]
     },
