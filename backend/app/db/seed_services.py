@@ -47,7 +47,7 @@ SERVICES = [
     },
     {
         "name": "Interior & Exterior Element Placement",
-        "description": "Precise directional placement of interior furnishings and exterior utilities.",
+        "description": "Phase 2: Precise directional placement of interior furnishings and exterior utilities.",
         "base_price": 500.0,  # Individual item baseline
         "pricing_type": "Variant_Fixed",
         "max_free_visits": 1,
