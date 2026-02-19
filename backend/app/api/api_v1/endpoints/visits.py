@@ -149,9 +149,24 @@ async def update_visit(
         raise HTTPException(status_code=404, detail="Visit not found")
     
     update_data = visit_in.dict(exclude_unset=True)
+    previous_manual_amount = visit.amount
+    previous_supplementary = bool(visit.is_supplementary)
     for field in update_data:
         setattr(visit, field, update_data[field])
-    
+
+    if visit.amount is not None and visit.amount > 0:
+        visit.is_supplementary = False
+        visit.fee_incurred = 0.0
+        await sync_visit_charge(db, visit)
+    else:
+        if previous_manual_amount is not None and previous_manual_amount > 0:
+            await sync_visit_charge(db, visit)
+        elif previous_supplementary:
+            linked_entry = await get_visit_charge_entry(db, visit.id)
+            if linked_entry:
+                linked_entry.date = visit.date or linked_entry.date
+                db.add(linked_entry)
+
     db.add(visit)
     await db.commit()
     await db.refresh(visit)
