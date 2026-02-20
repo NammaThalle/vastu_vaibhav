@@ -1,8 +1,13 @@
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+import asyncio
 import os
+from pathlib import Path
+
+from alembic import command
+from alembic.config import Config
+
 from app.core.config import settings
 from app.api.api_v1.api import api_router
 
