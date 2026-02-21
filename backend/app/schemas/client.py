@@ -19,11 +19,14 @@ class ClientCreate(ClientBase):
 
 class ClientUpdate(ClientBase):
     full_name: Optional[str] = None
+    created_at: Optional[datetime] = None
 
 class ClientInDBBase(ClientBase):
     id: str
     created_at: datetime
     updated_at: Optional[datetime] = None
+    total_billed: float = 0.0
+    current_balance: float = 0.0
 
     class Config:
         from_attributes = True
