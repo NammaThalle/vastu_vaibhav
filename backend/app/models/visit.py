@@ -24,3 +24,4 @@ class Visit(Base):
 
     # Relationships
     client = relationship("Client", back_populates="visits")
+    ledger_entries = relationship("ServiceEntry", back_populates="visit", cascade="all, delete-orphan")
