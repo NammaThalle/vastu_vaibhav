@@ -13,6 +13,7 @@ class Visit(Base):
     date = Column(DateTime(timezone=True), server_default=func.now())
     purpose = Column(String, nullable=True)
     observations = Column(Text, nullable=True)
+    amount = Column(Float, nullable=True)
     
     # For tracking supplementary visits (e.g. ₹ 500 charge)
     is_supplementary = Column(Boolean, default=False)
