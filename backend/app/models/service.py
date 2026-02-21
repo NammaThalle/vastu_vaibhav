@@ -19,3 +19,4 @@ class ServiceEntry(Base):
 
     # Relationships
     client = relationship("Client")
+    visit = relationship("Visit", back_populates="ledger_entries")
