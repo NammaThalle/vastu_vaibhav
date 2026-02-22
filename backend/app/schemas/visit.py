@@ -8,6 +8,7 @@ class VisitBase(BaseModel):
     date: Optional[datetime] = None
     purpose: Optional[str] = None
     observations: Optional[str] = None
+    amount: Optional[float] = None
 
 class VisitCreate(VisitBase):
     client_id: str
