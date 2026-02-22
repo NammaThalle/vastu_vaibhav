@@ -60,6 +60,7 @@ class LedgerEntry(BaseModel):
     amount: float
     date: datetime
     balance_after: float
+    visit_id: Optional[str] = None
 
 class ClientLedger(BaseModel):
     client_id: str
