@@ -12,10 +12,12 @@ class ServiceEntryBase(BaseModel):
 
 class ServiceEntryCreate(ServiceEntryBase):
     client_id: str
+    visit_id: Optional[str] = None
 
 class ServiceEntry(ServiceEntryBase):
     id: str
     client_id: str
+    visit_id: Optional[str] = None
     created_at: datetime
 
     class Config:
