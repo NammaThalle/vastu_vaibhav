@@ -92,44 +92,21 @@ Tailored for clients whose primary structural plan is finalized, focusing heavil
 - Full Property Package (Interior + Exterior): ₹ 5,000
 - Supplementary Site Visits: ₹ 500 per visit.
 
-**Exclusions:**
-- Generation of new plan drawings.
-
 ---
 
-### 5. House Vastu Analysis (Pre-Purchase)
-Designed for clients intending to purchase a pre-constructed or ready-to-move-in house/apartment, providing a complete Vastu check before finalized investment.
-
-**Inclusions:**
-- Initial site visit.
-- Determination of the property's precise structural alignment.
-- Verification of existing construction against core Vastu compliance markers.
-- Final suitability assessment for harmonious living.
-- A definitive final verdict and recommendation on purchasing the property.
-
-**Fixed Charges:**
-- Residential Apartments/Houses: ₹ 2,500
-- Commercial Apartments/Properties: ₹ 2,500
-- Supplementary Site Visits: ₹ 500 per visit.
-
-**Exclusions:**
-- Generation of new plan drawings.
-
----
-
-### 6. Discounted Bundled Packages
-To provide comprehensive support throughout your property journey, Vastu Vaibhav offers cost-effective, bundled service packages. 
+## 5. Discounted Bundled Packages
+To provide comprehensive support throughout your property journey, Vastu Vaibhav offers cost-effective, bundled service packages. Note that the **Initial Property Audit (Phase 1)** is mandatory prior to taking up packages to properly evaluate your needs.
 
 **A. The "Pre-Construction" Bundle**
-- **Includes**: Service #1 (Plot Selection) + Service #2 (New Plan Study).
-- **Ideal for**: Clients starting from scratch, ensuring the land is perfect and the initial architectural plan is heavily optimized before a single brick is laid.
+- **Includes**: Service #2 (New Plan Study) + essential guidance from Service #3 (if modifications needed to the draft).
+- **Ideal for**: Clients starting from scratch ensuring the architectural plan is heavily optimized before a single brick is laid.
 
 **B. The "Post-Construction" Bundle**
 - **Includes**: Service #3 (Plan Modification & Remedial Solutions) + Service #4 (Interior & Exterior Element Placement).
 - **Ideal for**: Clients who already own a property and are preparing for interiors, ensuring any existing negative spatial defects are neutralized before finalizing furniture and utility placement.
 
-**C. The "Complete Vastu" Bundle**
-- **Includes**: Service #1 (Plot Selection) + Service #2 (New Plan Study) + Service #4 (Interior & Exterior Element Placement).
-- **Ideal for**: Clients who want ultimate peace of mind and continuous Vastu guidance from the day they search for a plot to the day they place their living room sofa. 
+**C. The "Complete Vastu Master" Bundle**
+- **Includes**: Service #2 (New Plan Study) + Service #3 (Plan Mod) + Service #4 (Interior & Exterior Element Placement).
+- **Ideal for**: Clients who want continuous Vastu guidance from the day they finalize the plan to the day they place their living room sofa. 
 
-*(Note: Pricing for bundles is calculated based on the specific property type and scale. Please consult with the Vastu Vaibhav admin for your tailored bundled quote.)*
+*(Note: Pricing for bundles is calculated based on the specific property type and scale assessed during the Initial Property Audit. Please consult with the Vastu Vaibhav admin for your tailored bundled quote.)*
