@@ -23,7 +23,6 @@ import { Separator } from "@/components/ui/separator"
 import { clientsApi } from "@/services/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { ServiceCalculator } from "@/components/ServiceCalculator"
 
 export default function NewClientPage() {
     const router = useRouter()
