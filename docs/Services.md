@@ -79,7 +79,6 @@ A detailed case study for clients focusing on actionable solutions to convert ne
 Tailored for clients whose primary structural plan is finalized, focusing heavily on the micro-placement of interior furnishings and critical exterior utilities for optimal energy flow.
 
 **Inclusions:**
-- Site visit (if operationally required).
 - Precise directional/degree-based placement of elements relative to the finalized plan.
 - Collaborative support with interior designers or architects to integrate suggestions.
 - Provision of alternative placement options and mitigative remedies for fixed items.
