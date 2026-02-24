@@ -16,7 +16,16 @@ import {
     ArrowLeft,
     MoreHorizontal,
     Mail,
-    User
+    User,
+    Calendar,
+    CheckCircle2,
+    Circle,
+    Clock,
+    AlertCircle,
+    ArrowUpRight,
+    Trash2,
+    ArrowUp,
+    ArrowDown
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
