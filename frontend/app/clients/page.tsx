@@ -59,12 +59,77 @@ import { formatCurrency, cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 
+const STATUS_OPTIONS = [
+    { label: "Inquiry", value: "Inquiry", color: "text-blue-600 bg-blue-500/10 border-blue-500/20", icon: AlertCircle },
+    { label: "Active", value: "Active", color: "text-orange-600 bg-orange-500/10 border-orange-500/20", icon: Clock },
+    { label: "Completed", value: "Completed", color: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20", icon: CheckCircle2 },
+    { label: "Inactive", value: "Inactive", color: "text-muted-foreground bg-muted/50 border-border", icon: Circle },
+]
+
+function StatusBadge({ client, onUpdate }: { client: any, onUpdate: () => void }) {
+    const [updating, setUpdating] = React.useState(false);
+
+    const handleStatusChange = async (newStatus: string) => {
+        setUpdating(true);
+        try {
+            await clientsApi.update(client.id, { ...client, lead_status: newStatus });
+            toast.success(`Client marked as ${newStatus}`);
+            onUpdate();
+        } catch (err) {
+            toast.error("Failed to update status");
+        } finally {
+            setUpdating(false);
+        }
+    }
+
+    const currentStatus = STATUS_OPTIONS.find(s => s.value === (client.lead_status || "Inquiry")) || STATUS_OPTIONS[0];
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <button 
+                    disabled={updating}
+                    className={cn(
+                        "flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-tighter transition-all hover:scale-105 active:scale-95",
+                        currentStatus.color,
+                        updating && "opacity-50 cursor-not-allowed"
+                    )}
+                >
+                    <currentStatus.icon className="h-3 w-3" />
+                    {currentStatus.label}
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl border-primary/10 shadow-2xl backdrop-blur-xl bg-background/95">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground px-2 py-1.5 font-black">Change Client Status</DropdownMenuLabel>
+                <div className="grid gap-1 mt-1">
+                    {STATUS_OPTIONS.map((status) => (
+                        <button
+                            key={status.value}
+                            onClick={() => handleStatusChange(status.value)}
+                            className={cn(
+                                "flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all hover:bg-primary/5",
+                                client.lead_status === status.value ? "text-primary bg-primary/5" : "text-foreground"
+                            )}
+                        >
+                            <div className="flex items-center gap-3">
+                                <status.icon className={cn("h-4 w-4", status.color.split(' ')[0])} />
+                                {status.label}
+                            </div>
+                            {client.lead_status === status.value && <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />}
+                        </button>
+                    ))}
+                </div>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
+
 export default function ClientsPage() {
     const [clients, setClients] = React.useState<any[]>([])
     const [loading, setLoading] = React.useState(true)
     const [view, setView] = React.useState<"card" | "list">("list")
     const [searchQuery, setSearchQuery] = React.useState("")
-    const [sortBy, setSortBy] = React.useState("name")
+    const [sortBy, setSortBy] = React.useState("onboarding_asc")
     const router = useRouter()
 
     React.useEffect(() => {
