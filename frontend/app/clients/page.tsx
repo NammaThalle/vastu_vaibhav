@@ -155,11 +155,41 @@ export default function ClientsPage() {
                 client.email?.toLowerCase().includes(searchQuery.toLowerCase())
             )
             .sort((a, b) => {
-                if (sortBy === "name") return a.full_name.localeCompare(b.full_name)
-                if (sortBy === "fee") return b.total_fees_fixed - a.total_fees_fixed
-                return b.id.localeCompare(a.id)
+                const [field, dir] = sortBy.split('_')
+                const isAsc = dir === 'asc'
+                
+                if (field === "name") {
+                    return isAsc ? a.full_name.localeCompare(b.full_name) : b.full_name.localeCompare(a.full_name)
+                }
+                if (field === "fee") {
+                    return isAsc ? a.total_fees_fixed - b.total_fees_fixed : b.total_fees_fixed - a.total_fees_fixed
+                }
+                if (field === "balance") {
+                    return isAsc ? a.current_balance - b.current_balance : b.current_balance - a.current_balance
+                }
+                if (field === "onboarding") {
+                    return isAsc 
+                        ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                }
+                return 0
             })
     }, [clients, searchQuery, sortBy])
+
+    const handleSort = (field: string) => {
+        const [currentField, currentDir] = sortBy.split('_')
+        if (currentField === field) {
+            setSortBy(`${field}_${currentDir === 'asc' ? 'desc' : 'asc'}`)
+        } else {
+            setSortBy(`${field}_asc`)
+        }
+    }
+
+    const SortIcon = ({ field }: { field: string }) => {
+        const [currentField, currentDir] = sortBy.split('_')
+        if (currentField !== field) return <ArrowUpDown className="ml-1 h-3 w-3 opacity-20 transition-opacity group-hover:opacity-100" />
+        return currentDir === 'asc' ? <ArrowUp className="ml-1 h-3 w-3 text-primary" /> : <ArrowDown className="ml-1 h-3 w-3 text-primary" />
+    }
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto">
