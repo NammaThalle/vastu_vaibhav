@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
+import { createPortal } from "react-dom"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -889,19 +890,45 @@ function ClientDetailContent() {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="w-full max-w-md"
                         >
-                            <Card className="shadow-2xl border-primary/20">
-                                <CardHeader className="bg-primary/5">
+                            <Card className="shadow-2xl border-primary/20 overflow-hidden rounded-3xl">
+                                <CardHeader className="bg-primary/5 pb-6">
                                     <CardTitle>{editingVisit ? 'Edit' : 'Document'} Consultation Visit</CardTitle>
                                     <CardDescription>
                                         {editingVisit ? 'Modify existing visit documentation.' : 'Record your findings and service purpose.'}
                                     </CardDescription>
                                 </CardHeader>
                                 <form onSubmit={handleAddVisit}>
-                                    <CardContent className="space-y-4 pt-4">
+                                    <CardContent className="space-y-4 pt-6">
                                         <div className="space-y-2">
-                                            <Label htmlFor="purpose">Purpose of Visit</Label>
+                                            <Label htmlFor="visit-date" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Visit Date</Label>
+                                            <Input
+                                                id="visit-date"
+                                                type="date"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
+                                                value={visitForm.date}
+                                                onChange={e => setVisitForm({ ...visitForm, date: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="visit-amount" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Visit Charge Amount (Optional)</Label>
+                                            <div className="relative">
+                                                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    id="visit-amount"
+                                                    type="number"
+                                                    className="pl-9 rounded-xl bg-secondary/30 border-none h-11 font-black"
+                                                    placeholder="Leave blank for no charge"
+                                                    value={visitForm.amount}
+                                                    onChange={e => setVisitForm({ ...visitForm, amount: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="purpose" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Purpose of Visit</Label>
                                             <Input
                                                 id="purpose"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
                                                 placeholder="e.g. Site Inspection, Remedy Verify"
                                                 value={visitForm.purpose}
                                                 onChange={e => setVisitForm({ ...visitForm, purpose: e.target.value })}
