@@ -347,10 +347,27 @@ export default function ClientsPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="bg-muted/30">
-                                            <TableHead className="w-[200px]">Client Name</TableHead>
-                                            <TableHead className="hidden md:table-cell">Contact Details</TableHead>
-                                            <TableHead className="hidden lg:table-cell">Property Location</TableHead>
-                                            <TableHead className="text-right">Consulting Fee</TableHead>
+                                            <TableHead className="w-[250px]">
+                                                <button onClick={() => handleSort("name")} className="flex items-center group font-bold w-full text-left">
+                                                    Client Name <SortIcon field="name" />
+                                                </button>
+                                            </TableHead>
+                                            <TableHead className="hidden md:table-cell">
+                                                <button onClick={() => handleSort("onboarding")} className="flex items-center group font-bold w-full text-left">
+                                                    Onboarding Date <SortIcon field="onboarding" />
+                                                </button>
+                                            </TableHead>
+                                            <TableHead className="hidden lg:table-cell font-bold">Status</TableHead>
+                                            <TableHead className="text-right">
+                                                <button onClick={() => handleSort("fee")} className="flex items-center justify-end group font-bold w-full">
+                                                    Current Total Fee <SortIcon field="fee" />
+                                                </button>
+                                            </TableHead>
+                                            <TableHead className="text-right hidden sm:table-cell">
+                                                <button onClick={() => handleSort("balance")} className="flex items-center justify-end group font-bold w-full">
+                                                    Outstanding Balance <SortIcon field="balance" />
+                                                </button>
+                                            </TableHead>
                                             <TableHead className="w-[50px]"></TableHead>
                                         </TableRow>
                                     </TableHeader>

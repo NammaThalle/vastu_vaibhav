@@ -835,10 +835,20 @@ function ClientDetailContent() {
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="method">Payment Method</Label>
+                                            <Label htmlFor="pay-date" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Payment Date</Label>
+                                            <Input
+                                                id="pay-date"
+                                                type="date"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
+                                                value={paymentForm.date}
+                                                onChange={e => setPaymentForm({ ...paymentForm, date: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="method" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Payment Method</Label>
                                             <select
                                                 id="method"
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                className="flex h-11 w-full rounded-xl border-none bg-secondary/30 px-3 py-2 text-sm"
                                                 value={paymentForm.method}
                                                 onChange={e => setPaymentForm({ ...paymentForm, method: e.target.value })}
                                             >
