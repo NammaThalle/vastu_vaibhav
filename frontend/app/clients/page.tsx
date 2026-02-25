@@ -283,52 +283,55 @@ export default function ClientsPage() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: i * 0.05 }}
                                 >
-                                    <Card className="group relative overflow-hidden transition-all hover:shadow-xl hover:border-primary/50 cursor-pointer" onClick={() => router.push(`/clients/view?id=${client.id}`)}>
-                                        <CardHeader className="pb-3">
+                                    <Card className="group relative overflow-hidden transition-all hover:shadow-2xl hover:border-primary/40 cursor-pointer rounded-2xl bg-card/40 backdrop-blur-sm border-border/50" onClick={() => router.push(`/clients/view?id=${client.id}`)}>
+                                        <CardHeader className="pb-3 px-5 pt-5">
                                             <div className="flex items-start justify-between">
-                                                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                                                    <User className="h-6 w-6" />
+                                                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform">
+                                                    <User className="h-5 w-5" />
                                                 </div>
-                                                <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
-                                                    {formatCurrency(client.total_fees_fixed)}
-                                                </Badge>
+                                                <div className="flex flex-col items-end gap-1.5">
+                                                    <StatusBadge client={client} onUpdate={loadClients} />
+                                                    <Badge variant="outline" className={cn(
+                                                        "text-[9px] font-mono border-none",
+                                                        client.current_balance <= 0 ? "text-emerald-600 bg-emerald-500/10" : "text-destructive bg-destructive/10"
+                                                    )}>
+                                                        Bal: {formatCurrency(client.current_balance)}
+                                                    </Badge>
+                                                </div>
                                             </div>
-                                            <CardTitle className="mt-4 line-clamp-1">{client.full_name}</CardTitle>
-                                            <CardDescription className="flex items-center justify-between gap-1 mt-2">
-                                                <div className="flex items-center gap-1">
-                                                    <MapPin className="h-3 w-3" />
-                                                    <span className="line-clamp-1">{client.project_address || "No address listed"}</span>
+                                            <CardTitle className="mt-4 text-lg font-bold tracking-tight">{client.full_name}</CardTitle>
+                                            <CardDescription className="space-y-2 mt-2">
+                                                <div className="flex items-center gap-1.5 text-xs">
+                                                    <MapPin className="h-3 w-3 text-primary/60 shrink-0" />
+                                                    <span className="line-clamp-1 italic">{client.project_address || "No address listed"}</span>
                                                 </div>
-                                                <Badge variant="outline" className="text-[10px]">{client.lead_status || "Inquiry"}</Badge>
+                                                <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
+                                                    <Calendar className="h-3 w-3" />
+                                                    Since {new Date(client.created_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                                                </div>
                                             </CardDescription>
                                         </CardHeader>
-                                        <CardContent className="space-y-4 pb-6 font-medium text-sm">
-                                            <div className="flex items-center gap-3 text-muted-foreground">
-                                                <Phone className="h-3.5 w-3.5" />
-                                                {client.phone || "---"}
+                                        <CardContent className="px-5 pb-5 space-y-3 mt-1">
+                                            <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 group-hover:bg-primary/5 transition-colors">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-[10px] uppercase tracking-tighter text-muted-foreground font-bold">Total Fee</span>
+                                                    <span className="font-black text-sm">{formatCurrency(client.total_billed)}</span>
+                                                </div>
+                                                <div className="h-8 w-8 rounded-full bg-background flex items-center justify-center shadow-sm">
+                                                    <ArrowUpRight className="h-4 w-4 text-primary" />
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-3 text-muted-foreground">
-                                                <Mail className="h-3.5 w-3.5" />
-                                                <span className="line-clamp-1">{client.email || "---"}</span>
+                                            <div className="flex items-center gap-4 px-1">
+                                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                                                    <Phone className="h-3 w-3 text-primary" />
+                                                    {client.phone || "---"}
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium truncate">
+                                                    <Mail className="h-3 w-3 text-primary" />
+                                                    {client.email || "---"}
+                                                </div>
                                             </div>
                                         </CardContent>
-                                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem onClick={() => router.push(`/clients/view?id=${client.id}`)}>
-                                                        View Profile
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="text-destructive">Archive Client</DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
                                     </Card>
                                 </motion.div>
                             ))}
