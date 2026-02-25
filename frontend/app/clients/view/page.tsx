@@ -859,18 +859,19 @@ function ClientDetailContent() {
                                             </select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="notes">Reference Notes</Label>
+                                            <Label htmlFor="notes" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Reference Notes</Label>
                                             <Input
                                                 id="notes"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
                                                 placeholder="Transaction ID or remarks..."
                                                 value={paymentForm.notes}
                                                 onChange={e => setPaymentForm({ ...paymentForm, notes: e.target.value })}
                                             />
                                         </div>
                                     </CardContent>
-                                    <CardFooter className="flex gap-3 pt-4 border-t">
-                                        <Button type="button" variant="outline" className="flex-1" onClick={() => { setShowAddPayment(false); setEditingPayment(null); }}>Cancel</Button>
-                                        <Button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white">
+                                    <CardFooter className="flex gap-3 pt-6 pb-8 px-6 border-t">
+                                        <Button type="button" variant="ghost" className="flex-1 rounded-xl h-12 font-bold" onClick={() => { setShowAddPayment(false); setEditingPayment(null); }}>Cancel</Button>
+                                        <Button type="submit" className="flex-1 rounded-xl h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white">
                                             {editingPayment ? 'Update Payment' : 'Save Payment'}
                                         </Button>
                                     </CardFooter>

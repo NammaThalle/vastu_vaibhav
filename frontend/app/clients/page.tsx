@@ -375,43 +375,58 @@ export default function ClientsPage() {
                                         {filteredClients.map((client) => (
                                             <TableRow
                                                 key={client.id}
-                                                className="cursor-pointer group hover:bg-accent/50"
+                                                className="cursor-pointer group hover:bg-accent/50 border-b border-border/40"
                                                 onClick={() => router.push(`/clients/view?id=${client.id}`)}
                                             >
-                                                <TableCell className="font-semibold">{client.full_name}</TableCell>
-                                                <TableCell className="hidden md:table-cell">
-                                                    <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                                                        <div className="flex items-center gap-1">
-                                                            <Phone className="h-3 w-3" /> {client.phone || "N/A"}
-                                                        </div>
-                                                        <div className="flex items-center gap-1">
-                                                            <Mail className="h-3 w-3" /> {client.email || "N/A"}
+                                                <TableCell className="py-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-sm sm:text-base">{client.full_name}</span>
+                                                        <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground font-medium tracking-wider">
+                                                            <MapPin className="h-3 w-3 shrink-0" />
+                                                            <span className="truncate">{client.project_address || "No address listed"}</span>
                                                         </div>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="hidden lg:table-cell text-xs text-muted-foreground italic">
-                                                    <div className="flex items-center gap-1 max-w-[300px]">
-                                                        <MapPin className="h-3 w-3 shrink-0" />
-                                                        <span className="truncate">{client.project_address || "N/A"}</span>
+                                                <TableCell className="hidden md:table-cell">
+                                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                                                        <Calendar className="h-3 w-3 shrink-0" />
+                                                        {new Date(client.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                     </div>
+                                                </TableCell>
+                                                <TableCell className="hidden lg:table-cell">
+                                                    <StatusBadge client={client} onUpdate={loadClients} />
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <Badge variant="outline" className="font-mono">
-                                                        {formatCurrency(client.total_fees_fixed)}
+                                                    <span className="font-black text-sm">{formatCurrency(client.total_billed)}</span>
+                                                </TableCell>
+                                                <TableCell className="text-right hidden sm:table-cell">
+                                                    <Badge variant="outline" className={cn(
+                                                        "font-mono text-[10px] px-2 py-0.5 border-none",
+                                                        client.current_balance <= 0 ? "text-emerald-600 bg-emerald-500/10" : "text-destructive bg-destructive/10"
+                                                    )}>
+                                                        {client.current_balance <= 0 ? "Settled" : formatCurrency(client.current_balance)}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell onClick={(e) => e.stopPropagation()}>
+                                                <TableCell onClick={(e) => e.stopPropagation()} className="w-[40px]">
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary rounded-full">
                                                                 <MoreHorizontal className="h-4 w-4" />
                                                             </Button>
                                                         </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={() => router.push(`/clients/view?id=${client.id}`)}>
-                                                                View Detail
+                                                        <DropdownMenuContent align="end" className="w-48 rounded-xl border-primary/10 shadow-2xl">
+                                                            <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Client Actions</DropdownMenuLabel>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem onClick={() => router.push(`/clients/view?id=${client.id}`)} className="py-2.5 gap-2 cursor-pointer">
+                                                                <User className="h-4 w-4 text-primary" /> View Profile
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem>Generate PDF</DropdownMenuItem>
+                                                            <DropdownMenuItem className="py-2.5 gap-2 cursor-pointer">
+                                                                <Mail className="h-4 w-4 text-primary" /> Send Statement
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem className="text-destructive py-2.5 gap-2 cursor-pointer">
+                                                                <Trash2 className="h-4 w-4" /> Archive
+                                                            </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </TableCell>
