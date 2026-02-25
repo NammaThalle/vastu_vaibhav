@@ -220,19 +220,24 @@ export default function ClientsPage() {
                 </div>
 
                 <div className="flex items-center gap-2 w-full md:w-auto">
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="w-full md:w-[180px] bg-card/50">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                <ArrowUpDown className="h-4 w-4" />
-                                <SelectValue placeholder="Sort by" />
-                            </div>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="name">Name (A-Z)</SelectItem>
-                            <SelectItem value="fee">Fees (High to Low)</SelectItem>
-                            <SelectItem value="latest">Latest Added</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    {view === "card" && (
+                        <Select value={sortBy} onValueChange={setSortBy}>
+                            <SelectTrigger className="w-full md:w-[220px] bg-card/50">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <ArrowUpDown className="h-4 w-4" />
+                                    <SelectValue placeholder="Sort by" />
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="onboarding_asc">Onboarding Date (Oldest)</SelectItem>
+                                <SelectItem value="onboarding_desc">Onboarding Date (Newest)</SelectItem>
+                                <SelectItem value="name_asc">Name (A-Z)</SelectItem>
+                                <SelectItem value="name_desc">Name (Z-A)</SelectItem>
+                                <SelectItem value="fee_desc">Fees (High to Low)</SelectItem>
+                                <SelectItem value="fee_asc">Fees (Low to High)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    )}
 
                     <div className="p-1 rounded-lg border bg-card/50 flex shrink-0">
                         <Button
