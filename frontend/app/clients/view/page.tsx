@@ -40,10 +40,20 @@ import {
     User,
     Users,
     AlertCircle,
+    CheckCircle2,
+    Circle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuLabel,
+    DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -969,14 +979,69 @@ function ClientDetailContent() {
                         </motion.div>
                     </div>
                 )}
+                
+                {showPhase2Calculator && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm overflow-y-auto">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="w-full max-w-2xl my-8"
+                        >
+                            <Card className="shadow-2xl border-indigo-500/20 relative overflow-hidden rounded-3xl">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="absolute right-4 top-4 text-muted-foreground hover:bg-muted rounded-full z-20"
+                                    onClick={() => setShowPhase2Calculator(false)}
+                                >
+                                    ✕
+                                </Button>
+                                <CardHeader className="bg-indigo-500/5 pb-8 relative">
+                                    <CardTitle className="text-2xl">Phase 2 Execution</CardTitle>
+                                    <CardDescription className="max-w-[80%]">
+                                        Configure detailed structural fixes, remedies, or interior element packages.
+                                    </CardDescription>
+                                    <div className="absolute top-0 right-0 h-32 w-32 bg-indigo-500/10 blur-3xl -z-10 rounded-full" />
+                                </CardHeader>
+                                <CardContent className="pt-8 px-8">
+                                    <ServiceCalculator 
+                                        onCalculated={async (fee, serviceId) => {
+                                            try {
+                                                const payload = {
+                                                    description: "Phase 2 Vastu Execution & Remedies",
+                                                    amount: fee,
+                                                    client_id: id as string
+                                                };
+                                                await ledgerApi.addService(payload);
+                                                toast.success('Phase 2 Service added to ledger');
+                                                setShowPhase2Calculator(false);
+                                                loadData();
+                                            } catch(err: any) {
+                                                toast.error(err.message || 'Failed to add Phase 2 charge');
+                                            }
+                                        }} 
+                                    />
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    </div>
+                )}
             </AnimatePresence>
         </div>
-    )
+    );
 }
 
 export default function ClientDetailPage() {
     return (
-        <Suspense fallback={<div style={{ padding: '2rem' }}>Loading consultant module...</div>}>
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                    <p className="text-muted-foreground font-bold tracking-widest uppercase text-[10px]">Loading Consultant Records</p>
+                </div>
+            </div>
+        }>
             <ClientDetailContent />
         </Suspense>
     );
