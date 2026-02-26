@@ -12,6 +12,7 @@ import {
     ArrowUpRight,
     Calendar,
     CalendarCheck,
+    Calculator,
     ChevronLeft,
     ChevronRight,
     ClipboardList,
@@ -936,19 +937,30 @@ function ClientDetailContent() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="observations">Clinical Observations</Label>
+                                            <Label htmlFor="observations" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Clinical Observations</Label>
                                             <textarea
                                                 id="observations"
-                                                className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                className="flex min-h-[140px] w-full rounded-xl border-none bg-secondary/30 px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                                                 placeholder="Detail your professional findings here..."
                                                 value={visitForm.observations}
                                                 onChange={e => setVisitForm({ ...visitForm, observations: e.target.value })}
                                             />
                                         </div>
                                     </CardContent>
-                                    <CardFooter className="flex gap-3 pt-4 border-t">
-                                        <Button type="button" variant="outline" className="flex-1" onClick={() => { setShowAddVisit(false); setEditingVisit(null); }}>Cancel</Button>
-                                        <Button type="submit" className="flex-1">
+                                    <CardFooter className="flex gap-3 pt-6 pb-8 px-6 border-t">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            className="flex-1 rounded-xl h-12 font-bold"
+                                            onClick={() => {
+                                                setShowAddVisit(false);
+                                                setEditingVisit(null);
+                                                setVisitForm({ date: '', purpose: '', observations: '', amount: '' });
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button type="submit" className="flex-1 rounded-xl h-12 font-bold bg-foreground text-background">
                                             {editingVisit ? 'Update Findings' : 'Save Findings'}
                                         </Button>
                                     </CardFooter>
