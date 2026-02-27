@@ -192,15 +192,20 @@ function ClientDetailContent() {
 
     // Forms State
     const [clientForm, setClientForm] = useState({ full_name: '', phone: '', email: '', project_address: '', location_type: '', lead_status: '' });
-    const [visitForm, setVisitForm] = useState({ purpose: '', observations: '' });
+    const [visitForm, setVisitForm] = useState({ date: '', purpose: '', observations: '', amount: '' });
 
     // Updated Charge Form
     const [chargeForm, setChargeForm] = useState({
         description: '', amount: 0,
-        addon_type: 'custom' // 'custom' or the ID of a specific addon
+        addon_type: 'custom', // 'custom' or the ID of a specific addon
+        date: ''
     });
 
-    const [paymentForm, setPaymentForm] = useState({ amount: 0, method: 'Cash', notes: '' });
+    const [discountForm, setDiscountForm] = useState({
+        description: 'Special Discount', amount: 0, date: ''
+    });
+
+    const [paymentForm, setPaymentForm] = useState({ amount: 0, method: 'Cash', notes: '', date: '' });
 
     useEffect(() => {
         if (id) {

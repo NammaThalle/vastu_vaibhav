@@ -92,7 +92,7 @@ export default function Dashboard() {
             icon: Users,
             color: "text-blue-500",
             bg: "bg-blue-500/10",
-            trend: "+4 this month",
+            trend: stats.newClientsTrend,
             description: "Active consulting profiles"
         },
         {
