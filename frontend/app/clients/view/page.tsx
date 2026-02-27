@@ -154,6 +154,25 @@ function ClientDetailContent() {
     const [client, setClient] = useState<any>(null);
     const [visits, setVisits] = useState<any[]>([]);
     const [ledger, setLedger] = useState<any>(null);
+    
+    // Collapsed ribbon: show only when profile card is fully scrolled out of view
+    const profileCardRef = useRef<HTMLDivElement>(null);
+    const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+    const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+    useEffect(() => {
+        setPortalTarget(document.body);
+        const el = profileCardRef.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                // Show ribbon when card is NOT intersecting (fully scrolled away)
+                setIsHeaderCollapsed(!entry.isIntersecting);
+            },
+            { threshold: 0 }
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [client]); // re-attach when client loads
     // New State for dynamic forms
     const [availableAddons, setAvailableAddons] = useState<any[]>([]);
 
