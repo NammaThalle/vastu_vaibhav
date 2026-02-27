@@ -150,6 +150,16 @@ export default function Dashboard() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
+                    <Select value={period} onValueChange={setPeriod}>
+                        <SelectTrigger className="w-[140px] bg-background">
+                            <SelectValue placeholder="Period" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="month">This Month</SelectItem>
+                            <SelectItem value="year">This Year</SelectItem>
+                            <SelectItem value="total">All Time</SelectItem>
+                        </SelectContent>
+                    </Select>
                     <Button variant="outline" className="hidden sm:flex items-center">
                         <FileText className="mr-2 h-4 w-4" />
                         Full Report

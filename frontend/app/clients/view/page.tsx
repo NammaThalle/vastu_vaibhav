@@ -289,25 +289,48 @@ function ClientDetailContent() {
 
     const startEditVisit = (visit: any) => {
         setEditingVisit(visit);
-        setVisitForm({ purpose: visit.purpose, observations: visit.observations });
+        setVisitForm({
+            date: formatVisitDateForInput(visit.date),
+            purpose: visit.purpose || '',
+            observations: visit.observations || '',
+            amount: visit.amount != null ? String(visit.amount) : '',
+        });
         setShowAddVisit(true);
+    };
+
+    const formatVisitDateForInput = (value?: string) => {
+        if (!value) return '';
+        const d = new Date(value);
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     };
 
     const handleAddCharge = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const payload: any = { description: chargeForm.description, amount: chargeForm.amount };
+            if (chargeForm.date) {
+                payload.date = new Date(chargeForm.date).toISOString();
+            }
+
             if (editingCharge) {
-                await ledgerApi.updateService(editingCharge.id, chargeForm);
-                toast.success('Service charge updated');
+                if (editingCharge.id === 'initial-fee') {
+                    // Update client created_at which sets the initial fee date
+                    // and total_fees_fixed to update the amount
+                    await clientsApi.update(id as string, { 
+                        created_at: payload.date || undefined,
+                        total_fees_fixed: payload.amount
+                    });
+                    toast.success('Initial fee updated');
+                } else {
+                    await ledgerApi.updateService(editingCharge.id, payload);
+                    toast.success('Service charge updated');
+                }
             } else {
-                await ledgerApi.addService({
-                    description: chargeForm.description,
-                    amount: chargeForm.amount,
-                    client_id: id as string
-                });
+                payload.client_id = id as string;
+                await ledgerApi.addService(payload);
                 toast.success('Service charge added');
             }
-            setChargeForm({ description: '', amount: 0, addon_type: 'custom' });
+            setChargeForm({ description: '', amount: 0, addon_type: 'custom', date: '' });
             setShowAddCharge(false);
             setEditingCharge(null);
             loadData();
