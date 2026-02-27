@@ -255,14 +255,19 @@ function ClientDetailContent() {
     const handleAddVisit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const payload = {
+                ...visitForm,
+                date: visitForm.date ? new Date(visitForm.date).toISOString() : undefined,
+                amount: visitForm.amount === '' ? null : Number(visitForm.amount),
+            };
             if (editingVisit) {
-                await visitsApi.update(editingVisit.id, visitForm);
+                await visitsApi.update(editingVisit.id, payload);
                 toast.success('Visit updated successfully');
             } else {
-                await visitsApi.create({ ...visitForm, client_id: id as string });
+                await visitsApi.create({ ...payload, client_id: id as string });
                 toast.success('Visit recorded successfully');
             }
-            setVisitForm({ purpose: '', observations: '' });
+            setVisitForm({ date: '', purpose: '', observations: '', amount: '' });
             setShowAddVisit(false);
             setEditingVisit(null);
             loadData();

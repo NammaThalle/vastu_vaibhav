@@ -101,20 +101,42 @@ export default function Dashboard() {
             icon: Calendar,
             color: "text-emerald-500",
             bg: "bg-emerald-500/10",
-            trend: "+8 since last week",
+            trend: stats.newVisitsTrend,
             description: "Site & virtual sessions"
         },
         {
+            title: "Total Revenue",
+            value: `₹${stats.totalRevenue.toLocaleString()}`,
+            icon: FileText,
+            color: "text-purple-500",
+            bg: "bg-purple-500/10",
+            trend: "Gross billings",
+            description: "Total volume generated"
+        },
+        {
             title: "Outstanding Balance",
-            value: `₹${stats.outstandingBalance.toLocaleString()}`,
+            value: `₹${stats.pendingBalance.toLocaleString()}`,
             icon: IndianRupee,
             color: "text-orange-500",
             bg: "bg-orange-500/10",
             trend: "Across all accounts",
             description: "Total pending payments",
-            urgent: stats.outstandingBalance > 50000
+            urgent: stats.pendingBalance > 50000
         }
     ]
+
+    function formatRelativeTime(value: string | Date) {
+        const date = new Date(value)
+        const diffMs = Date.now() - date.getTime()
+        const diffMins = Math.max(1, Math.floor(diffMs / 60000))
+        if (diffMins < 60) return `${diffMins}m ago`
+        const diffHours = Math.floor(diffMins / 60)
+        if (diffHours < 24) return `${diffHours}h ago`
+        const diffDays = Math.floor(diffHours / 24)
+        return `${diffDays}d ago`
+    }
+
+    const progressWidth = Math.min(100, stats.goalCompletion)
 
     return (
         <div className="space-y-8 max-w-7xl mx-auto">
