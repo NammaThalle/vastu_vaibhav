@@ -182,7 +182,9 @@ function ClientDetailContent() {
     // Modals Visibility
     const [showAddVisit, setShowAddVisit] = useState(false);
     const [showAddCharge, setShowAddCharge] = useState(false);
+    const [showAddDiscount, setShowAddDiscount] = useState(false);
     const [showAddPayment, setShowAddPayment] = useState(false);
+    const [showPhase2Calculator, setShowPhase2Calculator] = useState(false);
     const [editingVisit, setEditingVisit] = useState<any>(null);
     const [editingCharge, setEditingCharge] = useState<any>(null);
     const [editingPayment, setEditingPayment] = useState<any>(null);

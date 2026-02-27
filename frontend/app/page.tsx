@@ -20,44 +20,62 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { clientsApi, visitsApi, ledgerApi } from "@/services/api"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { dashboardApi } from "@/services/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 export default function Dashboard() {
+    const [period, setPeriod] = React.useState("month")
     const [stats, setStats] = React.useState({
         totalClients: 0,
+        newClientsTrend: "",
         totalVisits: 0,
-        outstandingBalance: 0,
-        monthlyGrowth: 12, // Dummy growth
+        newVisitsTrend: "",
+        collectedThisPeriod: 0,
+        goalForPeriod: 0,
+        goalCompletion: 0,
+        pendingBalance: 0,
+        overdueBalance: 0,
+        totalRevenue: 0,
     })
+    const [recentActivity, setRecentActivity] = React.useState<Array<{
+        id: string
+        title: string
+        subtitle: string
+        when: string
+    }>>([])
     const [loading, setLoading] = React.useState(true)
 
     React.useEffect(() => {
         loadDashboardData()
-    }, [])
+    }, [period])
 
     const loadDashboardData = async () => {
         try {
-            const [clients, visits] = await Promise.all([
-                clientsApi.getAll(),
-                visitsApi.getAll()
-            ])
+            setLoading(true)
+            const summary = await dashboardApi.getSummary(period)
 
-            let totalOutstanding = 0
-            // We take a sample of ledgers to avoid too many requests at once
-            // In a real app, this should be a backend aggregation
-            const ledgerPromises = clients.slice(0, 50).map((c: any) =>
-                ledgerApi.getClientLedger(c.id).catch(() => ({ current_balance: 0 }))
+            setRecentActivity(
+                (summary.recent_activity || []).map((item: any) => ({
+                    id: item.id,
+                    title: item.title,
+                    subtitle: item.subtitle,
+                    when: formatRelativeTime(item.when),
+                }))
             )
-            const ledgers = await Promise.all(ledgerPromises)
-            totalOutstanding = ledgers.reduce((acc, l) => acc + l.current_balance, 0)
 
             setStats({
-                totalClients: clients.length,
-                totalVisits: visits.length,
-                outstandingBalance: totalOutstanding,
-                monthlyGrowth: 12
+                totalClients: summary.total_clients,
+                newClientsTrend: summary.new_clients_trend,
+                totalVisits: summary.total_visits,
+                newVisitsTrend: summary.new_visits_trend,
+                collectedThisPeriod: summary.collected_this_period,
+                goalForPeriod: summary.goal_for_period,
+                goalCompletion: summary.goal_completion,
+                pendingBalance: summary.pending_balance,
+                overdueBalance: summary.overdue_balance,
+                totalRevenue: summary.total_revenue,
             })
         } catch (err) {
             console.error(err)
