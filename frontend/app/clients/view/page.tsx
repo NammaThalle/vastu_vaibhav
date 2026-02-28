@@ -339,6 +339,28 @@ function ClientDetailContent() {
         }
     };
 
+    const handleAddDiscount = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            // Apply minus to the positive absolute amount entered by user
+            const amount = -Math.abs(discountForm.amount);
+            const payload: any = { description: discountForm.description, amount };
+            if (discountForm.date) {
+                payload.date = new Date(discountForm.date).toISOString();
+            }
+
+            payload.client_id = id as string;
+            await ledgerApi.addService(payload);
+            toast.success('Discount applied successfully');
+            
+            setDiscountForm({ description: 'Special Discount', amount: 0, date: '' });
+            setShowAddDiscount(false);
+            loadData();
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to apply discount');
+        }
+    };
+
     const handleDeleteCharge = async (chargeId: string) => {
         if (!confirm("Are you sure you want to delete this charge?")) return;
         try {
