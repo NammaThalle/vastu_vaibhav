@@ -218,20 +218,29 @@ export default function Dashboard() {
                         <CardDescription>Latest client interactions and visits overview.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-6">
-                            {[1, 2, 3].map((_, i) => (
-                                <div key={i} className="flex items-center gap-4">
-                                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center border border-border">
-                                        <Users className="h-5 w-5 text-muted-foreground" />
+                        {recentActivity.length > 0 ? (
+                            <div className="space-y-6">
+                                {recentActivity.map((item) => (
+                                    <div key={item.id} className="flex items-center gap-4">
+                                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center border border-border">
+                                            <Users className="h-5 w-5 text-muted-foreground" />
+                                        </div>
+                                        <div className="flex-1 space-y-1">
+                                            <p className="text-sm font-semibold">{item.title}</p>
+                                            <p className="text-xs text-muted-foreground">{item.subtitle}</p>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">{item.when}</div>
                                     </div>
-                                    <div className="flex-1 space-y-1">
-                                        <p className="text-sm font-semibold">Consultation booked with Sharma Residence</p>
-                                        <p className="text-xs text-muted-foreground">Vastu analysis & Remedy planning</p>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">2h ago</div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-6 text-center">
+                                <p className="text-sm font-semibold">No recent activity yet</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    New visits and client interactions will appear here once the database has data.
+                                </p>
+                            </div>
+                        )}
                     </CardContent>
                     <CardFooter className="border-t pt-4">
                         <Button variant="ghost" className="w-full justify-between" asChild>

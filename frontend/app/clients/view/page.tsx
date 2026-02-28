@@ -374,7 +374,12 @@ function ClientDetailContent() {
 
     const startEditCharge = (entry: any) => {
         setEditingCharge(entry);
-        setChargeForm({ description: entry.description, amount: entry.amount, addon_type: 'custom' });
+        setChargeForm({ 
+            description: entry.description, 
+            amount: entry.amount, 
+            addon_type: 'custom',
+            date: formatVisitDateForInput(entry.date)
+        });
         setShowAddCharge(true);
     };
 
