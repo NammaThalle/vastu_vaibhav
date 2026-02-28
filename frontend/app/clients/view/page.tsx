@@ -437,7 +437,8 @@ function ClientDetailContent() {
         setPaymentForm({
             amount: entry.amount,
             method: entry.description.replace('Payment via ', ''),
-            notes: '' // Notes are not explicitly stored in the consolidated ledger entry but we can handle it
+            notes: '', // Notes are not explicitly stored in the consolidated ledger entry but we can handle it
+            date: formatVisitDateForInput(entry.date)
         });
         setShowAddPayment(true);
     };
