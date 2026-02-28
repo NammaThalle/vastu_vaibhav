@@ -398,14 +398,21 @@ function ClientDetailContent() {
     const handleAddPayment = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const payload = { ...paymentForm };
+            if (payload.date) {
+                payload.date = new Date(payload.date).toISOString();
+            } else {
+                delete (payload as any).date;
+            }
+
             if (editingPayment) {
-                await ledgerApi.updatePayment(editingPayment.id, paymentForm);
+                await ledgerApi.updatePayment(editingPayment.id, payload);
                 toast.success('Payment updated');
             } else {
-                await ledgerApi.addPayment({ ...paymentForm, client_id: id as string });
+                await ledgerApi.addPayment({ ...payload, client_id: id as string });
                 toast.success('Payment recorded');
             }
-            setPaymentForm({ amount: 0, method: 'Cash', notes: '' });
+            setPaymentForm({ amount: 0, method: 'Cash', notes: '', date: '' });
             setShowAddPayment(false);
             setEditingPayment(null);
             loadData();

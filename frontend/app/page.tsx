@@ -265,26 +265,40 @@ export default function Dashboard() {
                         <CardContent className="space-y-4">
                             <div className="flex items-end justify-between">
                                 <div className="space-y-1">
-                                    <span className="text-2xl font-bold">₹1.2L</span>
-                                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Collected this Month</p>
+                                    <span className="text-2xl font-bold">
+                                        {loading ? "..." : `₹${stats.collectedThisPeriod.toLocaleString()}`}
+                                    </span>
+                                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
+                                        Collected {period === "total" ? "Overall" : "this " + period}
+                                    </p>
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-blue-600 font-bold">85%</span>
+                                    <span className="text-blue-600 font-bold">{loading ? "..." : `${stats.goalCompletion}%`}</span>
                                     <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter text-right">Of Goal</p>
                                 </div>
                             </div>
                             <div className="h-2 w-full bg-muted rounded-full overflow-hidden flex">
-                                <div className="h-full bg-emerald-500 w-[85%]" />
-                                <div className="h-full bg-blue-400 w-[5%]" />
+                                <div
+                                    className="h-full bg-emerald-500 transition-all"
+                                    style={{ width: `${progressWidth}%` }}
+                                />
+                                <div
+                                    className="h-full bg-blue-400 transition-all"
+                                    style={{ width: `${Math.max(0, 100 - progressWidth)}%` }}
+                                />
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="p-2 rounded bg-background border border-border/50">
                                     <span className="text-[10px] text-muted-foreground block font-bold uppercase">Pending</span>
-                                    <span className="text-sm font-bold text-orange-600">₹45,000</span>
+                                    <span className="text-sm font-bold text-orange-600">
+                                        {loading ? "..." : `₹${stats.pendingBalance.toLocaleString()}`}
+                                    </span>
                                 </div>
                                 <div className="p-2 rounded bg-background border border-border/50">
                                     <span className="text-[10px] text-muted-foreground block font-bold uppercase">Overdue</span>
-                                    <span className="text-sm font-bold text-destructive">₹12,400</span>
+                                    <span className="text-sm font-bold text-destructive">
+                                        {loading ? "..." : `₹${stats.overdueBalance.toLocaleString()}`}
+                                    </span>
                                 </div>
                             </div>
                         </CardContent>
