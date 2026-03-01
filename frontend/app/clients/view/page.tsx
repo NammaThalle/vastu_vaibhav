@@ -517,283 +517,339 @@ function ClientDetailContent() {
     }
 
     return (
-        <div className="space-y-8 pb-12">
-            {/* Action Bar */}
-            <div className="flex items-center justify-between">
-                <Button variant="ghost" onClick={() => router.back()} className="group">
-                    <ChevronLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                    Directory
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20">
+            {/* Top Navigation */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+                <Button 
+                    variant="ghost" 
+                    onClick={() => router.back()} 
+                    className="text-muted-foreground hover:text-foreground transition-colors group px-0"
+                >
+                    <ChevronLeft className="mr-1 h-5 w-5 transition-transform group-hover:-translate-x-1" />
+                    Back to Directory
                 </Button>
-                <div className="flex items-center gap-2">
-                    <Button variant="destructive" onClick={handleDeleteClient} className="mr-2">
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete Client
-                    </Button>
-                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                    <div className="px-3 py-1 bg-secondary text-[10px] font-mono tracking-wider rounded-full text-muted-foreground border border-border">
                         ID: {id?.slice(0, 8)}
-                    </Badge>
-                </div>
-            </div>
-
-            {/* Profile Overview */}
-            <div className="grid gap-6 md:grid-cols-3">
-                <Card className="md:col-span-2 overflow-hidden border-none shadow-xl bg-gradient-to-br from-card to-background">
-                    <CardHeader className="relative pb-8">
-                        <div className="absolute top-0 right-0 p-6">
-                            <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                                <User className="h-8 w-8 text-primary" />
-                            </div>
-                        </div>
-                        <div className="space-y-1">
-                            <CardTitle className="text-4xl font-extrabold flex items-center gap-3">
-                                {client.full_name}
-                                <Badge variant="secondary" className="text-sm bg-primary/10 text-primary">{client.lead_status || 'Inquiry'}</Badge>
-                            </CardTitle>
-                            <CardDescription className="flex items-center gap-2 text-base">
-                                <MapPin className="h-4 w-4" />
-                                {client.project_address || "Project address not specified"}
-                            </CardDescription>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="grid gap-6 sm:grid-cols-3 border-t bg-muted/30 pt-6">
-                        <div className="space-y-1">
-                            <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Consulting Fee</span>
-                            <div className="text-2xl font-bold">{formatCurrency(client.total_fees_fixed)}</div>
-                        </div>
-                        <div className="space-y-1">
-                            <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Outstanding Balance</span>
-                            <div className={cn(
-                                "text-2xl font-bold",
-                                (ledger?.current_balance > 0) ? "text-destructive animate-pulse" : "text-emerald-500"
-                            )}>
-                                {formatCurrency(ledger?.current_balance || 0)}
-                            </div>
-                        </div>
-                        <div className="space-y-1">
-                            <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Total Visits</span>
-                            <div className="text-2xl font-bold">{visits.length}</div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-border/50 bg-card/50">
-                    <CardHeader>
-                        <CardTitle className="text-lg">Contact Details</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                                <Phone className="h-4 w-4 text-emerald-600" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs text-muted-foreground font-medium">Primary Contact</span>
-                                <span className="text-sm font-semibold">{client.phone || "No contact linked"}</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                                <Mail className="h-4 w-4 text-blue-600" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs text-muted-foreground font-medium">Email Address</span>
-                                <span className="text-sm font-semibold truncate max-w-[180px]">{client.email || "No email linked"}</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="pt-0">
-                        <Button variant="outline" className="w-full" onClick={startEditClient}>Edit Profile</Button>
-                    </CardFooter>
-                </Card>
-            </div>
-
-            <div className="grid gap-8 lg:grid-cols-3">
-                {/* Ledger History */}
-                <div className="lg:col-span-2 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 font-bold text-xl">
-                            <Receipt className="h-5 w-5 text-primary" />
-                            Financial Ledger
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleDownloadBill}
-                                className="bg-blue-500/5 text-blue-600 border-blue-200 hover:bg-blue-500/10 hover:text-blue-700 transition-all font-medium"
-                            >
-                                <FileDown className="mr-2 h-4 w-4" />
-                                Download Bill
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowAddCharge(true)}
-                                className="bg-orange-500/5 text-orange-600 border-orange-200 hover:bg-orange-500/10 hover:text-orange-700 transition-all font-medium"
-                            >
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Add Charge
-                            </Button>
-                            <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => setShowAddPayment(true)}
-                                className="shadow-lg shadow-primary/20 transition-all active:scale-95 font-medium"
-                            >
-                                <CreditCard className="mr-2 h-4 w-4" />
-                                Record Payment
-                            </Button>
-                        </div>
                     </div>
-
-                    <Card className="border-border/50 overflow-hidden">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted/30">
-                                    <TableHead>Execution Date</TableHead>
-                                    <TableHead>Transaction Detail</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
-                                    <TableHead className="text-right">Statement Balance</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {ledger?.history.map((entry: any, i: number) => (
-                                    <TableRow key={entry.id + i} className="group hover:bg-accent/30 transition-colors">
-                                        <TableCell className="text-muted-foreground font-medium">
-                                            <div className="flex flex-col">
-                                                {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                {entry.id !== 'initial-fee' && (
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <button
-                                                            onClick={() => entry.type === 'charge' ? startEditCharge(entry) : startEditPayment(entry)}
-                                                            className="text-[10px] text-primary hover:underline flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        >
-                                                            <Edit3 className="h-2.5 w-2.5" />
-                                                            Edit
-                                                        </button>
-                                                        <button
-                                                            onClick={() => entry.type === 'charge' ? handleDeleteCharge(entry.id) : handleDeletePayment(entry.id)}
-                                                            className="text-[10px] text-destructive hover:underline flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        >
-                                                            <Trash2 className="h-2.5 w-2.5" />
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col gap-1">
-                                                <span className="font-semibold">{entry.description}</span>
-                                                <div className="flex">
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={cn(
-                                                            "text-[10px] uppercase font-bold px-1.5 py-0",
-                                                            entry.type === 'charge'
-                                                                ? "text-orange-600 bg-orange-50 border-orange-200"
-                                                                : "text-emerald-600 bg-emerald-50 border-emerald-200"
-                                                        )}
-                                                    >
-                                                        {entry.type}
-                                                    </Badge>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className={cn(
-                                            "text-right font-bold",
-                                            entry.type === 'payment' ? "text-emerald-500" : "text-foreground"
-                                        )}>
-                                            {entry.type === 'payment' ? '-' : ''}{formatCurrency(entry.amount)}
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono font-bold text-base">
-                                            {formatCurrency(entry.balance_after)}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {(!ledger?.history || ledger.history.length === 0) && (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-12 text-muted-foreground italic">
-                                            No financial activity recorded for this profile.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </Card>
+                    <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleDeleteClient}
+                        className="text-destructive border-destructive/20 hover:bg-destructive/5 h-9"
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                    </Button>
                 </div>
+            </div>
 
-                {/* Visits History */}
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 font-bold text-xl">
-                            <ClipboardList className="h-5 w-5 text-primary" />
-                            Consultation Visits
+            <div className="flex flex-col lg:grid lg:grid-cols-[350px_1fr] gap-10 items-start">
+                {/* Left Sidebar: Profile & KPIs */}
+                <aside className="space-y-8 lg:sticky lg:top-24 w-full">
+                    <div className="flex flex-col items-center text-center space-y-6">
+                        {/* Avatar */}
+                        <div className="relative group">
+                            <div className="h-32 w-32 rounded-full bg-primary/10 flex items-center justify-center border-4 border-background shadow-2xl relative z-10 overflow-hidden transition-transform duration-500 group-hover:scale-105">
+                                <span className="text-4xl font-bold text-primary">
+                                    {client.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                                </span>
+                            </div>
+                            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full -z-10 opacity-50 group-hover:opacity-80 transition-opacity" />
                         </div>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setShowAddVisit(true)}
-                            className="bg-primary/5 text-primary hover:bg-primary/10 transition-all font-medium border border-primary/10"
+
+                        {/* Name & Status */}
+                        <div className="space-y-3">
+                            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                                {client.full_name}
+                            </h1>
+                            <div className="flex items-center justify-center flex-wrap gap-2">
+                                <StatusBadge client={client} onUpdate={loadData} />
+                                <span className="text-xs text-muted-foreground flex items-center gap-1 bg-secondary/50 px-3 py-1 rounded-full">
+                                    <MapPin className="h-3 w-3" />
+                                    {client.location_type || "Goa"}
+                                </span>
+                            </div>
+                        </div>
+
+                        <Separator className="bg-border/60" />
+
+                        {/* Contact Info */}
+                        <div className="w-full space-y-4">
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/50 group hover:border-primary/30 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                        <Phone className="h-5 w-5" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Phone</p>
+                                        <p className="text-sm font-semibold">{client.phone || "Not linked"}</p>
+                                    </div>
+                                </div>
+                                <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 h-8 w-8">
+                                    <Edit3 className="h-4 w-4" />
+                                </Button>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/50 group hover:border-primary/30 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                        <Mail className="h-5 w-5" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Email</p>
+                                        <p className="text-sm font-semibold truncate max-w-[150px]">{client.email || "Not linked"}</p>
+                                    </div>
+                                </div>
+                                <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 h-8 w-8">
+                                    <Edit3 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        <Button 
+                            variant="outline" 
+                            className="w-full border-primary/20 text-primary hover:bg-primary/5 hover:border-primary font-bold py-6 rounded-xl transition-all"
+                            onClick={startEditClient}
                         >
-                            <Calendar className="mr-2 h-4 w-4" />
-                            Record Visit
+                            Edit Profile
                         </Button>
                     </div>
 
-                    <ScrollArea className="h-[500px] pr-4">
-                        <div className="space-y-4">
+                    {/* KPIs Section */}
+                    <div className="space-y-6 pt-6">
+                        <div className="grid gap-4">
+                            <div className="p-5 rounded-2xl bg-white shadow-sm border border-border/50 space-y-1">
+                                <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Consulting Fee</p>
+                                <p className="text-3xl font-black">{formatCurrency(client.total_fees_fixed)}</p>
+                            </div>
+                            <div className={cn(
+                                "p-5 rounded-2xl shadow-sm border space-y-1 transition-all",
+                                (ledger?.current_balance > 0) 
+                                    ? "bg-red-50 border-red-100 text-red-900" 
+                                    : "bg-emerald-50 border-emerald-100 text-emerald-900"
+                            )}>
+                                <p className="text-[10px] uppercase font-bold tracking-widest opacity-70">Outstanding Balance</p>
+                                <p className="text-3xl font-black">
+                                    {formatCurrency(ledger?.current_balance || 0)}
+                                </p>
+                            </div>
+                            <div className="p-5 rounded-2xl bg-white shadow-sm border border-border/50 space-y-1">
+                                <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Total Visits</p>
+                                <p className="text-3xl font-black">{visits.length}</p>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                {/* Right Column: Ledger & Visits */}
+                <main className="space-y-12">
+                    {/* Financial Ledger Section */}
+                    <section className="space-y-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 uppercase">
+                                <Receipt className="h-6 w-6 text-primary" />
+                                Financial Ledger
+                            </h2>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleDownloadBill}
+                                    className="h-9 px-4 rounded-full text-xs font-bold border-border/60 hover:bg-secondary"
+                                >
+                                    <FileDown className="mr-2 h-4 w-4" />
+                                    Download
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowAddCharge(true)}
+                                    className="h-9 px-4 rounded-full text-xs font-bold border-orange-200 text-orange-700 hover:bg-orange-50"
+                                >
+                                    + Charge
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowAddDiscount(true)}
+                                    className="h-9 px-3 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold border-purple-200 text-purple-700 hover:bg-purple-50"
+                                >
+                                    - Discount
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setShowPhase2Calculator(true)}
+                                    className="h-9 px-3 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-none"
+                                >
+                                    Phase 2
+                                </Button>
+                                <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => setShowAddPayment(true)}
+                                    className="h-9 px-4 sm:px-5 rounded-full text-[10px] sm:text-xs font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                                >
+                                    + Payment
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-3xl shadow-sm border border-border/50 overflow-hidden">
+                            <div className="overflow-x-auto scrollbar-hide">
+                                <Table className="min-w-[600px] sm:min-w-full">
+                                    <TableHeader>
+                                        <TableRow className="hover:bg-transparent border-b bg-secondary/30">
+                                            <TableHead className="font-bold text-foreground h-14 pl-6">Date</TableHead>
+                                            <TableHead className="font-bold text-foreground h-14">Transaction Details</TableHead>
+                                            <TableHead className="font-bold text-foreground h-14">Type</TableHead>
+                                            <TableHead className="font-bold text-foreground h-14 text-right">Amount</TableHead>
+                                            <TableHead className="font-bold text-foreground h-14 text-right pr-6">Balance</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                <TableBody>
+                                    {ledger?.history.map((entry: any, i: number) => (
+                                        <TableRow key={entry.id + i} className="group hover:bg-secondary/20 transition-colors border-b last:border-0 h-16">
+                                            <TableCell className="pl-6">
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-sm">
+                                                        {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                    </span>
+                                                    {!entry.visit_id && (
+                                                        <div className="flex items-center gap-3 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button 
+                                                                onClick={() => entry.type === 'charge' ? startEditCharge(entry) : startEditPayment(entry)}
+                                                                className="text-[10px] font-bold text-primary hover:underline uppercase"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                            {entry.id !== 'initial-fee' && (
+                                                                <button 
+                                                                    onClick={() => entry.type === 'charge' ? handleDeleteCharge(entry.id) : handleDeletePayment(entry.id)}
+                                                                    className="text-[10px] font-bold text-destructive hover:underline uppercase"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="font-bold text-foreground">{entry.description}</TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <div className={cn(
+                                                        "h-2 w-2 rounded-full",
+                                                        entry.type === 'charge' && entry.amount < 0 ? "bg-purple-500" :
+                                                        entry.type === 'charge' ? "bg-orange-500" : "bg-emerald-500"
+                                                    )} />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">
+                                                        {entry.type === 'charge' && entry.amount < 0 ? 'discount' : entry.type}
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className={cn(
+                                                "text-right font-black",
+                                                entry.type === 'payment' ? "text-emerald-600" : entry.amount < 0 ? "text-purple-600" : "text-foreground"
+                                            )}>
+                                                {entry.type === 'payment' ? '-' : ''}{formatCurrency(entry.amount)}
+                                            </TableCell>
+                                            <TableCell className="text-right pr-6 font-mono font-bold text-sm text-muted-foreground">
+                                                {formatCurrency(entry.balance_after)}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {(!ledger?.history || ledger.history.length === 0) && (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">
+                                                No financial activity recorded for this profile.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Consultation Visits Section */}
+                    <section className="space-y-8">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 uppercase">
+                                <ClipboardList className="h-6 w-6 text-primary" />
+                                Consultation History
+                            </h2>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowAddVisit(true)}
+                                className="h-10 px-5 rounded-full text-xs font-bold border-primary/20 text-primary hover:bg-primary/5 shadow-sm"
+                            >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Record Visit
+                            </Button>
+                        </div>
+
+                        <div className="relative pl-8 space-y-10 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-border/60">
                             {visits.map((v, i) => (
                                 <motion.div
                                     key={v.id}
-                                    initial={{ opacity: 0, x: 20 }}
+                                    initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: i * 0.1 }}
+                                    className="relative"
                                 >
-                                    <Card className="group border-border/50 hover:border-primary/30 transition-colors bg-card/50 backdrop-blur-sm relative">
-                                        <CardHeader className="p-4 pb-2">
-                                            <div className="flex justify-between items-start">
-                                                <Badge variant="outline" className="text-xs font-medium">
-                                                    {new Date(v.date).toLocaleDateString()}
-                                                </Badge>
-                                                <div className="flex items-center gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                                                        onClick={() => handleDeleteVisit(v.id)}
-                                                    >
-                                                        <Trash2 className="h-3.5 w-3.5" />
+                                    {/* Timeline Dot */}
+                                    <div className="absolute -left-[35px] top-1.5 h-6 w-6 rounded-full bg-background border-2 border-primary flex items-center justify-center z-10 shadow-sm">
+                                        <div className="h-2 w-2 rounded-full bg-primary" />
+                                    </div>
+
+                                    <div className="grid sm:grid-cols-[140px_1fr] gap-4 items-start">
+                                        <div className="pt-1.5">
+                                            <span className="text-xs font-black uppercase tracking-widest text-primary/70">
+                                                {new Date(v.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                                            </span>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-border/50 group hover:border-primary/30 hover:shadow-md transition-all relative">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <h3 className="text-lg font-bold text-foreground leading-tight">
+                                                    {v.purpose}
+                                                </h3>
+                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => startEditVisit(v)}>
+                                                        <Edit3 className="h-4 w-4" />
                                                     </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        onClick={() => startEditVisit(v)}
-                                                    >
-                                                        <Edit3 className="h-3.5 w-3.5" />
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteVisit(v.id)}>
+                                                        <Trash2 className="h-4 w-4" />
                                                     </Button>
-                                                    {v.purpose.toLowerCase().includes('vastu') && (
-                                                        <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                                                    )}
                                                 </div>
                                             </div>
-                                            <CardTitle className="text-base mt-2">{v.purpose}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="p-4 pt-0">
-                                            <p className="text-sm text-muted-foreground leading-relaxed italic">
-                                                "{v.observations || "No specific observations recorded."}"
-                                            </p>
-                                        </CardContent>
-                                    </Card>
+                                            <div className="relative">
+                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/10 rounded-full" />
+                                                <p className="text-sm text-muted-foreground leading-relaxed pl-4 italic">
+                                                    "{v.observations || "No specific observations recorded."}"
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </motion.div>
                             ))}
+
                             {visits.length === 0 && (
-                                <div className="text-center py-12 bg-muted/10 rounded-xl border border-dashed">
-                                    <p className="text-muted-foreground italic text-sm">No documented visits.</p>
+                                <div className="text-center py-16 bg-white/50 rounded-3xl border border-dashed border-border flex flex-col items-center gap-3">
+                                    <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center">
+                                        <Calendar className="h-6 w-6 text-muted-foreground" />
+                                    </div>
+                                    <p className="text-muted-foreground font-medium italic">No documented consultation visits yet.</p>
+                                    <Button variant="ghost" className="text-primary font-bold text-xs" onClick={() => setShowAddVisit(true)}>
+                                        + Record Your First Visit
+                                    </Button>
                                 </div>
                             )}
                         </div>
-                    </ScrollArea>
-                </div>
+                    </section>
+                </main>
             </div>
 
             {/* MODALS */}

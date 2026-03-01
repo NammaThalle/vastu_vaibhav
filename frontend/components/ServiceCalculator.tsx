@@ -39,8 +39,10 @@ export function ServiceCalculator({ onCalculated, initialFee = 0 }: ServiceCalcu
 
     React.useEffect(() => {
         servicesApi.getCatalog().then(data => {
-            setServices(data)
-            if (data.length > 0) setSelectedServiceId(data[0].id)
+            // Filter out Phase 1 Initial Audit since this calculator is generally for Phase 2 Execution
+            const phase2Services = data.filter((s: any) => !s.name.includes("Initial Property Audit"));
+            setServices(phase2Services)
+            if (phase2Services.length > 0) setSelectedServiceId(phase2Services[0].id)
             setLoadingParams(false)
         }).catch(() => setLoadingParams(false))
     }, [])
