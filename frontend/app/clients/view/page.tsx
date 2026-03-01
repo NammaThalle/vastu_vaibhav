@@ -862,33 +862,33 @@ function ClientDetailContent() {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="w-full max-w-md"
                         >
-                            <Card className="shadow-2xl border-primary/20">
-                                <CardHeader className="bg-primary/5">
+                            <Card className="shadow-2xl border-primary/20 overflow-hidden rounded-3xl">
+                                <CardHeader className="bg-primary/5 pb-6">
                                     <CardTitle>Edit Client Profile</CardTitle>
                                     <CardDescription>Update consultant contact details or preferences.</CardDescription>
                                 </CardHeader>
                                 <form onSubmit={handleEditClient}>
-                                    <CardContent className="space-y-4 pt-4">
+                                    <CardContent className="space-y-4 pt-6">
                                         <div className="space-y-2">
-                                            <Label htmlFor="c-name">Full Name</Label>
-                                            <Input id="c-name" required value={clientForm.full_name} onChange={e => setClientForm({ ...clientForm, full_name: e.target.value })} />
+                                            <Label htmlFor="c-name" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Full Name</Label>
+                                            <Input id="c-name" className="rounded-xl bg-secondary/30 border-none h-11" required value={clientForm.full_name} onChange={e => setClientForm({ ...clientForm, full_name: e.target.value })} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="c-phone">Phone</Label>
-                                            <Input id="c-phone" value={clientForm.phone} onChange={e => setClientForm({ ...clientForm, phone: e.target.value })} />
+                                            <Label htmlFor="c-phone" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Phone</Label>
+                                            <Input id="c-phone" className="rounded-xl bg-secondary/30 border-none h-11" value={clientForm.phone} onChange={e => setClientForm({ ...clientForm, phone: e.target.value })} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="c-email">Email</Label>
-                                            <Input id="c-email" type="email" value={clientForm.email} onChange={e => setClientForm({ ...clientForm, email: e.target.value })} />
+                                            <Label htmlFor="c-email" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Email</Label>
+                                            <Input id="c-email" type="email" className="rounded-xl bg-secondary/30 border-none h-11" value={clientForm.email} onChange={e => setClientForm({ ...clientForm, email: e.target.value })} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="c-address">Project Address</Label>
-                                            <Input id="c-address" value={clientForm.project_address} onChange={e => setClientForm({ ...clientForm, project_address: e.target.value })} />
+                                            <Label htmlFor="c-address" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Project Address</Label>
+                                            <Input id="c-address" className="rounded-xl bg-secondary/30 border-none h-11" value={clientForm.project_address} onChange={e => setClientForm({ ...clientForm, project_address: e.target.value })} />
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label htmlFor="c-loc">Location</Label>
-                                                <select id="c-loc" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={clientForm.location_type} onChange={e => setClientForm({ ...clientForm, location_type: e.target.value })}>
+                                                <Label htmlFor="c-loc" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Location</Label>
+                                                <select id="c-loc" className="flex h-11 w-full rounded-xl border-none bg-secondary/30 px-3 py-2 text-sm" value={clientForm.location_type} onChange={e => setClientForm({ ...clientForm, location_type: e.target.value })}>
                                                     <option>Goa</option>
                                                     <option>Karnataka</option>
                                                     <option>Maharashtra</option>
