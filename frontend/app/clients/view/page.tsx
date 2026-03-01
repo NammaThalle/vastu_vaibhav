@@ -924,24 +924,23 @@ function ClientDetailContent() {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="w-full max-w-md"
                         >
-                            <Card className="shadow-2xl border-orange-500/20">
-                                <CardHeader className="bg-orange-500/5">
+                            <Card className="shadow-2xl border-orange-500/20 overflow-hidden rounded-3xl">
+                                <CardHeader className="bg-orange-500/5 pb-6">
                                     <CardTitle>{editingCharge ? 'Edit' : 'Add'} Extra Service Charge</CardTitle>
                                     <CardDescription>
                                         {editingCharge ? 'Modify existing ledger entry details.' : 'Include professional remedies or travel expenses.'}
                                     </CardDescription>
                                 </CardHeader>
                                 <form onSubmit={handleAddCharge}>
-                                    <CardContent className="space-y-4 pt-4">
-
+                                    <CardContent className="space-y-4 pt-6">
                                         {!editingCharge && (
                                             <div className="space-y-2">
-                                                <Label htmlFor="addon_type">Select Charge Type</Label>
+                                                <Label htmlFor="addon_type" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Select Charge Type</Label>
                                                 <Select
                                                     value={chargeForm.addon_type}
                                                     onValueChange={(value) => onAddonSelect(value)}
                                                 >
-                                                    <SelectTrigger className="w-full bg-background border-muted-foreground/20 focus:ring-orange-500/20 rounded-xl h-11 overflow-hidden">
+                                                    <SelectTrigger className="w-full bg-secondary/30 border-none focus:ring-orange-500/20 rounded-xl h-11 overflow-hidden">
                                                         <AnimatePresence mode="wait">
                                                             <motion.div
                                                                 key={chargeForm.addon_type}
