@@ -896,8 +896,8 @@ function ClientDetailContent() {
                                                 </select>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="c-status">Status</Label>
-                                                <select id="c-status" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={clientForm.lead_status} onChange={e => setClientForm({ ...clientForm, lead_status: e.target.value })}>
+                                                <Label htmlFor="c-status" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Status</Label>
+                                                <select id="c-status" className="flex h-11 w-full rounded-xl border-none bg-secondary/30 px-3 py-2 text-sm" value={clientForm.lead_status} onChange={e => setClientForm({ ...clientForm, lead_status: e.target.value })}>
                                                     <option>Inquiry</option>
                                                     <option>Active</option>
                                                     <option>Completed</option>

@@ -113,6 +113,10 @@ export const ledgerApi = {
     },
 };
 
+export const dashboardApi = {
+    getSummary: (period: string = 'month') => apiFetch(`/api/v1/dashboard/summary?period=${period}`),
+};
+
 export const servicesApi = {
     getCatalog: () => apiFetch('/api/v1/services/catalog'),
     getCatalogItem: (id: string) => apiFetch(`/api/v1/services/catalog/${id}`),
