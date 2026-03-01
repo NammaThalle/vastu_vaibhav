@@ -956,7 +956,7 @@ function ClientDetailContent() {
                                                     </SelectTrigger>
                                                     <SelectContent className="rounded-xl border-orange-500/10 shadow-2xl">
                                                         <SelectGroup>
-                                                            <SelectItem value="custom" className="font-semibold text-orange-600 focus:text-orange-700 focus:bg-orange-50">
+                                                            <SelectItem value="custom" className="font-semibold text-orange-600 focus:text-orange-700 focus:bg-orange-50 cursor-pointer">
                                                                 ✨ Custom Manual Entry
                                                             </SelectItem>
                                                             {availableAddons.length > 0 && (
