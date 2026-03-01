@@ -906,9 +906,9 @@ function ClientDetailContent() {
                                             </div>
                                         </div>
                                     </CardContent>
-                                    <CardFooter className="flex gap-3 pt-4 border-t">
-                                        <Button type="button" variant="outline" className="flex-1" onClick={() => setShowEditClient(false)}>Cancel</Button>
-                                        <Button type="submit" className="flex-1">Update Profile</Button>
+                                    <CardFooter className="flex gap-3 pt-6 pb-8 px-6 border-t">
+                                        <Button type="button" variant="ghost" className="flex-1 rounded-xl h-12 font-bold" onClick={() => setShowEditClient(false)}>Cancel</Button>
+                                        <Button type="submit" className="flex-1 rounded-xl h-12 font-bold bg-foreground text-background">Update Profile</Button>
                                     </CardFooter>
                                 </form>
                             </Card>
