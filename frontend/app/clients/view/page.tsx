@@ -980,16 +980,14 @@ function ClientDetailContent() {
                                                         </SelectGroup>
                                                     </SelectContent>
                                                 </Select>
-                                                <p className="text-[10px] text-muted-foreground italic mt-1 px-1">
-                                                    Professional consulting rates pre-configured in your service catalog.
-                                                </p>
                                             </div>
                                         )}
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="description">Service Description</Label>
+                                            <Label htmlFor="description" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Service Description</Label>
                                             <Input
                                                 id="description"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
                                                 placeholder="e.g. Vastu Remedy Installation"
                                                 value={chargeForm.description}
                                                 onChange={e => setChargeForm({ ...chargeForm, description: e.target.value })}
