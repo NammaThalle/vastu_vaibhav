@@ -966,7 +966,7 @@ function ClientDetailContent() {
                                                                         {client.service_id ? "Recommended for Project" : "Standard Catalog Addons"}
                                                                     </SelectLabel>
                                                                     {availableAddons.map(addon => (
-                                                                        <SelectItem key={addon.id} value={addon.id} className="py-2.5">
+                                                                        <SelectItem key={addon.id} value={addon.id} className="py-2.5 cursor-pointer">
                                                                             <div className="flex items-center justify-between w-full gap-3">
                                                                                 <span className="font-medium truncate">{addon.name}</span>
                                                                                 <span className="text-xs text-orange-600 font-mono font-bold bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100 flex-shrink-0">
