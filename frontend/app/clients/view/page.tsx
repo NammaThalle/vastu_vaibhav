@@ -1109,23 +1109,34 @@ function ClientDetailContent() {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="w-full max-w-md"
                         >
-                            <Card className="shadow-2xl border-emerald-500/20">
-                                <CardHeader className="bg-emerald-500/5">
+                            <Card className="shadow-2xl border-emerald-500/20 overflow-hidden rounded-3xl">
+                                <CardHeader className="bg-emerald-500/5 pb-6">
                                     <CardTitle>{editingPayment ? 'Edit' : 'Record'} New Payment</CardTitle>
                                     <CardDescription>
                                         {editingPayment ? 'Modify payment record details.' : 'Update the outstanding balance for this consultant.'}
                                     </CardDescription>
                                 </CardHeader>
                                 <form onSubmit={handleAddPayment}>
-                                    <CardContent className="space-y-4 pt-4">
+                                    <CardContent className="space-y-4 pt-6">
                                         <div className="space-y-2">
-                                            <Label htmlFor="pay-amount">Amount (₹)</Label>
+                                            <div className="flex items-center justify-between">
+                                                <Label htmlFor="pay-amount" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Amount (₹)</Label>
+                                                {(ledger?.current_balance || 0) > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setPaymentForm(prev => ({ ...prev, amount: ledger.current_balance }))}
+                                                        className="text-[10px] bg-emerald-100 text-emerald-800 hover:bg-emerald-200 font-black px-2 py-1 rounded-md transition-all uppercase tracking-tighter"
+                                                    >
+                                                        Pay Full (₹{ledger.current_balance.toLocaleString()})
+                                                    </button>
+                                                )}
+                                            </div>
                                             <div className="relative">
                                                 <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                                 <Input
                                                     id="pay-amount"
                                                     type="number"
-                                                    className="pl-9 font-mono"
+                                                    className="pl-9 rounded-xl bg-secondary/30 border-none h-11 font-black text-emerald-700"
                                                     value={paymentForm.amount}
                                                     onChange={e => setPaymentForm({ ...paymentForm, amount: parseFloat(e.target.value) })}
                                                     required
