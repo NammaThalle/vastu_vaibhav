@@ -1033,6 +1033,74 @@ function ClientDetailContent() {
                     </div>
                 )}
 
+                {showAddDiscount && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="w-full max-w-md"
+                        >
+                            <Card className="shadow-2xl border-purple-500/20 overflow-hidden rounded-3xl">
+                                <CardHeader className="bg-purple-500/5 pb-6">
+                                    <CardTitle>Apply Account Discount</CardTitle>
+                                    <CardDescription>
+                                        Discounts reflect as negative adjustments to the client's overall bill.
+                                    </CardDescription>
+                                </CardHeader>
+                                <form onSubmit={handleAddDiscount}>
+                                    <CardContent className="space-y-4 pt-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="disc-description" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Discount Label</Label>
+                                            <Input
+                                                id="disc-description"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
+                                                placeholder="e.g. Special Discount, Courtesy Adjustment"
+                                                value={discountForm.description}
+                                                onChange={e => setDiscountForm({ ...discountForm, description: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="disc-amount" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Discount Amount (₹)</Label>
+                                            <div className="relative">
+                                                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    id="disc-amount"
+                                                    type="number"
+                                                    min="0.01"
+                                                    step="0.01"
+                                                    className="pl-9 rounded-xl bg-secondary/30 border-none h-11 font-black text-purple-700"
+                                                    value={discountForm.amount}
+                                                    onChange={e => setDiscountForm({ ...discountForm, amount: parseFloat(e.target.value) })}
+                                                    required
+                                                />
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground italic px-1 pt-1">-₹{(discountForm.amount || 0).toLocaleString()} deduction from bill.</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="disc-date" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Date Applied</Label>
+                                            <Input
+                                                id="disc-date"
+                                                type="date"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
+                                                value={discountForm.date}
+                                                onChange={e => setDiscountForm({ ...discountForm, date: e.target.value })}
+                                            />
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="flex gap-3 pt-6 pb-8 px-6 border-t">
+                                        <Button type="button" variant="ghost" className="flex-1 rounded-xl h-12 font-bold" onClick={() => setShowAddDiscount(false)}>Cancel</Button>
+                                        <Button type="submit" className="flex-1 rounded-xl h-12 font-bold bg-purple-600 hover:bg-purple-700 text-white">
+                                            Apply Discount
+                                        </Button>
+                                    </CardFooter>
+                                </form>
+                            </Card>
+                        </motion.div>
+                    </div>
+                )}
+
                 {showAddPayment && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
                         <motion.div
