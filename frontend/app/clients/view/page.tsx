@@ -1010,10 +1010,20 @@ function ClientDetailContent() {
                                                 />
                                             </div>
                                         </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="charge-date" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Charge Date</Label>
+                                            <Input
+                                                id="charge-date"
+                                                type="date"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
+                                                value={chargeForm.date}
+                                                onChange={e => setChargeForm({ ...chargeForm, date: e.target.value })}
+                                            />
+                                        </div>
                                     </CardContent>
-                                    <CardFooter className="flex gap-3 pt-4 border-t">
-                                        <Button type="button" variant="outline" className="flex-1" onClick={() => { setShowAddCharge(false); setEditingCharge(null); }}>Cancel</Button>
-                                        <Button type="submit" className="flex-1 bg-orange-600 hover:bg-orange-700">
+                                    <CardFooter className="flex gap-3 pt-6 pb-8 px-6 border-t">
+                                        <Button type="button" variant="ghost" className="flex-1 rounded-xl h-12 font-bold" onClick={() => { setShowAddCharge(false); setEditingCharge(null); }}>Cancel</Button>
+                                        <Button type="submit" className="flex-1 rounded-xl h-12 font-bold bg-orange-600 hover:bg-orange-700 text-white">
                                             {editingCharge ? 'Update Entry' : 'Add Charge'}
                                         </Button>
                                     </CardFooter>
