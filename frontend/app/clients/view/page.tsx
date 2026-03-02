@@ -996,13 +996,13 @@ function ClientDetailContent() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="amount">Amount (₹)</Label>
+                                            <Label htmlFor="amount" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Amount (₹)</Label>
                                             <div className="relative">
                                                 <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                                 <Input
                                                     id="amount"
                                                     type="number"
-                                                    className="pl-9 font-mono"
+                                                    className="pl-9 rounded-xl bg-secondary/30 border-none h-11 font-black"
                                                     value={chargeForm.amount}
                                                     onChange={e => setChargeForm({ ...chargeForm, amount: parseFloat(e.target.value) })}
                                                     disabled={chargeForm.addon_type !== 'custom'}
