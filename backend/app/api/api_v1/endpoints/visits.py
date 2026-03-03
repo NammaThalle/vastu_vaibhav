@@ -14,6 +14,46 @@ from sqlalchemy import func
 
 router = APIRouter()
 
+
+def build_visit_charge_description(visit: VisitModel) -> str:
+    purpose = (visit.purpose or "").strip()
+    return f"Visit Charge: {purpose}" if purpose else "Visit Charge"
+
+
+async def get_visit_charge_entry(db: AsyncSession, visit_id: str) -> LedgerModel | None:
+    result = await db.execute(select(LedgerModel).where(LedgerModel.visit_id == visit_id))
+    return result.scalars().first()
+
+
+async def sync_visit_charge(db: AsyncSession, visit: VisitModel) -> None:
+    existing_entry = await get_visit_charge_entry(db, visit.id)
+    has_amount = visit.amount is not None and visit.amount > 0
+
+    if not has_amount:
+        if existing_entry:
+            await db.delete(existing_entry)
+        return
+
+    charge_date = visit.date or visit.created_at
+    description = build_visit_charge_description(visit)
+
+    if existing_entry:
+        existing_entry.amount = visit.amount
+        existing_entry.date = charge_date
+        existing_entry.description = description
+        db.add(existing_entry)
+        return
+
+    db.add(
+        LedgerModel(
+            client_id=visit.client_id,
+            visit_id=visit.id,
+            description=description,
+            amount=visit.amount,
+            date=charge_date,
+        )
+    )
+
 @router.get("/", response_model=List[Visit])
 async def read_visits(
     db: AsyncSession = Depends(deps.get_db),
@@ -46,8 +86,11 @@ async def create_visit(
     db.add(visit)
     await db.flush() # Secure the ID but don't commit fully yet
     
-    # 3. Handle Auto-Billing if Client belongs to a Service Strategy
-    if client.service_id:
+    # 3. Manual visit amount owns the visit-linked charge for this visit.
+    if visit.amount is not None and visit.amount > 0:
+        await sync_visit_charge(db, visit)
+    # 4. Only fall back to supplementary auto-billing when no manual amount is provided.
+    elif client.service_id:
         # A. Fetch the rules for their exact package
         res_cat = await db.execute(select(CatalogModel).where(CatalogModel.id == client.service_id))
         service_catalog = res_cat.scalars().first()
@@ -74,13 +117,17 @@ async def create_visit(
                     charge_amount = visit_addon.price
                 
                 # E. Inject Charge into Ledger
-                auto_charge = LedgerModel(
-                    client_id=client.id,
-                    visit_id=visit.id,
-                    description=f"Auto-Billed: Supplementary Site Visit (#{current_visit_count})",
-                    amount=charge_amount,
+                visit.is_supplementary = True
+                visit.fee_incurred = charge_amount
+                db.add(
+                    LedgerModel(
+                        client_id=client.id,
+                        visit_id=visit.id,
+                        description=f"Auto-Billed: Supplementary Site Visit (#{current_visit_count})",
+                        amount=charge_amount,
+                        date=visit.date or visit.created_at,
+                    )
                 )
-                db.add(auto_charge)
 
     await db.commit()
     await db.refresh(visit)
@@ -102,9 +149,24 @@ async def update_visit(
         raise HTTPException(status_code=404, detail="Visit not found")
     
     update_data = visit_in.dict(exclude_unset=True)
+    previous_manual_amount = visit.amount
+    previous_supplementary = bool(visit.is_supplementary)
     for field in update_data:
         setattr(visit, field, update_data[field])
-    
+
+    if visit.amount is not None and visit.amount > 0:
+        visit.is_supplementary = False
+        visit.fee_incurred = 0.0
+        await sync_visit_charge(db, visit)
+    else:
+        if previous_manual_amount is not None and previous_manual_amount > 0:
+            await sync_visit_charge(db, visit)
+        elif previous_supplementary:
+            linked_entry = await get_visit_charge_entry(db, visit.id)
+            if linked_entry:
+                linked_entry.date = visit.date or linked_entry.date
+                db.add(linked_entry)
+
     db.add(visit)
     await db.commit()
     await db.refresh(visit)
@@ -138,6 +200,9 @@ async def delete_visit(
     visit = result.scalars().first()
     if not visit:
         raise HTTPException(status_code=404, detail="Visit not found")
+    linked_entry = await get_visit_charge_entry(db, visit.id)
+    if linked_entry:
+        await db.delete(linked_entry)
     await db.delete(visit)
     await db.commit()
     return visit

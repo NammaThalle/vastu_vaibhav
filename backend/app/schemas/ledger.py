@@ -12,10 +12,12 @@ class ServiceEntryBase(BaseModel):
 
 class ServiceEntryCreate(ServiceEntryBase):
     client_id: str
+    visit_id: Optional[str] = None
 
 class ServiceEntry(ServiceEntryBase):
     id: str
     client_id: str
+    visit_id: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -58,6 +60,7 @@ class LedgerEntry(BaseModel):
     amount: float
     date: datetime
     balance_after: float
+    visit_id: Optional[str] = None
 
 class ClientLedger(BaseModel):
     client_id: str

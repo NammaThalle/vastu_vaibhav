@@ -8,66 +8,70 @@ Vastu Vaibhav provides expert Vastu consultations and markings. We do **not** dr
 
 ---
 
-### 1. Plot Selection Analysis
-Designed for clients preparing to purchase land, this service provides a comprehensive Vastu analysis of the prospective plot to guide your investment decision.
+## Phase 1: Initial Assessments
+*The mandatory first step for all properties. This phase focuses purely on diagnosis, viability, and cost estimation before any detailed structural alterations or specific remedies are calculated.*
+
+### 1. Initial Property Audit & Case Study
+Designed as the primary entry point for any client, regardless of the property type (plot, apartment, independent house, commercial shop, etc.). This service involves a preliminary visit to assess the current Vastu compliance of the space and understand the client's requirements before deep-diving into specific modifications. This ensures clients know exactly what is wrong and what is required to fix it before making heavy investments.
 
 **Inclusions:**
-- Initial site visit (Maximum 1 visit included).
-- Determination of exact plot alignment and directional coordinates.
-- Assessment of spatial suitability for house construction according to Vastu principles.
-- Evaluation of plot suitability for intended use (Living, Agriculture, Business, or Commercial).
-- Professional verbal guidance regarding optimal placement of the primary structure and key internal elements.
-- A definitive final verdict and recommendation on purchasing the property.
+- Initial site visit by the consultant.
+- Preliminary assessment of the existing situation (whether pre-construction or post-construction).
+- Overview of major Vastu-positive and Vastu-negative aspects of the property.
+- Evaluation of property suitability for intended use, including a final verdict on purchasing for prospective buyers.
+- Identification of required subsequent services (e.g., Plan Modification, Interior Layout, Remedies).
+- Provision of an estimated scope of work and total quotation for full Vastu treatment.
 
 **Fixed Charges:**
-- Residential Plots: ₹ 3,000
-- Commercial/Agricultural Plots: ₹ 5,000
-- Industrial Plots: ₹ 10,000
+- Residential Properties (Houses/Apartments): ₹ 2,000
+- Commercial Properties: ₹ 2,000
+- Plots/Land: ₹ 2,500
 - Supplementary Site Visits: ₹ 500 per visit (if requested beyond the initial included visit).
 
 **Exclusions:**
+- Detailed structural change recommendations or exact degree alignments.
+- Precise implementation of Vastu remedies.
+- Micro-placement of interior/exterior elements.
 - Generation of new plan drawings.
 
 ---
 
+## Phase 2: Detailed Solutions & Implementation
+*Once the initial audit is complete, these services are executed to apply exact Vastu calculations, superimpose directional degrees on plans, and implement specific changes or remedies.*
+
 ### 2. New Plan Study
-Ideal for clients who have acquired a plot and possess an initial drafted architectural plan, but seek to optimize it according to Vastu principles prior to construction.
+Ideal for clients who possess an initial drafted architectural plan (pre-construction) and seek to optimize the layout according to Vastu principles prior to building.
 
 **Inclusions:**
-- Site visits (Maximum 2 visits included).
 - Comprehensive analysis of the architectural plan provided by the client or architect.
+- Application of strict 16 Vastu zones and 32 entrances.
 - Identification and detailed explanation of Vastu-compliant (positive) and non-compliant (negative) elements within the plan.
 
 **Fixed Charges:**
-- Residential Apartments/Houses: ₹ 2,500
+- Residential Properties: ₹ 2,500
 - Commercial Properties: ₹ 2,500
-- Supplementary Site Visits: ₹ 500 per visit (if requested beyond the included visits).
+- Supplementary Site Visits: ₹ 500 per visit.
 
 **Exclusions:**
 - Initial drafting of the plan (must be provided in advance).
-- Detailed suggestions for structural changes or mitigative remedies (See Service #3).
-- Generation of new plan drawings.
+- Specific mitigative remedies (See Service #3).
 
 ---
 
 ### 3. Plan Modification & Remedial Solutions
-A detailed case study for clients with an existing plot and plan, focusing on actionable solutions. We assist in modifying the plan to neutralize spatial defects and convert negative placements into Vastu-positive alignments.
+A detailed case study for clients focusing on actionable solutions to convert negative placements into Vastu-positive alignments or neutralize spatial defects.
 
 **Inclusions:**
-- Site visit (if operationally required).
+- Site visit (if operationally required beyond the initial audit).
 - Pinpoint identification of non-compliant items using precise directional degrees superimposed on the provided plan.
 - Comprehensive advisory support for the client or architect to implement necessary plan modifications.
-- Strategic placement recommendations for, but not limited to: 
-  *Kitchens, Bathrooms/WC, Bedrooms, Living/Dining Rooms, Pooja Rooms, Study Rooms, Balconies, Staircases, Main Doors, and Ventilation hubs.*
-- Provision of multiple placement options for each room or functional item. In scenarios where structural shifting is impossible, we provide the most effective Vastu remedies to mitigate adverse effects.
+- Strategic placement recommendations for: *Kitchens, Bathrooms/WC, Bedrooms, Living/Dining Rooms, Pooja Rooms, Study Rooms, Balconies, Staircases, Main Doors, and Ventilation hubs.*
+- Provision of multiple placement options for each room. Where structural shifting is impossible, we provide the most effective Vastu remedies (metals, colors, pyramids) to mitigate effects.
 
 **Fixed Charges:**
 - Room/Zone Analysis: ₹ 1,500 per specific room or functional item analyzed.
 - Specific Vastu Remedies: ₹ 500 per implemented remedy.
-- Supplementary Site Visits: ₹ 500 per visit (beyond the primary visit, if applicable).
-
-**Exclusions:**
-- Generation of new plan drawings.
+- Supplementary Site Visits: ₹ 500 per visit.
 
 ---
 
@@ -75,7 +79,6 @@ A detailed case study for clients with an existing plot and plan, focusing on ac
 Tailored for clients whose primary structural plan is finalized, focusing heavily on the micro-placement of interior furnishings and critical exterior utilities for optimal energy flow.
 
 **Inclusions:**
-- Site visit (if operationally required).
 - Precise directional/degree-based placement of elements relative to the finalized plan.
 - Collaborative support with interior designers or architects to integrate suggestions.
 - Provision of alternative placement options and mitigative remedies for fixed items.
@@ -89,44 +92,21 @@ Tailored for clients whose primary structural plan is finalized, focusing heavil
 - Full Property Package (Interior + Exterior): ₹ 5,000
 - Supplementary Site Visits: ₹ 500 per visit.
 
-**Exclusions:**
-- Generation of new plan drawings.
-
 ---
 
-### 5. House Vastu Analysis (Pre-Purchase)
-Designed for clients intending to purchase a pre-constructed or ready-to-move-in house/apartment, providing a complete Vastu check before finalized investment.
-
-**Inclusions:**
-- Initial site visit.
-- Determination of the property's precise structural alignment.
-- Verification of existing construction against core Vastu compliance markers.
-- Final suitability assessment for harmonious living.
-- A definitive final verdict and recommendation on purchasing the property.
-
-**Fixed Charges:**
-- Residential Apartments/Houses: ₹ 2,500
-- Commercial Apartments/Properties: ₹ 2,500
-- Supplementary Site Visits: ₹ 500 per visit.
-
-**Exclusions:**
-- Generation of new plan drawings.
-
----
-
-### 6. Discounted Bundled Packages
-To provide comprehensive support throughout your property journey, Vastu Vaibhav offers cost-effective, bundled service packages. 
+## 5. Discounted Bundled Packages
+To provide comprehensive support throughout your property journey, Vastu Vaibhav offers cost-effective, bundled service packages. Note that the **Initial Property Audit (Phase 1)** is mandatory prior to taking up packages to properly evaluate your needs.
 
 **A. The "Pre-Construction" Bundle**
-- **Includes**: Service #1 (Plot Selection) + Service #2 (New Plan Study).
-- **Ideal for**: Clients starting from scratch, ensuring the land is perfect and the initial architectural plan is heavily optimized before a single brick is laid.
+- **Includes**: Service #2 (New Plan Study) + essential guidance from Service #3 (if modifications needed to the draft).
+- **Ideal for**: Clients starting from scratch ensuring the architectural plan is heavily optimized before a single brick is laid.
 
 **B. The "Post-Construction" Bundle**
 - **Includes**: Service #3 (Plan Modification & Remedial Solutions) + Service #4 (Interior & Exterior Element Placement).
 - **Ideal for**: Clients who already own a property and are preparing for interiors, ensuring any existing negative spatial defects are neutralized before finalizing furniture and utility placement.
 
-**C. The "Complete Vastu" Bundle**
-- **Includes**: Service #1 (Plot Selection) + Service #2 (New Plan Study) + Service #4 (Interior & Exterior Element Placement).
-- **Ideal for**: Clients who want ultimate peace of mind and continuous Vastu guidance from the day they search for a plot to the day they place their living room sofa. 
+**C. The "Complete Vastu Master" Bundle**
+- **Includes**: Service #2 (New Plan Study) + Service #3 (Plan Mod) + Service #4 (Interior & Exterior Element Placement).
+- **Ideal for**: Clients who want continuous Vastu guidance from the day they finalize the plan to the day they place their living room sofa. 
 
-*(Note: Pricing for bundles is calculated based on the specific property type and scale. Please consult with the Vastu Vaibhav admin for your tailored bundled quote.)*
+*(Note: Pricing for bundles is calculated based on the specific property type and scale assessed during the Initial Property Audit. Please consult with the Vastu Vaibhav admin for your tailored bundled quote.)*

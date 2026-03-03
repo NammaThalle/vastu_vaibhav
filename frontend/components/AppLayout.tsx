@@ -199,11 +199,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </AnimatePresence>
 
             {/* Main Content */}
-            <main className="flex-1 container mx-auto px-4 py-8 relative">
+            <main className="flex-1 container mx-auto px-4 py-8">
                 <motion.div
                     key={pathname}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ duration: 0.2 }}
                 >
                     {children}

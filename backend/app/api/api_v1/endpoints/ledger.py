@@ -171,11 +171,11 @@ async def get_client_ledger(
     # Combine services and payments, sort by date
     all_events = []
     for s in services:
-        all_events.append({"type": "charge", "id": s.id, "amount": s.amount, "desc": s.description, "date": s.date})
+        all_events.append({"type": "charge", "id": s.id, "amount": s.amount, "desc": s.description, "date": s.date, "visit_id": s.visit_id})
         total_billed += s.amount
     
     for p in payments:
-        all_events.append({"type": "payment", "id": p.id, "amount": p.amount, "desc": f"Payment via {p.method}", "date": p.date})
+        all_events.append({"type": "payment", "id": p.id, "amount": p.amount, "desc": f"Payment via {p.method}", "date": p.date, "visit_id": None})
         total_paid += p.amount
 
     all_events.sort(key=lambda x: x["date"])
@@ -192,7 +192,8 @@ async def get_client_ledger(
             description=event["desc"],
             amount=event["amount"],
             date=event["date"],
-            balance_after=current_running_balance
+            balance_after=current_running_balance,
+            visit_id=event.get("visit_id")
         ))
 
     return ClientLedger(

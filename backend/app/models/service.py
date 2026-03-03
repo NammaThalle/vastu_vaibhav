@@ -9,6 +9,7 @@ class ServiceEntry(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     client_id = Column(String, ForeignKey("clients.id", ondelete="CASCADE"), nullable=False)
+    visit_id = Column(String, ForeignKey("visits.id", ondelete="CASCADE"), nullable=True)
     description = Column(String, nullable=False)
     amount = Column(Float, nullable=False)
     date = Column(DateTime(timezone=True), server_default=func.now())
@@ -18,3 +19,4 @@ class ServiceEntry(Base):
 
     # Relationships
     client = relationship("Client")
+    visit = relationship("Visit", back_populates="ledger_entries")

@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
+import { createPortal } from "react-dom"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -11,6 +12,7 @@ import {
     ArrowUpRight,
     Calendar,
     CalendarCheck,
+    Calculator,
     ChevronLeft,
     ChevronRight,
     ClipboardList,
@@ -38,10 +40,20 @@ import {
     User,
     Users,
     AlertCircle,
+    CheckCircle2,
+    Circle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuLabel,
+    DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -67,6 +79,72 @@ import {
 import { clientsApi, visitsApi, ledgerApi, servicesApi } from "@/services/api"
 import { formatCurrency, cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { ServiceCalculator } from "@/components/ServiceCalculator"
+
+const STATUS_OPTIONS = [
+    { label: "Inquiry", value: "Inquiry", color: "text-blue-600 bg-blue-500/10 border-blue-500/20", icon: AlertCircle },
+    { label: "Active", value: "Active", color: "text-orange-600 bg-orange-500/10 border-orange-500/20", icon: Clock },
+    { label: "Completed", value: "Completed", color: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20", icon: CheckCircle2 },
+    { label: "Inactive", value: "Inactive", color: "text-muted-foreground bg-muted/50 border-border", icon: Circle },
+]
+
+function StatusBadge({ client, onUpdate }: { client: any, onUpdate: () => void }) {
+    const [updating, setUpdating] = React.useState(false);
+
+    const handleStatusChange = async (newStatus: string) => {
+        setUpdating(true);
+        try {
+            await clientsApi.update(client.id, { ...client, lead_status: newStatus });
+            toast.success(`Client marked as ${newStatus}`);
+            onUpdate();
+        } catch (err) {
+            toast.error("Failed to update status");
+        } finally {
+            setUpdating(false);
+        }
+    }
+
+    const currentStatus = STATUS_OPTIONS.find(s => s.value === (client.lead_status || "Inquiry")) || STATUS_OPTIONS[0];
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <button 
+                    disabled={updating}
+                    className={cn(
+                        "flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-tighter transition-all hover:scale-105 active:scale-95 whitespace-nowrap",
+                        currentStatus.color,
+                        updating && "opacity-50 cursor-not-allowed"
+                    )}
+                >
+                    <currentStatus.icon className="h-3 w-3" />
+                    {currentStatus.label}
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl border-primary/10 shadow-2xl backdrop-blur-xl bg-background/95">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground px-2 py-1.5 font-black">Change Client Status</DropdownMenuLabel>
+                <div className="grid gap-1 mt-1">
+                    {STATUS_OPTIONS.map((status) => (
+                        <button
+                            key={status.value}
+                            onClick={() => handleStatusChange(status.value)}
+                            className={cn(
+                                "flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all hover:bg-primary/5",
+                                client.lead_status === status.value ? "text-primary bg-primary/5" : "text-foreground"
+                            )}
+                        >
+                            <div className="flex items-center gap-3">
+                                <status.icon className={cn("h-4 w-4", status.color.split(' ')[0])} />
+                                {status.label}
+                            </div>
+                            {client.lead_status === status.value && <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />}
+                        </button>
+                    ))}
+                </div>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
 
 function ClientDetailContent() {
     const searchParams = useSearchParams();
@@ -76,6 +154,25 @@ function ClientDetailContent() {
     const [client, setClient] = useState<any>(null);
     const [visits, setVisits] = useState<any[]>([]);
     const [ledger, setLedger] = useState<any>(null);
+    
+    // Collapsed ribbon: show only when profile card is fully scrolled out of view
+    const profileCardRef = useRef<HTMLDivElement>(null);
+    const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+    const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+    useEffect(() => {
+        setPortalTarget(document.body);
+        const el = profileCardRef.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                // Show ribbon when card is NOT intersecting (fully scrolled away)
+                setIsHeaderCollapsed(!entry.isIntersecting);
+            },
+            { threshold: 0 }
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [client]); // re-attach when client loads
     // New State for dynamic forms
     const [availableAddons, setAvailableAddons] = useState<any[]>([]);
 
@@ -85,7 +182,9 @@ function ClientDetailContent() {
     // Modals Visibility
     const [showAddVisit, setShowAddVisit] = useState(false);
     const [showAddCharge, setShowAddCharge] = useState(false);
+    const [showAddDiscount, setShowAddDiscount] = useState(false);
     const [showAddPayment, setShowAddPayment] = useState(false);
+    const [showPhase2Calculator, setShowPhase2Calculator] = useState(false);
     const [editingVisit, setEditingVisit] = useState<any>(null);
     const [editingCharge, setEditingCharge] = useState<any>(null);
     const [editingPayment, setEditingPayment] = useState<any>(null);
@@ -93,15 +192,20 @@ function ClientDetailContent() {
 
     // Forms State
     const [clientForm, setClientForm] = useState({ full_name: '', phone: '', email: '', project_address: '', location_type: '', lead_status: '' });
-    const [visitForm, setVisitForm] = useState({ purpose: '', observations: '' });
+    const [visitForm, setVisitForm] = useState({ date: '', purpose: '', observations: '', amount: '' });
 
     // Updated Charge Form
     const [chargeForm, setChargeForm] = useState({
         description: '', amount: 0,
-        addon_type: 'custom' // 'custom' or the ID of a specific addon
+        addon_type: 'custom', // 'custom' or the ID of a specific addon
+        date: ''
     });
 
-    const [paymentForm, setPaymentForm] = useState({ amount: 0, method: 'Cash', notes: '' });
+    const [discountForm, setDiscountForm] = useState({
+        description: 'Special Discount', amount: 0, date: ''
+    });
+
+    const [paymentForm, setPaymentForm] = useState({ amount: 0, method: 'Cash', notes: '', date: '' });
 
     useEffect(() => {
         if (id) {
@@ -151,14 +255,19 @@ function ClientDetailContent() {
     const handleAddVisit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const payload = {
+                ...visitForm,
+                date: visitForm.date ? new Date(visitForm.date).toISOString() : undefined,
+                amount: visitForm.amount === '' ? null : Number(visitForm.amount),
+            };
             if (editingVisit) {
-                await visitsApi.update(editingVisit.id, visitForm);
+                await visitsApi.update(editingVisit.id, payload);
                 toast.success('Visit updated successfully');
             } else {
-                await visitsApi.create({ ...visitForm, client_id: id as string });
+                await visitsApi.create({ ...payload, client_id: id as string });
                 toast.success('Visit recorded successfully');
             }
-            setVisitForm({ purpose: '', observations: '' });
+            setVisitForm({ date: '', purpose: '', observations: '', amount: '' });
             setShowAddVisit(false);
             setEditingVisit(null);
             loadData();
@@ -180,30 +289,75 @@ function ClientDetailContent() {
 
     const startEditVisit = (visit: any) => {
         setEditingVisit(visit);
-        setVisitForm({ purpose: visit.purpose, observations: visit.observations });
+        setVisitForm({
+            date: formatVisitDateForInput(visit.date),
+            purpose: visit.purpose || '',
+            observations: visit.observations || '',
+            amount: visit.amount != null ? String(visit.amount) : '',
+        });
         setShowAddVisit(true);
+    };
+
+    const formatVisitDateForInput = (value?: string) => {
+        if (!value) return '';
+        const d = new Date(value);
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     };
 
     const handleAddCharge = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const payload: any = { description: chargeForm.description, amount: chargeForm.amount };
+            if (chargeForm.date) {
+                payload.date = new Date(chargeForm.date).toISOString();
+            }
+
             if (editingCharge) {
-                await ledgerApi.updateService(editingCharge.id, chargeForm);
-                toast.success('Service charge updated');
+                if (editingCharge.id === 'initial-fee') {
+                    // Update client created_at which sets the initial fee date
+                    // and total_fees_fixed to update the amount
+                    await clientsApi.update(id as string, { 
+                        created_at: payload.date || undefined,
+                        total_fees_fixed: payload.amount
+                    });
+                    toast.success('Initial fee updated');
+                } else {
+                    await ledgerApi.updateService(editingCharge.id, payload);
+                    toast.success('Service charge updated');
+                }
             } else {
-                await ledgerApi.addService({
-                    description: chargeForm.description,
-                    amount: chargeForm.amount,
-                    client_id: id as string
-                });
+                payload.client_id = id as string;
+                await ledgerApi.addService(payload);
                 toast.success('Service charge added');
             }
-            setChargeForm({ description: '', amount: 0, addon_type: 'custom' });
+            setChargeForm({ description: '', amount: 0, addon_type: 'custom', date: '' });
             setShowAddCharge(false);
             setEditingCharge(null);
             loadData();
         } catch (err: any) {
             toast.error(err.message || 'Failed to process charge');
+        }
+    };
+
+    const handleAddDiscount = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            // Apply minus to the positive absolute amount entered by user
+            const amount = -Math.abs(discountForm.amount);
+            const payload: any = { description: discountForm.description, amount };
+            if (discountForm.date) {
+                payload.date = new Date(discountForm.date).toISOString();
+            }
+
+            payload.client_id = id as string;
+            await ledgerApi.addService(payload);
+            toast.success('Discount applied successfully');
+            
+            setDiscountForm({ description: 'Special Discount', amount: 0, date: '' });
+            setShowAddDiscount(false);
+            loadData();
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to apply discount');
         }
     };
 
@@ -220,7 +374,12 @@ function ClientDetailContent() {
 
     const startEditCharge = (entry: any) => {
         setEditingCharge(entry);
-        setChargeForm({ description: entry.description, amount: entry.amount, addon_type: 'custom' });
+        setChargeForm({ 
+            description: entry.description, 
+            amount: entry.amount, 
+            addon_type: 'custom',
+            date: formatVisitDateForInput(entry.date)
+        });
         setShowAddCharge(true);
     };
 
@@ -239,14 +398,21 @@ function ClientDetailContent() {
     const handleAddPayment = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const payload = { ...paymentForm };
+            if (payload.date) {
+                payload.date = new Date(payload.date).toISOString();
+            } else {
+                delete (payload as any).date;
+            }
+
             if (editingPayment) {
-                await ledgerApi.updatePayment(editingPayment.id, paymentForm);
+                await ledgerApi.updatePayment(editingPayment.id, payload);
                 toast.success('Payment updated');
             } else {
-                await ledgerApi.addPayment({ ...paymentForm, client_id: id as string });
+                await ledgerApi.addPayment({ ...payload, client_id: id as string });
                 toast.success('Payment recorded');
             }
-            setPaymentForm({ amount: 0, method: 'Cash', notes: '' });
+            setPaymentForm({ amount: 0, method: 'Cash', notes: '', date: '' });
             setShowAddPayment(false);
             setEditingPayment(null);
             loadData();
@@ -271,7 +437,8 @@ function ClientDetailContent() {
         setPaymentForm({
             amount: entry.amount,
             method: entry.description.replace('Payment via ', ''),
-            notes: '' // Notes are not explicitly stored in the consolidated ledger entry but we can handle it
+            notes: '', // Notes are not explicitly stored in the consolidated ledger entry but we can handle it
+            date: formatVisitDateForInput(entry.date)
         });
         setShowAddPayment(true);
     };
@@ -350,283 +517,339 @@ function ClientDetailContent() {
     }
 
     return (
-        <div className="space-y-8 pb-12">
-            {/* Action Bar */}
-            <div className="flex items-center justify-between">
-                <Button variant="ghost" onClick={() => router.back()} className="group">
-                    <ChevronLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                    Directory
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20">
+            {/* Top Navigation */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+                <Button 
+                    variant="ghost" 
+                    onClick={() => router.back()} 
+                    className="text-muted-foreground hover:text-foreground transition-colors group px-0"
+                >
+                    <ChevronLeft className="mr-1 h-5 w-5 transition-transform group-hover:-translate-x-1" />
+                    Back to Directory
                 </Button>
-                <div className="flex items-center gap-2">
-                    <Button variant="destructive" onClick={handleDeleteClient} className="mr-2">
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete Client
-                    </Button>
-                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                    <div className="px-3 py-1 bg-secondary text-[10px] font-mono tracking-wider rounded-full text-muted-foreground border border-border">
                         ID: {id?.slice(0, 8)}
-                    </Badge>
-                </div>
-            </div>
-
-            {/* Profile Overview */}
-            <div className="grid gap-6 md:grid-cols-3">
-                <Card className="md:col-span-2 overflow-hidden border-none shadow-xl bg-gradient-to-br from-card to-background">
-                    <CardHeader className="relative pb-8">
-                        <div className="absolute top-0 right-0 p-6">
-                            <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                                <User className="h-8 w-8 text-primary" />
-                            </div>
-                        </div>
-                        <div className="space-y-1">
-                            <CardTitle className="text-4xl font-extrabold flex items-center gap-3">
-                                {client.full_name}
-                                <Badge variant="secondary" className="text-sm bg-primary/10 text-primary">{client.lead_status || 'Inquiry'}</Badge>
-                            </CardTitle>
-                            <CardDescription className="flex items-center gap-2 text-base">
-                                <MapPin className="h-4 w-4" />
-                                {client.project_address || "Project address not specified"}
-                            </CardDescription>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="grid gap-6 sm:grid-cols-3 border-t bg-muted/30 pt-6">
-                        <div className="space-y-1">
-                            <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Consulting Fee</span>
-                            <div className="text-2xl font-bold">{formatCurrency(client.total_fees_fixed)}</div>
-                        </div>
-                        <div className="space-y-1">
-                            <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Outstanding Balance</span>
-                            <div className={cn(
-                                "text-2xl font-bold",
-                                (ledger?.current_balance > 0) ? "text-destructive animate-pulse" : "text-emerald-500"
-                            )}>
-                                {formatCurrency(ledger?.current_balance || 0)}
-                            </div>
-                        </div>
-                        <div className="space-y-1">
-                            <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Total Visits</span>
-                            <div className="text-2xl font-bold">{visits.length}</div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-border/50 bg-card/50">
-                    <CardHeader>
-                        <CardTitle className="text-lg">Contact Details</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                                <Phone className="h-4 w-4 text-emerald-600" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs text-muted-foreground font-medium">Primary Contact</span>
-                                <span className="text-sm font-semibold">{client.phone || "No contact linked"}</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                                <Mail className="h-4 w-4 text-blue-600" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs text-muted-foreground font-medium">Email Address</span>
-                                <span className="text-sm font-semibold truncate max-w-[180px]">{client.email || "No email linked"}</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="pt-0">
-                        <Button variant="outline" className="w-full" onClick={startEditClient}>Edit Profile</Button>
-                    </CardFooter>
-                </Card>
-            </div>
-
-            <div className="grid gap-8 lg:grid-cols-3">
-                {/* Ledger History */}
-                <div className="lg:col-span-2 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 font-bold text-xl">
-                            <Receipt className="h-5 w-5 text-primary" />
-                            Financial Ledger
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleDownloadBill}
-                                className="bg-blue-500/5 text-blue-600 border-blue-200 hover:bg-blue-500/10 hover:text-blue-700 transition-all font-medium"
-                            >
-                                <FileDown className="mr-2 h-4 w-4" />
-                                Download Bill
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowAddCharge(true)}
-                                className="bg-orange-500/5 text-orange-600 border-orange-200 hover:bg-orange-500/10 hover:text-orange-700 transition-all font-medium"
-                            >
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Add Charge
-                            </Button>
-                            <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => setShowAddPayment(true)}
-                                className="shadow-lg shadow-primary/20 transition-all active:scale-95 font-medium"
-                            >
-                                <CreditCard className="mr-2 h-4 w-4" />
-                                Record Payment
-                            </Button>
-                        </div>
                     </div>
-
-                    <Card className="border-border/50 overflow-hidden">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted/30">
-                                    <TableHead>Execution Date</TableHead>
-                                    <TableHead>Transaction Detail</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
-                                    <TableHead className="text-right">Statement Balance</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {ledger?.history.map((entry: any, i: number) => (
-                                    <TableRow key={entry.id + i} className="group hover:bg-accent/30 transition-colors">
-                                        <TableCell className="text-muted-foreground font-medium">
-                                            <div className="flex flex-col">
-                                                {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                {entry.id !== 'initial-fee' && (
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <button
-                                                            onClick={() => entry.type === 'charge' ? startEditCharge(entry) : startEditPayment(entry)}
-                                                            className="text-[10px] text-primary hover:underline flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        >
-                                                            <Edit3 className="h-2.5 w-2.5" />
-                                                            Edit
-                                                        </button>
-                                                        <button
-                                                            onClick={() => entry.type === 'charge' ? handleDeleteCharge(entry.id) : handleDeletePayment(entry.id)}
-                                                            className="text-[10px] text-destructive hover:underline flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        >
-                                                            <Trash2 className="h-2.5 w-2.5" />
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col gap-1">
-                                                <span className="font-semibold">{entry.description}</span>
-                                                <div className="flex">
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={cn(
-                                                            "text-[10px] uppercase font-bold px-1.5 py-0",
-                                                            entry.type === 'charge'
-                                                                ? "text-orange-600 bg-orange-50 border-orange-200"
-                                                                : "text-emerald-600 bg-emerald-50 border-emerald-200"
-                                                        )}
-                                                    >
-                                                        {entry.type}
-                                                    </Badge>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className={cn(
-                                            "text-right font-bold",
-                                            entry.type === 'payment' ? "text-emerald-500" : "text-foreground"
-                                        )}>
-                                            {entry.type === 'payment' ? '-' : ''}{formatCurrency(entry.amount)}
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono font-bold text-base">
-                                            {formatCurrency(entry.balance_after)}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {(!ledger?.history || ledger.history.length === 0) && (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-12 text-muted-foreground italic">
-                                            No financial activity recorded for this profile.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </Card>
+                    <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleDeleteClient}
+                        className="text-destructive border-destructive/20 hover:bg-destructive/5 h-9"
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                    </Button>
                 </div>
+            </div>
 
-                {/* Visits History */}
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 font-bold text-xl">
-                            <ClipboardList className="h-5 w-5 text-primary" />
-                            Consultation Visits
+            <div className="flex flex-col lg:grid lg:grid-cols-[350px_1fr] gap-10 items-start">
+                {/* Left Sidebar: Profile & KPIs */}
+                <aside className="space-y-8 lg:sticky lg:top-24 w-full">
+                    <div className="flex flex-col items-center text-center space-y-6">
+                        {/* Avatar */}
+                        <div className="relative group">
+                            <div className="h-32 w-32 rounded-full bg-primary/10 flex items-center justify-center border-4 border-background shadow-2xl relative z-10 overflow-hidden transition-transform duration-500 group-hover:scale-105">
+                                <span className="text-4xl font-bold text-primary">
+                                    {client.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                                </span>
+                            </div>
+                            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full -z-10 opacity-50 group-hover:opacity-80 transition-opacity" />
                         </div>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setShowAddVisit(true)}
-                            className="bg-primary/5 text-primary hover:bg-primary/10 transition-all font-medium border border-primary/10"
+
+                        {/* Name & Status */}
+                        <div className="space-y-3">
+                            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                                {client.full_name}
+                            </h1>
+                            <div className="flex items-center justify-center flex-wrap gap-2">
+                                <StatusBadge client={client} onUpdate={loadData} />
+                                <span className="text-xs text-muted-foreground flex items-center gap-1 bg-secondary/50 px-3 py-1 rounded-full">
+                                    <MapPin className="h-3 w-3" />
+                                    {client.location_type || "Goa"}
+                                </span>
+                            </div>
+                        </div>
+
+                        <Separator className="bg-border/60" />
+
+                        {/* Contact Info */}
+                        <div className="w-full space-y-4">
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/50 group hover:border-primary/30 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                        <Phone className="h-5 w-5" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Phone</p>
+                                        <p className="text-sm font-semibold">{client.phone || "Not linked"}</p>
+                                    </div>
+                                </div>
+                                <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 h-8 w-8">
+                                    <Edit3 className="h-4 w-4" />
+                                </Button>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/50 group hover:border-primary/30 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                        <Mail className="h-5 w-5" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Email</p>
+                                        <p className="text-sm font-semibold truncate max-w-[150px]">{client.email || "Not linked"}</p>
+                                    </div>
+                                </div>
+                                <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 h-8 w-8">
+                                    <Edit3 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        <Button 
+                            variant="outline" 
+                            className="w-full border-primary/20 text-primary hover:bg-primary/5 hover:border-primary font-bold py-6 rounded-xl transition-all"
+                            onClick={startEditClient}
                         >
-                            <Calendar className="mr-2 h-4 w-4" />
-                            Record Visit
+                            Edit Profile
                         </Button>
                     </div>
 
-                    <ScrollArea className="h-[500px] pr-4">
-                        <div className="space-y-4">
+                    {/* KPIs Section */}
+                    <div className="space-y-6 pt-6">
+                        <div className="grid gap-4">
+                            <div className="p-5 rounded-2xl bg-white shadow-sm border border-border/50 space-y-1">
+                                <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Consulting Fee</p>
+                                <p className="text-3xl font-black">{formatCurrency(client.total_fees_fixed)}</p>
+                            </div>
+                            <div className={cn(
+                                "p-5 rounded-2xl shadow-sm border space-y-1 transition-all",
+                                (ledger?.current_balance > 0) 
+                                    ? "bg-red-50 border-red-100 text-red-900" 
+                                    : "bg-emerald-50 border-emerald-100 text-emerald-900"
+                            )}>
+                                <p className="text-[10px] uppercase font-bold tracking-widest opacity-70">Outstanding Balance</p>
+                                <p className="text-3xl font-black">
+                                    {formatCurrency(ledger?.current_balance || 0)}
+                                </p>
+                            </div>
+                            <div className="p-5 rounded-2xl bg-white shadow-sm border border-border/50 space-y-1">
+                                <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Total Visits</p>
+                                <p className="text-3xl font-black">{visits.length}</p>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                {/* Right Column: Ledger & Visits */}
+                <main className="space-y-12">
+                    {/* Financial Ledger Section */}
+                    <section className="space-y-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 uppercase">
+                                <Receipt className="h-6 w-6 text-primary" />
+                                Financial Ledger
+                            </h2>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleDownloadBill}
+                                    className="h-9 px-4 rounded-full text-xs font-bold border-border/60 hover:bg-secondary"
+                                >
+                                    <FileDown className="mr-2 h-4 w-4" />
+                                    Download
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowAddCharge(true)}
+                                    className="h-9 px-4 rounded-full text-xs font-bold border-orange-200 text-orange-700 hover:bg-orange-50"
+                                >
+                                    + Charge
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowAddDiscount(true)}
+                                    className="h-9 px-3 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold border-purple-200 text-purple-700 hover:bg-purple-50"
+                                >
+                                    - Discount
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setShowPhase2Calculator(true)}
+                                    className="h-9 px-3 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-none"
+                                >
+                                    Phase 2
+                                </Button>
+                                <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => setShowAddPayment(true)}
+                                    className="h-9 px-4 sm:px-5 rounded-full text-[10px] sm:text-xs font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                                >
+                                    + Payment
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-3xl shadow-sm border border-border/50 overflow-hidden">
+                            <div className="overflow-x-auto scrollbar-hide">
+                                <Table className="min-w-[600px] sm:min-w-full">
+                                    <TableHeader>
+                                        <TableRow className="hover:bg-transparent border-b bg-secondary/30">
+                                            <TableHead className="font-bold text-foreground h-14 pl-6">Date</TableHead>
+                                            <TableHead className="font-bold text-foreground h-14">Transaction Details</TableHead>
+                                            <TableHead className="font-bold text-foreground h-14">Type</TableHead>
+                                            <TableHead className="font-bold text-foreground h-14 text-right">Amount</TableHead>
+                                            <TableHead className="font-bold text-foreground h-14 text-right pr-6">Balance</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                <TableBody>
+                                    {ledger?.history.map((entry: any, i: number) => (
+                                        <TableRow key={entry.id + i} className="group hover:bg-secondary/20 transition-colors border-b last:border-0 h-16">
+                                            <TableCell className="pl-6">
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-sm">
+                                                        {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                    </span>
+                                                    {!entry.visit_id && (
+                                                        <div className="flex items-center gap-3 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button 
+                                                                onClick={() => entry.type === 'charge' ? startEditCharge(entry) : startEditPayment(entry)}
+                                                                className="text-[10px] font-bold text-primary hover:underline uppercase"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                            {entry.id !== 'initial-fee' && (
+                                                                <button 
+                                                                    onClick={() => entry.type === 'charge' ? handleDeleteCharge(entry.id) : handleDeletePayment(entry.id)}
+                                                                    className="text-[10px] font-bold text-destructive hover:underline uppercase"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="font-bold text-foreground">{entry.description}</TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <div className={cn(
+                                                        "h-2 w-2 rounded-full",
+                                                        entry.type === 'charge' && entry.amount < 0 ? "bg-purple-500" :
+                                                        entry.type === 'charge' ? "bg-orange-500" : "bg-emerald-500"
+                                                    )} />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">
+                                                        {entry.type === 'charge' && entry.amount < 0 ? 'discount' : entry.type}
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className={cn(
+                                                "text-right font-black",
+                                                entry.type === 'payment' ? "text-emerald-600" : entry.amount < 0 ? "text-purple-600" : "text-foreground"
+                                            )}>
+                                                {entry.type === 'payment' ? '-' : ''}{formatCurrency(entry.amount)}
+                                            </TableCell>
+                                            <TableCell className="text-right pr-6 font-mono font-bold text-sm text-muted-foreground">
+                                                {formatCurrency(entry.balance_after)}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {(!ledger?.history || ledger.history.length === 0) && (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">
+                                                No financial activity recorded for this profile.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Consultation Visits Section */}
+                    <section className="space-y-8">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 uppercase">
+                                <ClipboardList className="h-6 w-6 text-primary" />
+                                Consultation History
+                            </h2>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowAddVisit(true)}
+                                className="h-10 px-5 rounded-full text-xs font-bold border-primary/20 text-primary hover:bg-primary/5 shadow-sm"
+                            >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Record Visit
+                            </Button>
+                        </div>
+
+                        <div className="relative pl-8 space-y-10 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-border/60">
                             {visits.map((v, i) => (
                                 <motion.div
                                     key={v.id}
-                                    initial={{ opacity: 0, x: 20 }}
+                                    initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: i * 0.1 }}
+                                    className="relative"
                                 >
-                                    <Card className="group border-border/50 hover:border-primary/30 transition-colors bg-card/50 backdrop-blur-sm relative">
-                                        <CardHeader className="p-4 pb-2">
-                                            <div className="flex justify-between items-start">
-                                                <Badge variant="outline" className="text-xs font-medium">
-                                                    {new Date(v.date).toLocaleDateString()}
-                                                </Badge>
-                                                <div className="flex items-center gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                                                        onClick={() => handleDeleteVisit(v.id)}
-                                                    >
-                                                        <Trash2 className="h-3.5 w-3.5" />
+                                    {/* Timeline Dot */}
+                                    <div className="absolute -left-[35px] top-1.5 h-6 w-6 rounded-full bg-background border-2 border-primary flex items-center justify-center z-10 shadow-sm">
+                                        <div className="h-2 w-2 rounded-full bg-primary" />
+                                    </div>
+
+                                    <div className="grid sm:grid-cols-[140px_1fr] gap-4 items-start">
+                                        <div className="pt-1.5">
+                                            <span className="text-xs font-black uppercase tracking-widest text-primary/70">
+                                                {new Date(v.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                                            </span>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-border/50 group hover:border-primary/30 hover:shadow-md transition-all relative">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <h3 className="text-lg font-bold text-foreground leading-tight">
+                                                    {v.purpose}
+                                                </h3>
+                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => startEditVisit(v)}>
+                                                        <Edit3 className="h-4 w-4" />
                                                     </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        onClick={() => startEditVisit(v)}
-                                                    >
-                                                        <Edit3 className="h-3.5 w-3.5" />
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteVisit(v.id)}>
+                                                        <Trash2 className="h-4 w-4" />
                                                     </Button>
-                                                    {v.purpose.toLowerCase().includes('vastu') && (
-                                                        <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                                                    )}
                                                 </div>
                                             </div>
-                                            <CardTitle className="text-base mt-2">{v.purpose}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="p-4 pt-0">
-                                            <p className="text-sm text-muted-foreground leading-relaxed italic">
-                                                "{v.observations || "No specific observations recorded."}"
-                                            </p>
-                                        </CardContent>
-                                    </Card>
+                                            <div className="relative">
+                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/10 rounded-full" />
+                                                <p className="text-sm text-muted-foreground leading-relaxed pl-4 italic">
+                                                    "{v.observations || "No specific observations recorded."}"
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </motion.div>
                             ))}
+
                             {visits.length === 0 && (
-                                <div className="text-center py-12 bg-muted/10 rounded-xl border border-dashed">
-                                    <p className="text-muted-foreground italic text-sm">No documented visits.</p>
+                                <div className="text-center py-16 bg-white/50 rounded-3xl border border-dashed border-border flex flex-col items-center gap-3">
+                                    <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center">
+                                        <Calendar className="h-6 w-6 text-muted-foreground" />
+                                    </div>
+                                    <p className="text-muted-foreground font-medium italic">No documented consultation visits yet.</p>
+                                    <Button variant="ghost" className="text-primary font-bold text-xs" onClick={() => setShowAddVisit(true)}>
+                                        + Record Your First Visit
+                                    </Button>
                                 </div>
                             )}
                         </div>
-                    </ScrollArea>
-                </div>
+                    </section>
+                </main>
             </div>
 
             {/* MODALS */}
@@ -639,33 +862,33 @@ function ClientDetailContent() {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="w-full max-w-md"
                         >
-                            <Card className="shadow-2xl border-primary/20">
-                                <CardHeader className="bg-primary/5">
+                            <Card className="shadow-2xl border-primary/20 overflow-hidden rounded-3xl">
+                                <CardHeader className="bg-primary/5 pb-6">
                                     <CardTitle>Edit Client Profile</CardTitle>
                                     <CardDescription>Update consultant contact details or preferences.</CardDescription>
                                 </CardHeader>
                                 <form onSubmit={handleEditClient}>
-                                    <CardContent className="space-y-4 pt-4">
+                                    <CardContent className="space-y-4 pt-6">
                                         <div className="space-y-2">
-                                            <Label htmlFor="c-name">Full Name</Label>
-                                            <Input id="c-name" required value={clientForm.full_name} onChange={e => setClientForm({ ...clientForm, full_name: e.target.value })} />
+                                            <Label htmlFor="c-name" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Full Name</Label>
+                                            <Input id="c-name" className="rounded-xl bg-secondary/30 border-none h-11" required value={clientForm.full_name} onChange={e => setClientForm({ ...clientForm, full_name: e.target.value })} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="c-phone">Phone</Label>
-                                            <Input id="c-phone" value={clientForm.phone} onChange={e => setClientForm({ ...clientForm, phone: e.target.value })} />
+                                            <Label htmlFor="c-phone" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Phone</Label>
+                                            <Input id="c-phone" className="rounded-xl bg-secondary/30 border-none h-11" value={clientForm.phone} onChange={e => setClientForm({ ...clientForm, phone: e.target.value })} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="c-email">Email</Label>
-                                            <Input id="c-email" type="email" value={clientForm.email} onChange={e => setClientForm({ ...clientForm, email: e.target.value })} />
+                                            <Label htmlFor="c-email" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Email</Label>
+                                            <Input id="c-email" type="email" className="rounded-xl bg-secondary/30 border-none h-11" value={clientForm.email} onChange={e => setClientForm({ ...clientForm, email: e.target.value })} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="c-address">Project Address</Label>
-                                            <Input id="c-address" value={clientForm.project_address} onChange={e => setClientForm({ ...clientForm, project_address: e.target.value })} />
+                                            <Label htmlFor="c-address" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Project Address</Label>
+                                            <Input id="c-address" className="rounded-xl bg-secondary/30 border-none h-11" value={clientForm.project_address} onChange={e => setClientForm({ ...clientForm, project_address: e.target.value })} />
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label htmlFor="c-loc">Location</Label>
-                                                <select id="c-loc" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={clientForm.location_type} onChange={e => setClientForm({ ...clientForm, location_type: e.target.value })}>
+                                                <Label htmlFor="c-loc" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Location</Label>
+                                                <select id="c-loc" className="flex h-11 w-full rounded-xl border-none bg-secondary/30 px-3 py-2 text-sm" value={clientForm.location_type} onChange={e => setClientForm({ ...clientForm, location_type: e.target.value })}>
                                                     <option>Goa</option>
                                                     <option>Karnataka</option>
                                                     <option>Maharashtra</option>
@@ -673,8 +896,8 @@ function ClientDetailContent() {
                                                 </select>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="c-status">Status</Label>
-                                                <select id="c-status" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={clientForm.lead_status} onChange={e => setClientForm({ ...clientForm, lead_status: e.target.value })}>
+                                                <Label htmlFor="c-status" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Status</Label>
+                                                <select id="c-status" className="flex h-11 w-full rounded-xl border-none bg-secondary/30 px-3 py-2 text-sm" value={clientForm.lead_status} onChange={e => setClientForm({ ...clientForm, lead_status: e.target.value })}>
                                                     <option>Inquiry</option>
                                                     <option>Active</option>
                                                     <option>Completed</option>
@@ -683,9 +906,9 @@ function ClientDetailContent() {
                                             </div>
                                         </div>
                                     </CardContent>
-                                    <CardFooter className="flex gap-3 pt-4 border-t">
-                                        <Button type="button" variant="outline" className="flex-1" onClick={() => setShowEditClient(false)}>Cancel</Button>
-                                        <Button type="submit" className="flex-1">Update Profile</Button>
+                                    <CardFooter className="flex gap-3 pt-6 pb-8 px-6 border-t">
+                                        <Button type="button" variant="ghost" className="flex-1 rounded-xl h-12 font-bold" onClick={() => setShowEditClient(false)}>Cancel</Button>
+                                        <Button type="submit" className="flex-1 rounded-xl h-12 font-bold bg-foreground text-background">Update Profile</Button>
                                     </CardFooter>
                                 </form>
                             </Card>
@@ -701,24 +924,23 @@ function ClientDetailContent() {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="w-full max-w-md"
                         >
-                            <Card className="shadow-2xl border-orange-500/20">
-                                <CardHeader className="bg-orange-500/5">
+                            <Card className="shadow-2xl border-orange-500/20 overflow-hidden rounded-3xl">
+                                <CardHeader className="bg-orange-500/5 pb-6">
                                     <CardTitle>{editingCharge ? 'Edit' : 'Add'} Extra Service Charge</CardTitle>
                                     <CardDescription>
                                         {editingCharge ? 'Modify existing ledger entry details.' : 'Include professional remedies or travel expenses.'}
                                     </CardDescription>
                                 </CardHeader>
                                 <form onSubmit={handleAddCharge}>
-                                    <CardContent className="space-y-4 pt-4">
-
+                                    <CardContent className="space-y-4 pt-6">
                                         {!editingCharge && (
                                             <div className="space-y-2">
-                                                <Label htmlFor="addon_type">Select Charge Type</Label>
+                                                <Label htmlFor="addon_type" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Select Charge Type</Label>
                                                 <Select
                                                     value={chargeForm.addon_type}
                                                     onValueChange={(value) => onAddonSelect(value)}
                                                 >
-                                                    <SelectTrigger className="w-full bg-background border-muted-foreground/20 focus:ring-orange-500/20 rounded-xl h-11 overflow-hidden">
+                                                    <SelectTrigger className="w-full bg-secondary/30 border-none focus:ring-orange-500/20 rounded-xl h-11 overflow-hidden">
                                                         <AnimatePresence mode="wait">
                                                             <motion.div
                                                                 key={chargeForm.addon_type}
@@ -734,7 +956,7 @@ function ClientDetailContent() {
                                                     </SelectTrigger>
                                                     <SelectContent className="rounded-xl border-orange-500/10 shadow-2xl">
                                                         <SelectGroup>
-                                                            <SelectItem value="custom" className="font-semibold text-orange-600 focus:text-orange-700 focus:bg-orange-50">
+                                                            <SelectItem value="custom" className="font-semibold text-orange-600 focus:text-orange-700 focus:bg-orange-50 cursor-pointer">
                                                                 ✨ Custom Manual Entry
                                                             </SelectItem>
                                                             {availableAddons.length > 0 && (
@@ -744,7 +966,7 @@ function ClientDetailContent() {
                                                                         {client.service_id ? "Recommended for Project" : "Standard Catalog Addons"}
                                                                     </SelectLabel>
                                                                     {availableAddons.map(addon => (
-                                                                        <SelectItem key={addon.id} value={addon.id} className="py-2.5">
+                                                                        <SelectItem key={addon.id} value={addon.id} className="py-2.5 cursor-pointer">
                                                                             <div className="flex items-center justify-between w-full gap-3">
                                                                                 <span className="font-medium truncate">{addon.name}</span>
                                                                                 <span className="text-xs text-orange-600 font-mono font-bold bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100 flex-shrink-0">
@@ -758,16 +980,14 @@ function ClientDetailContent() {
                                                         </SelectGroup>
                                                     </SelectContent>
                                                 </Select>
-                                                <p className="text-[10px] text-muted-foreground italic mt-1 px-1">
-                                                    Professional consulting rates pre-configured in your service catalog.
-                                                </p>
                                             </div>
                                         )}
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="description">Service Description</Label>
+                                            <Label htmlFor="description" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Service Description</Label>
                                             <Input
                                                 id="description"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
                                                 placeholder="e.g. Vastu Remedy Installation"
                                                 value={chargeForm.description}
                                                 onChange={e => setChargeForm({ ...chargeForm, description: e.target.value })}
@@ -776,13 +996,13 @@ function ClientDetailContent() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="amount">Amount (₹)</Label>
+                                            <Label htmlFor="amount" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Amount (₹)</Label>
                                             <div className="relative">
                                                 <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                                 <Input
                                                     id="amount"
                                                     type="number"
-                                                    className="pl-9 font-mono"
+                                                    className="pl-9 rounded-xl bg-secondary/30 border-none h-11 font-black"
                                                     value={chargeForm.amount}
                                                     onChange={e => setChargeForm({ ...chargeForm, amount: parseFloat(e.target.value) })}
                                                     disabled={chargeForm.addon_type !== 'custom'}
@@ -790,11 +1010,89 @@ function ClientDetailContent() {
                                                 />
                                             </div>
                                         </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="charge-date" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Charge Date</Label>
+                                            <Input
+                                                id="charge-date"
+                                                type="date"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
+                                                value={chargeForm.date}
+                                                onChange={e => setChargeForm({ ...chargeForm, date: e.target.value })}
+                                            />
+                                        </div>
                                     </CardContent>
-                                    <CardFooter className="flex gap-3 pt-4 border-t">
-                                        <Button type="button" variant="outline" className="flex-1" onClick={() => { setShowAddCharge(false); setEditingCharge(null); }}>Cancel</Button>
-                                        <Button type="submit" className="flex-1 bg-orange-600 hover:bg-orange-700">
+                                    <CardFooter className="flex gap-3 pt-6 pb-8 px-6 border-t">
+                                        <Button type="button" variant="ghost" className="flex-1 rounded-xl h-12 font-bold" onClick={() => { setShowAddCharge(false); setEditingCharge(null); }}>Cancel</Button>
+                                        <Button type="submit" className="flex-1 rounded-xl h-12 font-bold bg-orange-600 hover:bg-orange-700 text-white">
                                             {editingCharge ? 'Update Entry' : 'Add Charge'}
+                                        </Button>
+                                    </CardFooter>
+                                </form>
+                            </Card>
+                        </motion.div>
+                    </div>
+                )}
+
+                {showAddDiscount && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="w-full max-w-md"
+                        >
+                            <Card className="shadow-2xl border-purple-500/20 overflow-hidden rounded-3xl">
+                                <CardHeader className="bg-purple-500/5 pb-6">
+                                    <CardTitle>Apply Account Discount</CardTitle>
+                                    <CardDescription>
+                                        Discounts reflect as negative adjustments to the client's overall bill.
+                                    </CardDescription>
+                                </CardHeader>
+                                <form onSubmit={handleAddDiscount}>
+                                    <CardContent className="space-y-4 pt-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="disc-description" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Discount Label</Label>
+                                            <Input
+                                                id="disc-description"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
+                                                placeholder="e.g. Special Discount, Courtesy Adjustment"
+                                                value={discountForm.description}
+                                                onChange={e => setDiscountForm({ ...discountForm, description: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="disc-amount" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Discount Amount (₹)</Label>
+                                            <div className="relative">
+                                                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    id="disc-amount"
+                                                    type="number"
+                                                    min="0.01"
+                                                    step="0.01"
+                                                    className="pl-9 rounded-xl bg-secondary/30 border-none h-11 font-black text-purple-700"
+                                                    value={discountForm.amount}
+                                                    onChange={e => setDiscountForm({ ...discountForm, amount: parseFloat(e.target.value) })}
+                                                    required
+                                                />
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground italic px-1 pt-1">-₹{(discountForm.amount || 0).toLocaleString()} deduction from bill.</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="disc-date" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Date Applied</Label>
+                                            <Input
+                                                id="disc-date"
+                                                type="date"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
+                                                value={discountForm.date}
+                                                onChange={e => setDiscountForm({ ...discountForm, date: e.target.value })}
+                                            />
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="flex gap-3 pt-6 pb-8 px-6 border-t">
+                                        <Button type="button" variant="ghost" className="flex-1 rounded-xl h-12 font-bold" onClick={() => setShowAddDiscount(false)}>Cancel</Button>
+                                        <Button type="submit" className="flex-1 rounded-xl h-12 font-bold bg-purple-600 hover:bg-purple-700 text-white">
+                                            Apply Discount
                                         </Button>
                                     </CardFooter>
                                 </form>
@@ -811,23 +1109,34 @@ function ClientDetailContent() {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="w-full max-w-md"
                         >
-                            <Card className="shadow-2xl border-emerald-500/20">
-                                <CardHeader className="bg-emerald-500/5">
+                            <Card className="shadow-2xl border-emerald-500/20 overflow-hidden rounded-3xl">
+                                <CardHeader className="bg-emerald-500/5 pb-6">
                                     <CardTitle>{editingPayment ? 'Edit' : 'Record'} New Payment</CardTitle>
                                     <CardDescription>
                                         {editingPayment ? 'Modify payment record details.' : 'Update the outstanding balance for this consultant.'}
                                     </CardDescription>
                                 </CardHeader>
                                 <form onSubmit={handleAddPayment}>
-                                    <CardContent className="space-y-4 pt-4">
+                                    <CardContent className="space-y-4 pt-6">
                                         <div className="space-y-2">
-                                            <Label htmlFor="pay-amount">Amount (₹)</Label>
+                                            <div className="flex items-center justify-between">
+                                                <Label htmlFor="pay-amount" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Amount (₹)</Label>
+                                                {(ledger?.current_balance || 0) > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setPaymentForm(prev => ({ ...prev, amount: ledger.current_balance }))}
+                                                        className="text-[10px] bg-emerald-100 text-emerald-800 hover:bg-emerald-200 font-black px-2 py-1 rounded-md transition-all uppercase tracking-tighter"
+                                                    >
+                                                        Pay Full (₹{ledger.current_balance.toLocaleString()})
+                                                    </button>
+                                                )}
+                                            </div>
                                             <div className="relative">
                                                 <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                                 <Input
                                                     id="pay-amount"
                                                     type="number"
-                                                    className="pl-9 font-mono"
+                                                    className="pl-9 rounded-xl bg-secondary/30 border-none h-11 font-black text-emerald-700"
                                                     value={paymentForm.amount}
                                                     onChange={e => setPaymentForm({ ...paymentForm, amount: parseFloat(e.target.value) })}
                                                     required
@@ -835,10 +1144,20 @@ function ClientDetailContent() {
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="method">Payment Method</Label>
+                                            <Label htmlFor="pay-date" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Payment Date</Label>
+                                            <Input
+                                                id="pay-date"
+                                                type="date"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
+                                                value={paymentForm.date}
+                                                onChange={e => setPaymentForm({ ...paymentForm, date: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="method" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Payment Method</Label>
                                             <select
                                                 id="method"
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                className="flex h-11 w-full rounded-xl border-none bg-secondary/30 px-3 py-2 text-sm"
                                                 value={paymentForm.method}
                                                 onChange={e => setPaymentForm({ ...paymentForm, method: e.target.value })}
                                             >
@@ -849,18 +1168,19 @@ function ClientDetailContent() {
                                             </select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="notes">Reference Notes</Label>
+                                            <Label htmlFor="notes" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Reference Notes</Label>
                                             <Input
                                                 id="notes"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
                                                 placeholder="Transaction ID or remarks..."
                                                 value={paymentForm.notes}
                                                 onChange={e => setPaymentForm({ ...paymentForm, notes: e.target.value })}
                                             />
                                         </div>
                                     </CardContent>
-                                    <CardFooter className="flex gap-3 pt-4 border-t">
-                                        <Button type="button" variant="outline" className="flex-1" onClick={() => { setShowAddPayment(false); setEditingPayment(null); }}>Cancel</Button>
-                                        <Button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white">
+                                    <CardFooter className="flex gap-3 pt-6 pb-8 px-6 border-t">
+                                        <Button type="button" variant="ghost" className="flex-1 rounded-xl h-12 font-bold" onClick={() => { setShowAddPayment(false); setEditingPayment(null); }}>Cancel</Button>
+                                        <Button type="submit" className="flex-1 rounded-xl h-12 font-bold bg-emerald-600 hover:bg-emerald-700 text-white">
                                             {editingPayment ? 'Update Payment' : 'Save Payment'}
                                         </Button>
                                     </CardFooter>
@@ -878,19 +1198,45 @@ function ClientDetailContent() {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="w-full max-w-md"
                         >
-                            <Card className="shadow-2xl border-primary/20">
-                                <CardHeader className="bg-primary/5">
+                            <Card className="shadow-2xl border-primary/20 overflow-hidden rounded-3xl">
+                                <CardHeader className="bg-primary/5 pb-6">
                                     <CardTitle>{editingVisit ? 'Edit' : 'Document'} Consultation Visit</CardTitle>
                                     <CardDescription>
                                         {editingVisit ? 'Modify existing visit documentation.' : 'Record your findings and service purpose.'}
                                     </CardDescription>
                                 </CardHeader>
                                 <form onSubmit={handleAddVisit}>
-                                    <CardContent className="space-y-4 pt-4">
+                                    <CardContent className="space-y-4 pt-6">
                                         <div className="space-y-2">
-                                            <Label htmlFor="purpose">Purpose of Visit</Label>
+                                            <Label htmlFor="visit-date" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Visit Date</Label>
+                                            <Input
+                                                id="visit-date"
+                                                type="date"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
+                                                value={visitForm.date}
+                                                onChange={e => setVisitForm({ ...visitForm, date: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="visit-amount" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Visit Charge Amount (Optional)</Label>
+                                            <div className="relative">
+                                                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    id="visit-amount"
+                                                    type="number"
+                                                    className="pl-9 rounded-xl bg-secondary/30 border-none h-11 font-black"
+                                                    placeholder="Leave blank for no charge"
+                                                    value={visitForm.amount}
+                                                    onChange={e => setVisitForm({ ...visitForm, amount: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="purpose" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Purpose of Visit</Label>
                                             <Input
                                                 id="purpose"
+                                                className="rounded-xl bg-secondary/30 border-none h-11"
                                                 placeholder="e.g. Site Inspection, Remedy Verify"
                                                 value={visitForm.purpose}
                                                 onChange={e => setVisitForm({ ...visitForm, purpose: e.target.value })}
@@ -898,19 +1244,30 @@ function ClientDetailContent() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="observations">Clinical Observations</Label>
+                                            <Label htmlFor="observations" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Clinical Observations</Label>
                                             <textarea
                                                 id="observations"
-                                                className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                className="flex min-h-[140px] w-full rounded-xl border-none bg-secondary/30 px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                                                 placeholder="Detail your professional findings here..."
                                                 value={visitForm.observations}
                                                 onChange={e => setVisitForm({ ...visitForm, observations: e.target.value })}
                                             />
                                         </div>
                                     </CardContent>
-                                    <CardFooter className="flex gap-3 pt-4 border-t">
-                                        <Button type="button" variant="outline" className="flex-1" onClick={() => { setShowAddVisit(false); setEditingVisit(null); }}>Cancel</Button>
-                                        <Button type="submit" className="flex-1">
+                                    <CardFooter className="flex gap-3 pt-6 pb-8 px-6 border-t">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            className="flex-1 rounded-xl h-12 font-bold"
+                                            onClick={() => {
+                                                setShowAddVisit(false);
+                                                setEditingVisit(null);
+                                                setVisitForm({ date: '', purpose: '', observations: '', amount: '' });
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button type="submit" className="flex-1 rounded-xl h-12 font-bold bg-foreground text-background">
                                             {editingVisit ? 'Update Findings' : 'Save Findings'}
                                         </Button>
                                     </CardFooter>
@@ -919,14 +1276,69 @@ function ClientDetailContent() {
                         </motion.div>
                     </div>
                 )}
+                
+                {showPhase2Calculator && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm overflow-y-auto">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="w-full max-w-2xl my-8"
+                        >
+                            <Card className="shadow-2xl border-indigo-500/20 relative overflow-hidden rounded-3xl">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="absolute right-4 top-4 text-muted-foreground hover:bg-muted rounded-full z-20"
+                                    onClick={() => setShowPhase2Calculator(false)}
+                                >
+                                    ✕
+                                </Button>
+                                <CardHeader className="bg-indigo-500/5 pb-8 relative">
+                                    <CardTitle className="text-2xl">Phase 2 Execution</CardTitle>
+                                    <CardDescription className="max-w-[80%]">
+                                        Configure detailed structural fixes, remedies, or interior element packages.
+                                    </CardDescription>
+                                    <div className="absolute top-0 right-0 h-32 w-32 bg-indigo-500/10 blur-3xl -z-10 rounded-full" />
+                                </CardHeader>
+                                <CardContent className="pt-8 px-8">
+                                    <ServiceCalculator 
+                                        onCalculated={async (fee, serviceId) => {
+                                            try {
+                                                const payload = {
+                                                    description: "Phase 2 Vastu Execution & Remedies",
+                                                    amount: fee,
+                                                    client_id: id as string
+                                                };
+                                                await ledgerApi.addService(payload);
+                                                toast.success('Phase 2 Service added to ledger');
+                                                setShowPhase2Calculator(false);
+                                                loadData();
+                                            } catch(err: any) {
+                                                toast.error(err.message || 'Failed to add Phase 2 charge');
+                                            }
+                                        }} 
+                                    />
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    </div>
+                )}
             </AnimatePresence>
         </div>
-    )
+    );
 }
 
 export default function ClientDetailPage() {
     return (
-        <Suspense fallback={<div style={{ padding: '2rem' }}>Loading consultant module...</div>}>
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                    <p className="text-muted-foreground font-bold tracking-widest uppercase text-[10px]">Loading Consultant Records</p>
+                </div>
+            </div>
+        }>
             <ClientDetailContent />
         </Suspense>
     );

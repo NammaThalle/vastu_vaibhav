@@ -23,7 +23,6 @@ import { Separator } from "@/components/ui/separator"
 import { clientsApi } from "@/services/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { ServiceCalculator } from "@/components/ServiceCalculator"
 
 export default function NewClientPage() {
     const router = useRouter()
@@ -218,10 +217,37 @@ export default function NewClientPage() {
                                 </div>
 
                                 <Separator className="my-2" />
-                                <ServiceCalculator
-                                    onCalculated={(val, serviceId) => setFormData({ ...formData, total_fees_fixed: val, service_id: serviceId || "" })}
-                                    initialFee={formData.total_fees_fixed}
-                                />
+                                <div className="space-y-3 bg-muted/40 p-4 rounded-xl border border-dashed text-sm">
+                                    <div className="font-semibold text-primary mb-2 flex items-center gap-2">
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        Phase 1: Initial Property Audit
+                                    </div>
+                                    <div className="space-y-4">
+                                        <Label>Select Property Type to assign Phase 1 Base Fee</Label>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            {[
+                                                { label: "Residential", price: 2000 },
+                                                { label: "Commercial", price: 2000 },
+                                                { label: "Plot / Land", price: 2500 }
+                                            ].map((opt) => (
+                                                <button
+                                                    key={opt.label}
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, total_fees_fixed: opt.price })}
+                                                    className={cn(
+                                                        "flex flex-col items-center justify-center p-3 rounded-lg border transition-all",
+                                                        formData.total_fees_fixed === opt.price
+                                                            ? "bg-primary/10 border-primary text-primary"
+                                                            : "bg-background border-border hover:border-primary/50 text-muted-foreground hover:text-foreground"
+                                                    )}
+                                                >
+                                                    <span className="font-medium">{opt.label}</span>
+                                                    <span className="text-xs font-bold mt-1">₹ {opt.price}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </CardContent>
                         <CardFooter className="bg-muted/10 border-t p-6 flex justify-end gap-3">

@@ -28,5 +28,6 @@ class Client(Base):
     # Relationships
     core_service = relationship("ServiceCatalog", foreign_keys=[service_id])
     services = relationship("ClientService", back_populates="client", cascade="all, delete-orphan")
+    service_entries = relationship("ServiceEntry", back_populates="client", cascade="all, delete-orphan")
     visits = relationship("Visit", back_populates="client", cascade="all, delete-orphan")
     payments = relationship("Payment", back_populates="client", cascade="all, delete-orphan")

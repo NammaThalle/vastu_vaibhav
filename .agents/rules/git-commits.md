@@ -6,6 +6,8 @@ trigger: always_on
 
 This repository follows a strict internal strategy for all git commits. **AI agents must always read and enforce this behavior without deviation.**
 
+** IMPORTANT: Do not commit changes unless and until specified, or things are tested and approved by user **
+
 ## 1. Commit Realignment & Simulation
 - **Never take the current system time**. The time frame for all git commits must strictly fall between **5:30 AM to 11:30 AM IST**.
 - **Daily Pace**: Every day must have between **3 to 6 commits** (randomly distributed within the time window).
