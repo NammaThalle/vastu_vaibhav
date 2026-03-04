@@ -8,8 +8,10 @@ class ClientBase(BaseModel):
     full_name: str
     phone: Optional[str] = None
     email: Optional[str] = None
+    personal_address: Optional[str] = None
     project_address: Optional[str] = None
-    location_type: str = "Goa"
+    built_up_area: Optional[float] = None
+    location_type: Optional[str] = "Goa"
     lead_status: str = "Inquiry"
     total_fees_fixed: float = 0.0
     service_id: Optional[str] = None
