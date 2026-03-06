@@ -270,40 +270,63 @@ async def get_client_ledger(
         current_balance=current_running_balance
     )
 
-@router.get("/client/{client_id}/bill")
-async def download_client_bill(
+@router.get("/client/{client_id}/invoice-data")
+async def get_client_invoice_data(
     client_id: str,
     db: AsyncSession = Depends(deps.get_db),
 ) -> Any:
-    """
-    Generate and download a PDF bill for the client.
-    """
-    from fastapi.responses import StreamingResponse
-    from app.utils.pdf import render_to_pdf
-    from datetime import datetime
-
-    # 1. Get Ledger Data (Reuse logic)
     ledger_data = await get_client_ledger(client_id, db)
-    
-    # 2. Get Client Data
     result = await db.execute(select(ClientModel).where(ClientModel.id == client_id))
     client = result.scalars().first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    return build_invoice_payload(client, ledger_data)
 
-    # 3. Prepare Context
-    context = {
-        "client": client,
-        "ledger": ledger_data,
-        "history": ledger_data.history,
-        "date_generated": datetime.now().strftime("%d/%m/%Y"),
-    }
+@router.get("/client/{client_id}/bill")
+async def download_client_bill(
+    client_id: str,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(deps.get_db),
+) -> Any:
+    """
+    Generate and download a PDF bill for the client using the React invoice page and Puppeteer.
+    """
+    from fastapi.responses import FileResponse
 
-    # 4. Render PDF
-    pdf_file = render_to_pdf("bill.html", context)
-    
-    filename = f"Bill_{client.full_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.pdf"
-    
-    return StreamingResponse(
-        pdf_file,
+    result = await db.execute(select(ClientModel).where(ClientModel.id == client_id))
+    client = result.scalars().first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    ledger_data = await get_client_ledger(client_id, db)
+    invoice_payload = build_invoice_payload(client, ledger_data)
+    frontend_base_url = settings.FRONTEND_URL.rstrip("/")
+    encoded_invoice = quote(json.dumps(invoice_payload, separators=(",", ":")))
+    invoice_url = f"{frontend_base_url}/invoice/?data={encoded_invoice}"
+    script_path = Path(__file__).resolve().parents[4] / "scripts" / "render_invoice_pdf.mjs"
+
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        pdf_path = Path(tmp.name)
+
+    try:
+        subprocess.run(
+            ["node", str(script_path), invoice_url, str(pdf_path)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        pdf_path.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Invoice PDF generation failed: {(exc.stderr or exc.stdout or '').strip()}",
+        ) from exc
+
+    filename = f"Bill_{client.full_name.replace(' ', '_')}_{client_id[:6]}.pdf"
+    background_tasks.add_task(pdf_path.unlink, missing_ok=True)
+    return FileResponse(
+        path=pdf_path,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        filename=filename,
     )
