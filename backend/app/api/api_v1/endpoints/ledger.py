@@ -1,12 +1,18 @@
 
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from pathlib import Path
+import tempfile
+import subprocess
+import json
+from urllib.parse import quote
 from app.api import deps
 from app.models.service import ServiceEntry as ServiceModel
 from app.models.payment import Payment as PaymentModel
 from app.models.client import Client as ClientModel
+from app.core.config import settings
 from app.schemas.ledger import (
     ServiceEntry, ServiceEntryCreate, ServiceEntryUpdate,
     Payment, PaymentCreate, PaymentUpdate,
