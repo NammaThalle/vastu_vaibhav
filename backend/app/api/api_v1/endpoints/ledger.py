@@ -21,6 +21,66 @@ from app.schemas.ledger import (
 
 router = APIRouter()
 
+
+def build_invoice_payload(client: ClientModel, ledger_data: ClientLedger) -> dict[str, Any]:
+    from datetime import datetime, timedelta
+
+    now = datetime.now()
+    charge_items = [
+        {
+            "title": entry.description,
+            "description": entry.date.strftime("%d %b %Y") if entry.date else "",
+            "amount": entry.amount,
+        }
+        for entry in ledger_data.history
+        if entry.type == "charge" and entry.amount
+    ]
+    payment_entries = [entry for entry in ledger_data.history if entry.type == "payment"]
+
+    return {
+        "company": {
+            "name": "VASTU VAIBHAV",
+            "tagline": "Architecture | Interiors | Vastu",
+            "logo": "W",
+            "memberLabel": "BNI MEMBER",
+            "consultantName": "Mr. Ravindra Manerikar",
+            "address": "H.no.228, Gurukrupa, Deulwada, Solmushi, Nr. Gulawani Maharaj Math, Bori, Ponda, Goa",
+        },
+        "meta": {
+            "invoiceNo": f"VV-{now.strftime('%Y%m%d')}-{client.id[:6].upper()}",
+            "date": now.strftime("%d %b %Y"),
+            "dueDate": (now + timedelta(days=15)).strftime("%d %b %Y"),
+        },
+        "customer": {
+            "name": client.full_name,
+            "address": client.personal_address or "",
+            "phone": client.phone or "",
+            "projectAddress": client.project_address or "",
+            "builtUpArea": client.built_up_area,
+        },
+        "items": charge_items,
+        "summary": {
+            "subtotal": ledger_data.total_billed,
+            "taxRate": 0,
+            "taxAmount": 0,
+            "amountPaid": ledger_data.total_paid,
+            "balanceAmount": ledger_data.current_balance,
+        },
+        "payment": {
+            "preferredMode": payment_entries[0].description if payment_entries else "Bank Transfer / UPI",
+            "bankName": "HDFC BANK",
+            "accountNo": "ID030305089",
+            "ifsc": "100000",
+        },
+        "contact": {
+            "email": "vastuvaibhav.byravi@gmail.com",
+            "phone": "+91 94201 97749",
+            "secondaryPhone": "+91 86689 52446",
+            "website": "www.vastuvaibhav.co",
+            "gpayPhone": "+91 94201 97749",
+        },
+    }
+
 @router.post("/services", response_model=ServiceEntry)
 async def create_service_entry(
     *,
