@@ -72,7 +72,6 @@ def build_invoice_payload(client: ClientModel, ledger_data: ClientLedger) -> dic
             "email": "vastuvaibhav.byravi@gmail.com",
             "phone": "+91 94201 97749",
             "secondaryPhone": "+91 86689 52446",
-            "website": "www.vastuvaibhav.co",
             "gpayPhone": "+91 94201 97749",
         },
     }
