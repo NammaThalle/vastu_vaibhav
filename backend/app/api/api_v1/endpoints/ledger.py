@@ -40,11 +40,7 @@ def build_invoice_payload(client: ClientModel, ledger_data: ClientLedger) -> dic
     return {
         "company": {
             "name": "VASTU VAIBHAV",
-            "tagline": "Architecture | Interiors | Vastu",
-            "logo": "W",
             "memberLabel": "BNI MEMBER",
-            "consultantName": "Mr. Ravindra Manerikar",
-            "address": "H.no.228, Gurukrupa, Deulwada, Solmushi, Nr. Gulawani Maharaj Math, Bori, Ponda, Goa",
         },
         "meta": {
             "invoiceNo": f"VV-{now.strftime('%Y%m%d')}-{client.id[:6].upper()}",
