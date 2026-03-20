@@ -42,7 +42,6 @@ type InvoiceData = {
     email: string
     phone: string
     secondaryPhone?: string
-    website: string
     gpayPhone?: string
   }
 }
