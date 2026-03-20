@@ -210,9 +210,6 @@ function InvoicePageContent() {
             </div>
 
             <div className="rounded-[16px] border border-slate-200 bg-slate-50/70 p-3.5">
-              <div className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Project Details
-              </div>
               <div className="mt-2.5 space-y-2">
                 {projectDetails.length > 0 ? (
                   projectDetails.map((detail) => (
