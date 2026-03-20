@@ -6,11 +6,7 @@ import { useSearchParams } from "next/navigation"
 type InvoiceData = {
   company: {
     name: string
-    tagline: string
-    logo: string
     memberLabel: string
-    consultantName: string
-    address: string
   }
   meta: {
     invoiceNo: string
