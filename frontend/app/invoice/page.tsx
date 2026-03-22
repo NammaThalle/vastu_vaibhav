@@ -150,7 +150,7 @@ function InvoicePageContent() {
         </div>
 
         <div className="border-y border-indigo-100 bg-indigo-50/40 px-7 py-2">
-          <div className="flex flex-wrap items-center gap-2.5 text-[12px] font-medium text-slate-700">
+          <div className="flex flex-wrap items-center justify-center gap-2.5 text-[12px] font-medium text-slate-700">
             {/* Primary Phone Bubble */}
               <div className="flex items-center gap-2 rounded-full border border-indigo-100 bg-white px-3 py-1 shadow-sm">
               <svg className="h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -304,15 +304,10 @@ function InvoicePageContent() {
             </div>
           </div>
           
-          <div className="mt-10 text-[10px] text-slate-500">
-              Signature of the Receiver
-          </div>
-          <div className="mt-1 text-[10px] text-slate-500">
-              ( Ravindra Manerikar )
-          </div>
-              
-          <div className="mt-7 flex items-end justify-between gap-6 border-t border-slate-200 pt-2">
-            <div className="text-center text-[10px] text-slate-500">
+          <div className="mt-12">
+            <div className="text-[10px] text-slate-500">Signature of the Receiver</div>
+            <div className="mt-0.5 text-[10px] text-slate-500">( Ravindra Manerikar )</div>
+            <div className="mt-2 border-t border-slate-200 pt-1.5 text-center text-[10px] text-slate-500">
               Generated on {invoice.meta.date}
             </div>
           </div>
