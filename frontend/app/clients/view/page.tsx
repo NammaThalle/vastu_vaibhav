@@ -189,6 +189,8 @@ function ClientDetailContent() {
     const [editingCharge, setEditingCharge] = useState<any>(null);
     const [editingPayment, setEditingPayment] = useState<any>(null);
     const [showEditClient, setShowEditClient] = useState(false);
+    const [billStatus, setBillStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [billError, setBillError] = useState<string>('');
 
     // Forms State
     const [clientForm, setClientForm] = useState({ full_name: '', phone: '', email: '', project_address: '', location_type: '', lead_status: '' });
@@ -444,6 +446,8 @@ function ClientDetailContent() {
     };
 
     const handleDownloadBill = async () => {
+        setBillStatus('loading');
+        setBillError('');
         try {
             const blob = await ledgerApi.downloadBill(id as string);
             const url = window.URL.createObjectURL(blob);
@@ -454,9 +458,10 @@ function ClientDetailContent() {
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-            toast.success('Bill generated successfully');
+            setBillStatus('success');
         } catch (err: any) {
-            toast.error(err.message || 'Failed to generate bill');
+            setBillError(err.message || 'Failed to generate bill');
+            setBillStatus('error');
         }
     };
 
@@ -518,6 +523,54 @@ function ClientDetailContent() {
 
     return (
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20">
+
+            {/* Bill Generation Overlay */}
+            {billStatus !== 'idle' && (
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl shadow-2xl px-16 py-12 flex flex-col items-center gap-6 min-w-[280px]">
+                        {billStatus === 'loading' && (
+                            <>
+                                <div className="h-16 w-16 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                                <p className="text-[15px] font-semibold text-slate-700">Generating bill…</p>
+                                <p className="text-[12px] text-slate-400">This may take a few seconds</p>
+                            </>
+                        )}
+                        {billStatus === 'success' && (
+                            <>
+                                <div className="h-16 w-16 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center">
+                                    <svg className="h-9 w-9 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <p className="text-[15px] font-semibold text-slate-700">Bill generated successfully</p>
+                                <button
+                                    onClick={() => setBillStatus('idle')}
+                                    className="mt-2 px-6 py-2 rounded-full bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition-colors"
+                                >
+                                    Done
+                                </button>
+                            </>
+                        )}
+                        {billStatus === 'error' && (
+                            <>
+                                <div className="h-16 w-16 rounded-full bg-red-50 border-2 border-red-200 flex items-center justify-center">
+                                    <svg className="h-9 w-9 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </div>
+                                <p className="text-[15px] font-semibold text-slate-700">Bill not generated</p>
+                                <p className="text-[12px] text-red-500 text-center max-w-[220px]">{billError}</p>
+                                <button
+                                    onClick={() => setBillStatus('idle')}
+                                    className="mt-2 px-6 py-2 rounded-full bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors"
+                                >
+                                    Dismiss
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
             {/* Top Navigation */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
                 <Button 
@@ -656,10 +709,11 @@ function ClientDetailContent() {
                                     variant="outline"
                                     size="sm"
                                     onClick={handleDownloadBill}
+                                    disabled={billStatus === 'loading'}
                                     className="h-9 px-4 rounded-full text-xs font-bold border-border/60 hover:bg-secondary"
                                 >
                                     <FileDown className="mr-2 h-4 w-4" />
-                                    Download
+                                    Generate Bill
                                 </Button>
                                 <Button
                                     variant="outline"
