@@ -459,6 +459,9 @@ function ClientDetailContent() {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
             setBillStatus('success');
+            setTimeout(() => {
+                setBillStatus('idle');
+            }, 2000);
         } catch (err: any) {
             setBillError(err.message || 'Failed to generate bill');
             setBillStatus('error');
@@ -577,13 +580,7 @@ function ClientDetailContent() {
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                             </svg>
                                         </motion.div>
-                                        <p className="text-[15px] font-semibold text-slate-700">Bill generated successfully</p>
-                                        <button
-                                            onClick={() => setBillStatus('idle')}
-                                            className="mt-2 px-6 py-2 rounded-full bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition-colors"
-                                        >
-                                            Done
-                                        </button>
+                                        <p className="text-[15px] font-semibold text-slate-700 pb-2">Bill generated successfully</p>
                                     </motion.div>
                                 )}
                                 {billStatus === 'error' && (
