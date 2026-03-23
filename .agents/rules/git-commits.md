@@ -18,6 +18,7 @@ This repository follows a strict internal strategy for all git commits. **AI age
 - All git commits must be performed **semantically**.
 - Only logically related files should be grouped and committed together (e.g., all `models/` together, all frontend `components/` together).
 - Do not dump all files into a single massive commit.
+- **NEVER create empty commits.** Every commit must contain actual file changes. Do not use `--allow-empty` to simulate a commit count. If there are no more file changes to split, do not create artificial commits.
 
 ## 3. Standard Git Messages
 - Follow conventional commits standard (e.g., `feat:`, `fix:`, `docs:`, `chore:`).
