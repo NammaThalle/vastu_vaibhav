@@ -129,9 +129,6 @@ function InvoicePageContent() {
               <div className="mt-3 text-[1.65rem] font-semibold tracking-[0.05em] text-slate-700">
                 INVOICE
               </div>
-              <div className="mt-1 text-[11px] font-medium text-slate-500">
-                #{invoice.meta.invoiceNo}
-              </div>
             </div>
           </div>
         </div>
@@ -169,16 +166,16 @@ function InvoicePageContent() {
         <div className="px-7 pb-4 pt-1.5">
           <div className="grid grid-cols-3 gap-4 border-b border-slate-200 pb-2 text-sm">
             <div>
+              <div className="text-[9px] text-slate-400">Invoice No</div>
+              <div className="mt-1 font-semibold text-[13px] text-slate-900">{invoice.meta.invoiceNo}</div>
+            </div>
+            <div>
               <div className="text-[9px] text-slate-400">Invoice Date</div>
               <div className="mt-1 font-semibold text-[13px] text-slate-900">{invoice.meta.date}</div>
             </div>
             <div>
               <div className="text-[9px] text-slate-400">Due Date</div>
               <div className="mt-1 font-semibold text-[13px] text-slate-900">{invoice.meta.dueDate}</div>
-            </div>
-            <div>
-              <div className="text-[9px] text-slate-400">Invoice No</div>
-              <div className="mt-1 font-semibold text-[13px] text-slate-900">{invoice.meta.invoiceNo}</div>
             </div>
           </div>
 
@@ -280,7 +277,7 @@ function InvoicePageContent() {
           
           <div className="mt-12">
             <div className="text-[10px] text-slate-500">Signature of the Receiver</div>
-            <div className="mt-0.5 text-[10px] text-slate-500">( Ravindra Manerikar )</div>
+            <div className="mt-0.5 text-[10px] text-slate-500">(Ravindra Manerikar)</div>
             <div className="mt-2 border-t border-slate-200 pt-1.5 text-center text-[10px] text-slate-500">
               Generated on {invoice.meta.date}
             </div>
