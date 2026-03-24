@@ -185,7 +185,9 @@ function InvoicePageContent() {
             </div>
             <div className="mt-1 text-[1.2rem] font-semibold text-slate-900 leading-none">{invoice.customer.name}</div>
             {invoice.customer.projectAddress ? (
-              <div className="mt-1 text-[11px] font-medium text-slate-500">{invoice.customer.projectAddress}</div>
+              <div className="mt-1 text-[11px] text-slate-500">
+                <span className="font-bold text-slate-700">Project Address:</span> <span className="font-light">{invoice.customer.projectAddress}</span>
+              </div>
             ) : null}
             
             <div className="mt-2 space-y-0.5">
