@@ -18,7 +18,6 @@ type InvoiceData = {
     address: string
     phone: string
     projectAddress: string
-    builtUpArea?: number | null
   }
   items: Array<{
     title: string
@@ -33,7 +32,6 @@ type InvoiceData = {
     balanceAmount: number
   }
   payment: {
-    preferredMode: string
     bankName: string
     accountNo: string
     ifsc: string
@@ -83,20 +81,7 @@ function InvoicePageContent() {
     }
   }, [dataParam])
 
-  const projectDetails = useMemo(() => {
-    if (!invoice) return []
-    return [
-      invoice.customer.projectAddress
-        ? { label: "Project Site", value: invoice.customer.projectAddress }
-        : null,
-      invoice.customer.builtUpArea
-        ? { label: "Built-up Area", value: `${invoice.customer.builtUpArea} sq.ft.` }
-        : null,
-      invoice.payment.preferredMode
-        ? { label: "Preferred Mode", value: invoice.payment.preferredMode }
-        : null,
-    ].filter(Boolean) as Array<{ label: string; value: string }>
-  }, [invoice])
+
 
   if (loading) {
     return <div className="min-h-screen bg-stone-100" />
@@ -195,35 +180,22 @@ function InvoicePageContent() {
             </div>
           </div>
 
-          <div className="mt-2 grid grid-cols-[1.2fr,0.8fr] gap-5">
-            <div>
-              <div className="text-[10px] text-slate-400">
-                Bill To
-              </div>
-              <div className="mt-1.5 text-[1.2rem] font-semibold text-slate-900">{invoice.customer.name}</div>
+          <div className="mt-2">
+            <div className="text-[10px] text-slate-400">
+              Bill To
+            </div>
+            <div className="mt-1 text-[1.2rem] font-semibold text-slate-900 leading-none">{invoice.customer.name}</div>
+            {invoice.customer.projectAddress ? (
+              <div className="mt-1 text-[11px] font-medium text-slate-500">{invoice.customer.projectAddress}</div>
+            ) : null}
+            
+            <div className="mt-2 space-y-0.5">
               {invoice.customer.address ? (
-                <div className="mt-1.5 max-w-xl text-[13px] leading-5 text-slate-500">{invoice.customer.address}</div>
+                <div className="max-w-xl text-[13px] leading-5 text-slate-500">{invoice.customer.address}</div>
               ) : null}
               {invoice.customer.phone ? (
                 <div className="text-[13px] leading-5 text-slate-500">{invoice.customer.phone}</div>
               ) : null}
-            </div>
-
-            <div className="rounded-[16px] border border-slate-200 bg-slate-50/70 p-3.5">
-              <div className="mt-2.5 space-y-2">
-                {projectDetails.length > 0 ? (
-                  projectDetails.map((detail) => (
-                    <div key={detail.label}>
-                      <div className="text-[9px] uppercase tracking-[0.16em] text-slate-400">
-                        {detail.label}
-                      </div>
-                      <div className="mt-0.5 text-[12px] font-medium text-slate-700">{detail.value}</div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-slate-500">No project details available.</div>
-                )}
-              </div>
             </div>
           </div>
 

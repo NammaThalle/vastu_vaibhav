@@ -52,7 +52,6 @@ def build_invoice_payload(client: ClientModel, ledger_data: ClientLedger) -> dic
             "address": client.personal_address or "",
             "phone": client.phone or "",
             "projectAddress": client.project_address or "",
-            "builtUpArea": client.built_up_area,
         },
         "items": charge_items,
         "summary": {
@@ -63,7 +62,6 @@ def build_invoice_payload(client: ClientModel, ledger_data: ClientLedger) -> dic
             "balanceAmount": ledger_data.current_balance,
         },
         "payment": {
-            "preferredMode": payment_entries[0].description if payment_entries else "Bank Transfer / UPI",
             "bankName": "HDFC BANK",
             "accountNo": "ID030305089",
             "ifsc": "100000",
