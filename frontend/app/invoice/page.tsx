@@ -110,10 +110,12 @@ function InvoicePageContent() {
               </div>
             </div>
 
-            <div className="text-center">
-              <div className="text-[2.2rem] font-black tracking-wide text-[#0f172a] leading-none uppercase">
-                {invoice.company.name}
-              </div>
+            <div className="text-center flex justify-center">
+              <img
+                src="/invoice-assets/vastu_vaibhav.png"
+                alt={invoice.company.name}
+                className="h-[8.5rem] w-auto object-contain"
+              />
             </div>
 
             <div className="absolute right-0 text-right">
