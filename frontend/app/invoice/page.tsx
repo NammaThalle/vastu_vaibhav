@@ -264,12 +264,20 @@ function InvoicePageContent() {
                 <span className="text-slate-500">Amount Paid</span>
                 <span className="font-medium text-slate-800">{formatCurrency(invoice.summary.amountPaid)}</span>
               </div>
-              <div className="mt-3 rounded-2xl bg-[#dfe6ed] px-3.5 py-3">
+              <div className={`mt-3 rounded-2xl px-3.5 py-3 border ${
+                invoice.summary.balanceAmount === 0 
+                  ? 'bg-emerald-50 border-emerald-200' 
+                  : 'bg-rose-50 border-rose-200'
+              }`}>
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  <span className={`text-[9px] font-semibold uppercase tracking-[0.18em] ${
+                    invoice.summary.balanceAmount === 0 ? 'text-emerald-600' : 'text-rose-600'
+                  }`}>
                     Balance
                   </span>
-                  <span className="text-[1.55rem] font-black text-slate-900">
+                  <span className={`text-[1.55rem] font-black ${
+                    invoice.summary.balanceAmount === 0 ? 'text-emerald-900' : 'text-rose-900'
+                  }`}>
                     {formatCurrency(invoice.summary.balanceAmount)}
                   </span>
                 </div>
