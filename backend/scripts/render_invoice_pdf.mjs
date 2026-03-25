@@ -1,7 +1,4 @@
-import { createRequire } from "node:module";
-
-const require = createRequire(import.meta.url);
-const puppeteer = require("../../frontend/node_modules/puppeteer");
+import puppeteer from "puppeteer";
 
 const [, , url, outputPath] = process.argv;
 
