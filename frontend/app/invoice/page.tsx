@@ -100,12 +100,12 @@ function InvoicePageContent() {
       <div className="mx-auto w-full max-w-[780px] overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.06)] print:max-w-none print:rounded-none print:border-0 print:shadow-none">
         <div className="px-7 pt-2 pb-0">
           <div className="relative flex items-center justify-center min-h-[130px]">
-            <div className="absolute left-0 flex items-center gap-2">
+            <div className="absolute -left-3 flex items-center gap-2">
               <div className="flex h-[130px] w-[130px] shrink-0 items-center justify-center overflow-hidden bg-white">
                 <img
                   src="/invoice-assets/vastu_vaibhav_logo.png"
                   alt={invoice.company.name}
-                  className="h-full w-full scale-[1.9] object-contain"
+                  className="h-full w-full scale-[0.65] object-contain"
                 />
               </div>
             </div>
