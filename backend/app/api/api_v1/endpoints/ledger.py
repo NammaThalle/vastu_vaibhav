@@ -43,7 +43,7 @@ def build_invoice_payload(client: ClientModel, ledger_data: ClientLedger) -> dic
             "memberLabel": "BNI MEMBER",
         },
         "meta": {
-            "invoiceNo": f"VV-{now.strftime('%Y%m%d')}-{client.id[:6].upper()}",
+            "invoiceNo": f"VV-{client.id[:6].upper()}-{now.strftime('%Y%m%d')}",
             "date": now.strftime("%d %b %Y"),
             "dueDate": (now + timedelta(days=15)).strftime("%d %b %Y"),
         },
