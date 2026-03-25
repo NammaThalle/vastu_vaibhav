@@ -35,8 +35,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Install Node dependencies for the PDF renderer script
-RUN cd scripts && npm install
+# Install Node dependencies for the PDF renderer (must be after COPY to avoid .dockerignore clobbering node_modules)
+RUN npm install --omit=dev
+
 
 # Metadata
 LABEL maintainer="Vastu Vaibhav Team"
