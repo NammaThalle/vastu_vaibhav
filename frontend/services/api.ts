@@ -80,6 +80,7 @@ export const visitsApi = {
 
 export const ledgerApi = {
     getClientLedger: (clientId: string) => apiFetch(`/api/v1/ledger/client/${clientId}`),
+    getInvoiceData: (clientId: string) => apiFetch(`/api/v1/ledger/client/${clientId}/invoice-data`),
     addService: (data: { client_id: string; description: string; amount: number }) => apiFetch('/api/v1/ledger/services', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -107,7 +108,11 @@ export const ledgerApi = {
         return fetch(`${API_BASE_URL}/api/v1/ledger/client/${clientId}/bill`, {
             headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         }).then(res => {
-            if (!res.ok) throw new Error('Failed to download bill');
+            if (!res.ok) {
+                return res.text().then(text => {
+                    throw new Error(text || 'Failed to download bill');
+                });
+            }
             return res.blob();
         });
     },

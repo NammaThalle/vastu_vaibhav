@@ -1,12 +1,19 @@
 
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from pathlib import Path
+import asyncio
+import tempfile
+import subprocess
+import json
+from urllib.parse import quote
 from app.api import deps
 from app.models.service import ServiceEntry as ServiceModel
 from app.models.payment import Payment as PaymentModel
 from app.models.client import Client as ClientModel
+from app.core.config import settings
 from app.schemas.ledger import (
     ServiceEntry, ServiceEntryCreate, ServiceEntryUpdate,
     Payment, PaymentCreate, PaymentUpdate,
@@ -14,6 +21,59 @@ from app.schemas.ledger import (
 )
 
 router = APIRouter()
+
+
+def build_invoice_payload(client: ClientModel, ledger_data: ClientLedger) -> dict[str, Any]:
+    from datetime import datetime, timedelta
+
+    now = datetime.now()
+    charge_items = [
+        {
+            "title": entry.description,
+            "description": entry.date.strftime("%d %b %Y") if entry.date else "",
+            "amount": entry.amount,
+        }
+        for entry in ledger_data.history
+        if entry.type == "charge" and entry.amount
+    ]
+    payment_entries = [entry for entry in ledger_data.history if entry.type == "payment"]
+
+    return {
+        "company": {
+            "name": "VASTU VAIBHAV",
+            "memberLabel": "BNI MEMBER",
+        },
+        "meta": {
+            "invoiceNo": f"VV-{client.id[:6].upper()}-{now.strftime('%Y%m%d')}",
+            "date": now.strftime("%d %b %Y"),
+            "dueDate": (now + timedelta(days=15)).strftime("%d %b %Y"),
+        },
+        "customer": {
+            "name": client.full_name,
+            "address": client.personal_address or "",
+            "phone": client.phone or "",
+            "projectAddress": client.project_address or "",
+        },
+        "items": charge_items,
+        "summary": {
+            "subtotal": ledger_data.total_billed,
+            "taxRate": 0,
+            "taxAmount": 0,
+            "amountPaid": ledger_data.total_paid,
+            "balanceAmount": ledger_data.current_balance,
+        },
+        "payment": {
+            "bankName": "HDFC BANK",
+            "accountNo": "ID030305089",
+            "ifsc": "100000",
+        },
+        "contact": {
+            "email": "vastuvaibhav.byravi@gmail.com",
+            "phone": "+91 94201 97749",
+            "secondaryPhone": "+91 86689 52446",
+            "gpayPhone": "+91 94201 97749",
+        },
+    }
 
 @router.post("/services", response_model=ServiceEntry)
 async def create_service_entry(
@@ -204,40 +264,69 @@ async def get_client_ledger(
         current_balance=current_running_balance
     )
 
-@router.get("/client/{client_id}/bill")
-async def download_client_bill(
+@router.get("/client/{client_id}/invoice-data")
+async def get_client_invoice_data(
     client_id: str,
     db: AsyncSession = Depends(deps.get_db),
 ) -> Any:
-    """
-    Generate and download a PDF bill for the client.
-    """
-    from fastapi.responses import StreamingResponse
-    from app.utils.pdf import render_to_pdf
-    from datetime import datetime
-
-    # 1. Get Ledger Data (Reuse logic)
     ledger_data = await get_client_ledger(client_id, db)
-    
-    # 2. Get Client Data
     result = await db.execute(select(ClientModel).where(ClientModel.id == client_id))
     client = result.scalars().first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    return build_invoice_payload(client, ledger_data)
 
-    # 3. Prepare Context
-    context = {
-        "client": client,
-        "ledger": ledger_data,
-        "history": ledger_data.history,
-        "date_generated": datetime.now().strftime("%d/%m/%Y"),
-    }
+@router.get("/client/{client_id}/bill")
+async def download_client_bill(
+    client_id: str,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(deps.get_db),
+) -> Any:
+    """
+    Generate and download a PDF bill for the client using the React invoice page and Puppeteer.
+    """
+    from fastapi.responses import FileResponse
 
-    # 4. Render PDF
-    pdf_file = render_to_pdf("bill.html", context)
-    
-    filename = f"Bill_{client.full_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.pdf"
-    
-    return StreamingResponse(
-        pdf_file,
+    result = await db.execute(select(ClientModel).where(ClientModel.id == client_id))
+    client = result.scalars().first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    ledger_data = await get_client_ledger(client_id, db)
+    invoice_payload = build_invoice_payload(client, ledger_data)
+    frontend_base_url = settings.FRONTEND_URL.rstrip("/")
+    encoded_invoice = quote(json.dumps(invoice_payload, separators=(",", ":")))
+    invoice_url = f"{frontend_base_url}/invoice/?data={encoded_invoice}"
+    script_path = Path(__file__).resolve().parents[4] / "scripts" / "render_invoice_pdf.mjs"
+
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        pdf_path = Path(tmp.name)
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "node", str(script_path), invoice_url, str(pdf_path),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(
+                proc.returncode, "node",
+                output=stdout.decode(),
+                stderr=stderr.decode(),
+            )
+    except subprocess.CalledProcessError as exc:
+        pdf_path.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Invoice PDF generation failed: {(exc.stderr or exc.output or '').strip()}",
+        ) from exc
+
+    filename = f"Bill_{client.full_name.replace(' ', '_')}_{client_id[:6]}.pdf"
+    background_tasks.add_task(pdf_path.unlink, missing_ok=True)
+    return FileResponse(
+        path=pdf_path,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        filename=filename,
     )

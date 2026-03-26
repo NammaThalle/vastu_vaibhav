@@ -14,7 +14,9 @@ class Client(Base):
     email = Column(String, nullable=True)
     
     # CRM Specifics
+    personal_address = Column(String, nullable=True)
     project_address = Column(String, nullable=True)
+    built_up_area = Column(Float, nullable=True)
     location_type = Column(String, default="Goa") # Goa, Karnataka, Maharashtra, etc.
     lead_status = Column(String, default="Inquiry") # Inquiry, Active, Completed, Inactive
     service_id = Column(String, ForeignKey("service_catalog.id"), nullable=True)

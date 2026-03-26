@@ -42,7 +42,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
     const [isCheckingAuth, setIsCheckingAuth] = React.useState(true)
 
-    const isAuthPage = authPages.includes(pathname)
+    const normalizedPathname = pathname !== "/" && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname
+    const isAuthPage = authPages.includes(normalizedPathname)
 
     React.useEffect(() => {
         const token = localStorage.getItem("token")
@@ -52,7 +53,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             router.push("/")
         }
         setIsCheckingAuth(false)
-    }, [pathname, isAuthPage, router])
+    }, [normalizedPathname, isAuthPage, router])
 
     const handleLogout = () => {
         localStorage.removeItem("token")

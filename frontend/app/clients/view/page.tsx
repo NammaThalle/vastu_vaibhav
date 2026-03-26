@@ -189,6 +189,8 @@ function ClientDetailContent() {
     const [editingCharge, setEditingCharge] = useState<any>(null);
     const [editingPayment, setEditingPayment] = useState<any>(null);
     const [showEditClient, setShowEditClient] = useState(false);
+    const [billStatus, setBillStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [billError, setBillError] = useState<string>('');
 
     // Forms State
     const [clientForm, setClientForm] = useState({ full_name: '', phone: '', email: '', project_address: '', location_type: '', lead_status: '' });
@@ -444,6 +446,8 @@ function ClientDetailContent() {
     };
 
     const handleDownloadBill = async () => {
+        setBillStatus('loading');
+        setBillError('');
         try {
             const blob = await ledgerApi.downloadBill(id as string);
             const url = window.URL.createObjectURL(blob);
@@ -454,9 +458,13 @@ function ClientDetailContent() {
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-            toast.success('Bill generated successfully');
+            setBillStatus('success');
+            setTimeout(() => {
+                setBillStatus('idle');
+            }, 2000);
         } catch (err: any) {
-            toast.error(err.message || 'Failed to generate bill');
+            setBillError(err.message || 'Failed to generate bill');
+            setBillStatus('error');
         }
     };
 
@@ -518,6 +526,97 @@ function ClientDetailContent() {
 
     return (
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20">
+
+            {/* Bill Generation Overlay */}
+            <AnimatePresence>
+                {billStatus !== 'idle' && (
+                    <motion.div
+                        key="overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            key="card"
+                            initial={{ scale: 0.88, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.88, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                            className="bg-white rounded-3xl shadow-2xl px-16 py-12 flex flex-col items-center gap-6 min-w-[280px] overflow-hidden"
+                        >
+                            <AnimatePresence mode="wait">
+                                {billStatus === 'loading' && (
+                                    <motion.div
+                                        key="loading"
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.8 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="flex flex-col items-center gap-6"
+                                    >
+                                        <div className="h-16 w-16 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                                        <p className="text-[15px] font-semibold text-slate-700">Generating bill…</p>
+                                        <p className="text-[12px] text-slate-400">This may take a few seconds</p>
+                                    </motion.div>
+                                )}
+                                {billStatus === 'success' && (
+                                    <motion.div
+                                        key="success"
+                                        initial={{ opacity: 0, scale: 0.7 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.7 }}
+                                        transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                                        className="flex flex-col items-center gap-6"
+                                    >
+                                        <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{ type: 'spring', stiffness: 400, damping: 20, delay: 0.05 }}
+                                            className="h-16 w-16 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center"
+                                        >
+                                            <svg className="h-9 w-9 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </motion.div>
+                                        <p className="text-[15px] font-semibold text-slate-700 pb-2">Bill generated successfully</p>
+                                    </motion.div>
+                                )}
+                                {billStatus === 'error' && (
+                                    <motion.div
+                                        key="error"
+                                        initial={{ opacity: 0, scale: 0.7 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.7 }}
+                                        transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                                        className="flex flex-col items-center gap-6"
+                                    >
+                                        <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{ type: 'spring', stiffness: 400, damping: 20, delay: 0.05 }}
+                                            className="h-16 w-16 rounded-full bg-red-50 border-2 border-red-200 flex items-center justify-center"
+                                        >
+                                            <svg className="h-9 w-9 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </motion.div>
+                                        <p className="text-[15px] font-semibold text-slate-700">Bill not generated</p>
+                                        <p className="text-[12px] text-red-500 text-center max-w-[220px]">{billError}</p>
+                                        <button
+                                            onClick={() => setBillStatus('idle')}
+                                            className="mt-2 px-6 py-2 rounded-full bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors"
+                                        >
+                                            Dismiss
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             {/* Top Navigation */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
                 <Button 
@@ -656,10 +755,11 @@ function ClientDetailContent() {
                                     variant="outline"
                                     size="sm"
                                     onClick={handleDownloadBill}
+                                    disabled={billStatus === 'loading'}
                                     className="h-9 px-4 rounded-full text-xs font-bold border-border/60 hover:bg-secondary"
                                 >
                                     <FileDown className="mr-2 h-4 w-4" />
-                                    Download
+                                    Generate Bill
                                 </Button>
                                 <Button
                                     variant="outline"

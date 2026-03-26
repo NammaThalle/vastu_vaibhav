@@ -1,5 +1,6 @@
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import asyncio
 import os
@@ -12,6 +13,14 @@ from app.core.config import settings
 from app.api.api_v1.api import api_router
 
 app = FastAPI(title=settings.PROJECT_NAME, version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(api_router, prefix="/api/v1")
 
@@ -26,7 +35,8 @@ def run_database_migrations() -> None:
 
 @app.on_event("startup")
 async def apply_pending_migrations() -> None:
-    await asyncio.to_thread(run_database_migrations)
+    if settings.RUN_STARTUP_MIGRATIONS:
+        await asyncio.to_thread(run_database_migrations)
 
 # Mount Static Files (Frontend)
 # We serve the 'static' directory which contains the Next.js export
