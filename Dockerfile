@@ -6,7 +6,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PUPPETEER_CACHE_DIR=/app/.cache/puppeteer
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm install
-RUN npx puppeteer browsers install chrome
 COPY frontend/ .
 # Build static assets to /app/frontend/dist
 RUN npm run build
@@ -56,7 +55,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxtst6 \
     fonts-liberation \
     fonts-noto-color-emoji \
+    chromium \
     && rm -rf /var/lib/apt/lists/*
+
+# Use system Chromium (correct arch) instead of puppeteer's downloaded x86_64 binary
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Install Backend Dependencies
 COPY backend/requirements.txt .
@@ -70,7 +74,6 @@ COPY --from=frontend-builder /app/frontend/dist /app/static
 COPY --from=frontend-builder /app/frontend/package.json /app/frontend/package.json
 COPY --from=frontend-builder /app/frontend/package-lock.json /app/frontend/package-lock.json
 COPY --from=frontend-builder /app/frontend/node_modules /app/frontend/node_modules
-COPY --from=frontend-builder /app/.cache/puppeteer /app/.cache/puppeteer
 
 # Create data directory for SQLite
 RUN mkdir -p /data

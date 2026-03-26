@@ -4,6 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pathlib import Path
+import asyncio
 import tempfile
 import subprocess
 import json
@@ -303,17 +304,23 @@ async def download_client_bill(
         pdf_path = Path(tmp.name)
 
     try:
-        subprocess.run(
-            ["node", str(script_path), invoice_url, str(pdf_path)],
-            check=True,
-            capture_output=True,
-            text=True,
+        proc = await asyncio.create_subprocess_exec(
+            "node", str(script_path), invoice_url, str(pdf_path),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
         )
+        stdout, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(
+                proc.returncode, "node",
+                output=stdout.decode(),
+                stderr=stderr.decode(),
+            )
     except subprocess.CalledProcessError as exc:
         pdf_path.unlink(missing_ok=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Invoice PDF generation failed: {(exc.stderr or exc.stdout or '').strip()}",
+            detail=f"Invoice PDF generation failed: {(exc.stderr or exc.output or '').strip()}",
         ) from exc
 
     filename = f"Bill_{client.full_name.replace(' ', '_')}_{client_id[:6]}.pdf"

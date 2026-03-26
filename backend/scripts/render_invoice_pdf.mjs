@@ -1,4 +1,8 @@
-import puppeteer from "puppeteer";
+import { createRequire } from "node:module";
+
+// Resolve puppeteer from the frontend's node_modules (copied into the Docker image).
+const require = createRequire("/app/frontend/package.json");
+const puppeteer = require("puppeteer");
 
 const [, , url, outputPath] = process.argv;
 
@@ -7,6 +11,8 @@ if (!url || !outputPath) {
   process.exit(1);
 }
 
+// PUPPETEER_EXECUTABLE_PATH env var (set in Dockerfile) points to system Chromium,
+// which is the correct architecture for the container (ARM64 / x86_64).
 const browser = await puppeteer.launch({
   headless: "new",
   args: ["--no-sandbox", "--disable-setuid-sandbox"],
