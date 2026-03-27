@@ -38,6 +38,12 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+
+    /* Safe area insets for iOS notch / Dynamic Island */
+    --sat: env(safe-area-inset-top);
+    --sab: env(safe-area-inset-bottom);
+    --sal: env(safe-area-inset-left);
+    --sar: env(safe-area-inset-right);
   }
 
   .dark {
@@ -83,9 +89,32 @@
     @apply border-border;
   }
 
+  html {
+    /* Prevent iOS font-size inflation on landscape */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Smooth scrolling */
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Prevent overscroll bounce on iOS */
+    overscroll-behavior: none;
+  }
+
+  /* Remove iOS tap highlight on all interactive elements */
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    /* Eliminate 300ms tap delay */
+    touch-action: manipulation;
+  }
+
+  /* Improve default input appearance on iOS */
+  input, select, textarea {
+    -webkit-appearance: none;
+    appearance: none;
   }
 }
 
@@ -96,6 +125,21 @@
 
   .glass-card {
     @apply bg-card/50 backdrop-blur-lg border border-border/50 shadow-xl;
+  }
+
+  /* Hide scrollbar but keep scroll behavior (for horizontal table scroll on mobile) */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Bottom-sheet modal base — enters from bottom on mobile */
+  .mobile-bottom-sheet {
+    @apply fixed inset-x-0 bottom-0 z-[100] max-h-[90dvh] overflow-y-auto rounded-t-3xl bg-background;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
