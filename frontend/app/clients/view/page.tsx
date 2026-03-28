@@ -42,10 +42,22 @@ import {
     AlertCircle,
     CheckCircle2,
     Circle,
+    Minus,
+    MoreHorizontal,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -179,6 +191,9 @@ function ClientDetailContent() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    // Mobile tab state: 'profile' | 'ledger' | 'visits'
+    const [mobileTab, setMobileTab] = useState<'profile' | 'ledger' | 'visits'>('profile');
+
     // Modals Visibility
     const [showAddVisit, setShowAddVisit] = useState(false);
     const [showAddCharge, setShowAddCharge] = useState(false);
@@ -191,6 +206,18 @@ function ClientDetailContent() {
     const [showEditClient, setShowEditClient] = useState(false);
     const [billStatus, setBillStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [billError, setBillError] = useState<string>('');
+
+    // AlertDialog confirm state (replaces window.confirm)
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean;
+        title: string;
+        description: string;
+        onConfirm: () => void;
+    }>({ open: false, title: '', description: '', onConfirm: () => {} });
+
+    const showConfirm = (title: string, description: string, onConfirm: () => void) => {
+        setConfirmDialog({ open: true, title, description, onConfirm });
+    };
 
     // Forms State
     const [clientForm, setClientForm] = useState({ full_name: '', phone: '', email: '', project_address: '', location_type: '', lead_status: '' });
@@ -279,14 +306,19 @@ function ClientDetailContent() {
     };
 
     const handleDeleteVisit = async (visitId: string) => {
-        if (!confirm("Are you sure you want to delete this visit?")) return;
-        try {
-            await visitsApi.delete(visitId);
-            toast.success("Visit deleted");
-            loadData();
-        } catch (err: any) {
-            toast.error("Failed to delete visit");
-        }
+        showConfirm(
+            "Delete Visit",
+            "Are you sure you want to delete this consultation visit? This action cannot be undone.",
+            async () => {
+                try {
+                    await visitsApi.delete(visitId);
+                    toast.success("Visit deleted");
+                    loadData();
+                } catch (err: any) {
+                    toast.error("Failed to delete visit");
+                }
+            }
+        );
     };
 
     const startEditVisit = (visit: any) => {
@@ -364,14 +396,19 @@ function ClientDetailContent() {
     };
 
     const handleDeleteCharge = async (chargeId: string) => {
-        if (!confirm("Are you sure you want to delete this charge?")) return;
-        try {
-            await ledgerApi.deleteService(chargeId);
-            toast.success("Charge deleted");
-            loadData();
-        } catch (err: any) {
-            toast.error("Failed to delete charge");
-        }
+        showConfirm(
+            "Delete Charge",
+            "Are you sure you want to remove this charge from the ledger? This action cannot be undone.",
+            async () => {
+                try {
+                    await ledgerApi.deleteService(chargeId);
+                    toast.success("Charge deleted");
+                    loadData();
+                } catch (err: any) {
+                    toast.error("Failed to delete charge");
+                }
+            }
+        );
     };
 
     const startEditCharge = (entry: any) => {
@@ -424,14 +461,19 @@ function ClientDetailContent() {
     };
 
     const handleDeletePayment = async (paymentId: string) => {
-        if (!confirm("Are you sure you want to delete this payment?")) return;
-        try {
-            await ledgerApi.deletePayment(paymentId);
-            toast.success("Payment deleted");
-            loadData();
-        } catch (err: any) {
-            toast.error("Failed to delete payment");
-        }
+        showConfirm(
+            "Delete Payment",
+            "Are you sure you want to remove this payment record? The outstanding balance will be recalculated.",
+            async () => {
+                try {
+                    await ledgerApi.deletePayment(paymentId);
+                    toast.success("Payment deleted");
+                    loadData();
+                } catch (err: any) {
+                    toast.error("Failed to delete payment");
+                }
+            }
+        );
     };
 
     const startEditPayment = (entry: any) => {
@@ -451,13 +493,10 @@ function ClientDetailContent() {
         try {
             const blob = await ledgerApi.downloadBill(id as string);
             const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Bill_${client.full_name.replace(' ', '_')}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            // On iOS Safari, window.open() triggers the share sheet (Save to Files, AirDrop, etc.)
+            // On desktop, it opens in a new tab for preview — both better than <a download>
+            window.open(url, '_blank');
+            setTimeout(() => window.URL.revokeObjectURL(url), 5000);
             setBillStatus('success');
             setTimeout(() => {
                 setBillStatus('idle');
@@ -492,15 +531,20 @@ function ClientDetailContent() {
         }
     };
 
-    const handleDeleteClient = async () => {
-        if (!confirm("Are you sure you want to completely delete this client? This will remove all their visits, services, and payments permanently.")) return;
-        try {
-            await clientsApi.delete(client.id);
-            toast.success("Client deleted successfully");
-            router.push("/clients");
-        } catch (err: any) {
-            toast.error(err.message || 'Failed to delete client');
-        }
+    const handleDeleteClient = () => {
+        showConfirm(
+            "Delete Client Permanently",
+            "This will permanently remove this client and ALL their visits, services, and payment history. This action cannot be undone.",
+            async () => {
+                try {
+                    await clientsApi.delete(client.id);
+                    toast.success("Client deleted successfully");
+                    router.push("/clients");
+                } catch (err: any) {
+                    toast.error(err.message || 'Failed to delete client');
+                }
+            }
+        );
     };
 
     if (loading) {
@@ -643,9 +687,34 @@ function ClientDetailContent() {
                 </div>
             </div>
 
+            {/* ── Mobile Tab Bar ──────────────────────────────────────────────── */}
+            <div className="lg:hidden mb-6">
+                <div className="flex rounded-2xl bg-secondary/50 p-1 gap-1">
+                    {(["profile", "ledger", "visits"] as const).map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setMobileTab(tab)}
+                            className={cn(
+                                "flex-1 py-2.5 text-xs font-bold capitalize rounded-xl transition-all",
+                                mobileTab === tab
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            {tab === 'profile' ? '👤 Profile' : tab === 'ledger' ? '💰 Ledger' : '📋 Visits'}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* ── Sidebar+Main Grid ────────────────────────────────────────────── */}
             <div className="flex flex-col lg:grid lg:grid-cols-[350px_1fr] gap-10 items-start">
-                {/* Left Sidebar: Profile & KPIs */}
-                <aside className="space-y-8 lg:sticky lg:top-24 w-full">
+                {/* Left Sidebar: Profile & KPIs — hidden on mobile when not on profile tab */}
+                <aside className={cn(
+                    "space-y-8 lg:sticky lg:top-24 w-full",
+                    // On mobile: only show when profile tab is active
+                    mobileTab !== 'profile' ? "hidden lg:block" : ""
+                )}>
                     <div className="flex flex-col items-center text-center space-y-6">
                         {/* Avatar */}
                         <div className="relative group">
@@ -741,8 +810,12 @@ function ClientDetailContent() {
                     </div>
                 </aside>
 
-                {/* Right Column: Ledger & Visits */}
-                <main className="space-y-12">
+                {/* Right Column: Ledger & Visits — on mobile show based on tab */}
+                <main className={cn(
+                    "space-y-12",
+                    // On mobile: hidden when profile tab active
+                    mobileTab === 'profile' ? "hidden lg:block" : ""
+                )}>
                     {/* Financial Ledger Section */}
                     <section className="space-y-6">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -817,7 +890,7 @@ function ClientDetailContent() {
                                                         {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                                     </span>
                                                     {!entry.visit_id && (
-                                                        <div className="flex items-center gap-3 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <div className="flex items-center gap-3 mt-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                                             <button 
                                                                 onClick={() => entry.type === 'charge' ? startEditCharge(entry) : startEditPayment(entry)}
                                                                 className="text-[10px] font-bold text-primary hover:underline uppercase"
@@ -873,8 +946,8 @@ function ClientDetailContent() {
                         </div>
                     </section>
 
-                    {/* Consultation Visits Section */}
-                    <section className="space-y-8">
+                    {/* Consultation Visits Section — on mobile shown only on visits tab */}
+                    <section className={cn("space-y-8", mobileTab === 'ledger' ? "hidden lg:block" : "")}>
                         <div className="flex items-center justify-between">
                             <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 uppercase">
                                 <ClipboardList className="h-6 w-6 text-primary" />
@@ -916,7 +989,7 @@ function ClientDetailContent() {
                                                 <h3 className="text-lg font-bold text-foreground leading-tight">
                                                     {v.purpose}
                                                 </h3>
-                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => startEditVisit(v)}>
                                                         <Edit3 className="h-4 w-4" />
                                                     </Button>
@@ -952,15 +1025,53 @@ function ClientDetailContent() {
                 </main>
             </div>
 
+            {/* ── Mobile Sticky Bottom Action Bar ──────────────────────────────── */}
+            <div
+                className="lg:hidden fixed inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border/60 px-4 py-3 flex items-center gap-2"
+                style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
+            >
+                <Button
+                    className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-500/30"
+                    onClick={() => setShowAddPayment(true)}
+                >
+                    <IndianRupee className="mr-1.5 h-4 w-4" />
+                    Record Payment
+                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl shrink-0">
+                            <MoreHorizontal className="h-5 w-5" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52 rounded-2xl shadow-2xl" side="top">
+                        <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setShowAddCharge(true)} className="gap-2 py-2.5">
+                            <Plus className="h-4 w-4 text-orange-500" /> Add Charge
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setShowAddDiscount(true)} className="gap-2 py-2.5">
+                            <Minus className="h-4 w-4 text-purple-500" /> Apply Discount
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setShowPhase2Calculator(true)} className="gap-2 py-2.5">
+                            <Calculator className="h-4 w-4 text-indigo-500" /> Phase 2 Execution
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleDownloadBill} disabled={billStatus === 'loading'} className="gap-2 py-2.5">
+                            <FileDown className="h-4 w-4" /> Generate Bill
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+
             {/* MODALS */}
             <AnimatePresence>
                 {showEditClient && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-background/80 backdrop-blur-sm">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="w-full max-w-md"
+                            initial={{ opacity: 0, y: 60 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 60 }}
+                            className="w-full sm:max-w-md max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl"
                         >
                             <Card className="shadow-2xl border-primary/20 overflow-hidden rounded-3xl">
                                 <CardHeader className="bg-primary/5 pb-6">
@@ -1017,12 +1128,12 @@ function ClientDetailContent() {
                 )}
 
                 {showAddCharge && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-background/80 backdrop-blur-sm">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="w-full max-w-md"
+                            initial={{ opacity: 0, y: 60 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 60 }}
+                            className="w-full sm:max-w-md max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl"
                         >
                             <Card className="shadow-2xl border-orange-500/20 overflow-hidden rounded-3xl">
                                 <CardHeader className="bg-orange-500/5 pb-6">
@@ -1134,12 +1245,12 @@ function ClientDetailContent() {
                 )}
 
                 {showAddDiscount && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-background/80 backdrop-blur-sm">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="w-full max-w-md"
+                            initial={{ opacity: 0, y: 60 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 60 }}
+                            className="w-full sm:max-w-md max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl"
                         >
                             <Card className="shadow-2xl border-purple-500/20 overflow-hidden rounded-3xl">
                                 <CardHeader className="bg-purple-500/5 pb-6">
@@ -1202,12 +1313,12 @@ function ClientDetailContent() {
                 )}
 
                 {showAddPayment && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-background/80 backdrop-blur-sm">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="w-full max-w-md"
+                            initial={{ opacity: 0, y: 60 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 60 }}
+                            className="w-full sm:max-w-md max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl"
                         >
                             <Card className="shadow-2xl border-emerald-500/20 overflow-hidden rounded-3xl">
                                 <CardHeader className="bg-emerald-500/5 pb-6">
@@ -1291,12 +1402,12 @@ function ClientDetailContent() {
                 )}
 
                 {showAddVisit && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-background/80 backdrop-blur-sm">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="w-full max-w-md"
+                            initial={{ opacity: 0, y: 60 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 60 }}
+                            className="w-full sm:max-w-md max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl"
                         >
                             <Card className="shadow-2xl border-primary/20 overflow-hidden rounded-3xl">
                                 <CardHeader className="bg-primary/5 pb-6">
@@ -1380,10 +1491,10 @@ function ClientDetailContent() {
                 {showPhase2Calculator && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm overflow-y-auto">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="w-full max-w-2xl my-8"
+                            initial={{ opacity: 0, y: 60 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 60 }}
+                            className="w-full sm:max-w-2xl max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl"
                         >
                             <Card className="shadow-2xl border-indigo-500/20 relative overflow-hidden rounded-3xl">
                                 <Button 
@@ -1425,6 +1536,31 @@ function ClientDetailContent() {
                     </div>
                 )}
             </AnimatePresence>
+
+            {/* ── Confirm AlertDialog (replaces all window.confirm() calls) ─────── */}
+            <AlertDialog
+                open={confirmDialog.open}
+                onOpenChange={(open) => !open && setConfirmDialog(prev => ({ ...prev, open: false }))}
+            >
+                <AlertDialogContent className="rounded-2xl max-w-sm mx-auto">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
+                        <AlertDialogDescription>{confirmDialog.description}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                            onClick={() => {
+                                confirmDialog.onConfirm();
+                                setConfirmDialog(prev => ({ ...prev, open: false }));
+                            }}
+                        >
+                            Confirm
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
