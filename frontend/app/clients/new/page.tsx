@@ -89,7 +89,7 @@ export default function NewClientPage() {
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">New Client</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">New Client</h1>
                     <p className="text-muted-foreground">Initialize a new consulting profile.</p>
                 </div>
             </div>
@@ -206,7 +206,7 @@ export default function NewClientPage() {
                                     </div>
                                 </div>
 
-                                <div className="grid gap-2 max-w-[200px]">
+                                <div className="grid gap-2 w-full sm:max-w-xs">
                                     <Label htmlFor="fees" className="text-sm font-semibold">Base Fixed Fee (₹)</Label>
                                     <div className="relative">
                                         <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -240,7 +240,7 @@ export default function NewClientPage() {
                                                     type="button"
                                                     onClick={() => setFormData({ ...formData, total_fees_fixed: opt.price })}
                                                     className={cn(
-                                                        "flex flex-col items-center justify-center p-3 rounded-lg border transition-all",
+                                                        "flex flex-col items-center justify-center p-4 min-h-[56px] rounded-lg border transition-all",
                                                         formData.total_fees_fixed === opt.price
                                                             ? "bg-primary/10 border-primary text-primary"
                                                             : "bg-background border-border hover:border-primary/50 text-muted-foreground hover:text-foreground"
