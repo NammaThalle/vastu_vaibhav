@@ -123,6 +123,7 @@ export default function NewClientPage() {
                                             className="pl-9 bg-muted/20"
                                             value={formData.full_name}
                                             onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                            autoComplete="name"
                                             required
                                         />
                                     </div>
@@ -138,6 +139,7 @@ export default function NewClientPage() {
                                             placeholder="Enter full property address for Vastu analysis..."
                                             value={formData.project_address}
                                             onChange={(e) => setFormData({ ...formData, project_address: e.target.value })}
+                                            autoComplete="street-address"
                                         />
                                     </div>
                                 </div>
@@ -164,6 +166,8 @@ export default function NewClientPage() {
                                             <Input
                                                 id="phone"
                                                 type="tel"
+                                                inputMode="numeric"
+                                                autoComplete="tel"
                                                 placeholder="+91 00000 00000"
                                                 className="pl-9 bg-muted/20"
                                                 value={formData.phone}
@@ -178,6 +182,7 @@ export default function NewClientPage() {
                                             <Input
                                                 id="email"
                                                 type="email"
+                                                autoComplete="email"
                                                 placeholder="client@example.com"
                                                 className="pl-9 bg-muted/20"
                                                 value={formData.email}
