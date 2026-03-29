@@ -128,11 +128,11 @@ export function ServiceCalculator({ onCalculated, initialFee = 0 }: ServiceCalcu
                         <>
                             <div className="space-y-2">
                                 <Label>Number of Rooms Evaluated</Label>
-                                <Input type="number" min="0" value={numRooms} onChange={e => setNumRooms(Number(e.target.value))} />
+                                <Input type="number" inputMode="numeric" min="0" value={numRooms} onChange={e => setNumRooms(Number(e.target.value))} />
                             </div>
                             <div className="space-y-2">
                                 <Label>Number of Remedies Placed</Label>
-                                <Input type="number" min="0" value={numRemedies} onChange={e => setNumRemedies(Number(e.target.value))} />
+                                <Input type="number" inputMode="numeric" min="0" value={numRemedies} onChange={e => setNumRemedies(Number(e.target.value))} />
                             </div>
                         </>
                     )}
@@ -141,11 +141,11 @@ export function ServiceCalculator({ onCalculated, initialFee = 0 }: ServiceCalcu
                         <>
                             <div className="space-y-2">
                                 <Label>Interior Items Analyzed</Label>
-                                <Input type="number" min="0" value={interiorItems} onChange={e => setInteriorItems(Number(e.target.value))} disabled={fullInterior} />
+                                <Input type="number" inputMode="numeric" min="0" value={interiorItems} onChange={e => setInteriorItems(Number(e.target.value))} disabled={fullInterior} />
                             </div>
                             <div className="space-y-2">
                                 <Label>Exterior Items Analyzed</Label>
-                                <Input type="number" min="0" value={exteriorItems} onChange={e => setExteriorItems(Number(e.target.value))} disabled={fullExterior} />
+                                <Input type="number" inputMode="numeric" min="0" value={exteriorItems} onChange={e => setExteriorItems(Number(e.target.value))} disabled={fullExterior} />
                             </div>
                             <div className="flex items-center gap-2 sm:col-span-2 mt-2">
                                 <label className="flex items-center gap-2 text-sm">
@@ -180,7 +180,7 @@ export function ServiceCalculator({ onCalculated, initialFee = 0 }: ServiceCalcu
                                     <Label>Custom Negotiated Price</Label>
                                     <div className="relative">
                                         <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input type="number" min="0" className="pl-9" value={customBundlePrice} onChange={e => setCustomBundlePrice(Number(e.target.value))} />
+                                        <Input type="number" inputMode="numeric" min="0" className="pl-9" value={customBundlePrice} onChange={e => setCustomBundlePrice(Number(e.target.value))} />
                                     </div>
                                 </div>
                             )}
@@ -190,7 +190,7 @@ export function ServiceCalculator({ onCalculated, initialFee = 0 }: ServiceCalcu
                     {/* Common Fields */}
                     <div className="space-y-2 sm:col-span-2 pt-2">
                         <Label>Extra / Long Distance Consultation Visits</Label>
-                        <Input type="number" min="0" value={extraVisits} onChange={e => setExtraVisits(Number(e.target.value))} className="w-full sm:w-1/2" />
+                        <Input type="number" inputMode="numeric" min="0" value={extraVisits} onChange={e => setExtraVisits(Number(e.target.value))} className="w-full sm:w-1/2" />
                     </div>
                 </div>
 
