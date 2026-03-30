@@ -373,7 +373,7 @@ export default function ServicesSettingsPage() {
             {/* Confirm AlertDialog */}
             <AlertDialog
                 open={confirmDialog.open}
-                onOpenChange={(open) => !open && setConfirmDialog(prev => ({ ...prev, open: false }))}
+                onOpenChange={(open: boolean) => !open && setConfirmDialog(prev => ({ ...prev, open: false }))}
             >
                 <AlertDialogContent className="rounded-2xl max-w-sm mx-auto">
                     <AlertDialogHeader>
