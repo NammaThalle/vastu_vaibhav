@@ -5,9 +5,6 @@ const withPWA = require("next-pwa")({
     cacheOnFrontEndNav: true,
     reloadOnOnline: true,
     disable: process.env.NODE_ENV === "development",
-    workboxOptions: {
-        disableDevLogs: true,
-    },
 });
 
 
