@@ -141,6 +141,17 @@
     @apply fixed inset-x-0 bottom-0 z-[100] max-h-[90dvh] overflow-y-auto rounded-t-3xl bg-background;
     padding-bottom: env(safe-area-inset-bottom);
   }
+
+  /* Full viewport height that accounts for iOS Safari toolbar shrink/grow */
+  .min-h-screen-dvh {
+    min-height: 100dvh;
+  }
+
+  /* Correct focus ring for iOS Safari (strips blue system outline) */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
 }
 
 /* Animations from cardsilo */
