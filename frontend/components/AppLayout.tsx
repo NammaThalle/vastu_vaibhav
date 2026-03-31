@@ -23,6 +23,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
+import { WifiOff } from "lucide-react"
 
 const navItems = [
     { path: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -51,6 +52,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         setIsCheckingAuth(false)
     }, [normalizedPathname, isAuthPage, router])
 
+    // ── Offline detection ──────────────────────────────────────────────
+    const [isOnline, setIsOnline] = React.useState(true)
+    React.useEffect(() => {
+        setIsOnline(navigator.onLine)
+        const handleOnline  = () => setIsOnline(true)
+        const handleOffline = () => setIsOnline(false)
+        window.addEventListener('online',  handleOnline)
+        window.addEventListener('offline', handleOffline)
+        return () => {
+            window.removeEventListener('online',  handleOnline)
+            window.removeEventListener('offline', handleOffline)
+        }
+    }, [])
+
     const handleLogout = () => {
         localStorage.removeItem("token")
         router.push("/login")
@@ -70,6 +85,23 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
+            {/* ── Offline Banner ───────────────────────────────────────────────── */}
+            <AnimatePresence>
+                {!isOnline && (
+                    <motion.div
+                        key="offline-banner"
+                        initial={{ y: -40, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -40, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        className="sticky top-0 z-[60] flex items-center justify-center gap-2 bg-amber-500 text-amber-950 px-4 py-2 text-xs font-bold"
+                    >
+                        <WifiOff className="h-3.5 w-3.5 shrink-0" />
+                        Offline — Showing last cached data
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* ── Header ─────────────────────────────────────────────────────── */}
             <header
                 className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
