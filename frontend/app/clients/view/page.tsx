@@ -492,16 +492,39 @@ function ClientDetailContent() {
         setBillError('');
         try {
             const blob = await ledgerApi.downloadBill(id as string);
-            const url = window.URL.createObjectURL(blob);
-            // On iOS Safari, window.open() triggers the share sheet (Save to Files, AirDrop, etc.)
-            // On desktop, it opens in a new tab for preview — both better than <a download>
-            window.open(url, '_blank');
-            setTimeout(() => window.URL.revokeObjectURL(url), 5000);
-            setBillStatus('success');
-            setTimeout(() => {
-                setBillStatus('idle');
-            }, 2000);
+
+            // Build a clean filename: "Bill_Rajesh_Kumar_2025-01-15.pdf"
+            const safeName = client.full_name.replace(/\s+/g, '_');
+            const dateStr = new Date().toISOString().split('T')[0];
+            const fileName = `Bill_${safeName}_${dateStr}.pdf`;
+
+            // ── iOS / Android: Web Share API with file support ────────────
+            // This triggers the native share sheet (AirDrop, Save to Files,
+            // WhatsApp, Mail, etc.) — exactly what the user expects on iPhone.
+            const file = new File([blob], fileName, { type: 'application/pdf' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: `Bill — ${client.full_name}`,
+                    text: `Vastu Vaibhav invoice for ${client.full_name}`,
+                });
+                setBillStatus('success');
+            } else {
+                // ── Desktop / unsupported: open in new tab for preview/print ─
+                const url = window.URL.createObjectURL(blob);
+                window.open(url, '_blank');
+                setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+                setBillStatus('success');
+            }
+
+            setTimeout(() => setBillStatus('idle'), 2000);
         } catch (err: any) {
+            // navigator.share throws AbortError if user dismisses the sheet — not an error
+            if (err?.name === 'AbortError') {
+                setBillStatus('idle');
+                return;
+            }
             setBillError(err.message || 'Failed to generate bill');
             setBillStatus('error');
         }
