@@ -36,8 +36,12 @@ const authPages = ["/login", "/register"]
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
     const router = useRouter()
-    const { theme, setTheme } = useTheme()
+    const { theme, setTheme, resolvedTheme } = useTheme()
     const [isCheckingAuth, setIsCheckingAuth] = React.useState(true)
+    const [mounted, setMounted] = React.useState(false)
+
+    // After mount, we know the real theme (including system preference)
+    React.useEffect(() => { setMounted(true) }, [])
 
     const normalizedPathname = pathname !== "/" && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname
     const isAuthPage = authPages.includes(normalizedPathname)
@@ -145,20 +149,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
                             className="h-9 w-9 relative"
                             aria-label="Toggle theme"
                         >
                             <AnimatePresence mode="wait">
                                 <motion.div
-                                    key={theme}
+                                    key={mounted ? resolvedTheme : 'loading'}
                                     initial={{ y: 20, opacity: 0, rotate: -40 }}
                                     animate={{ y: 0, opacity: 1, rotate: 0 }}
                                     exit={{ y: -20, opacity: 0, rotate: 40 }}
                                     transition={{ duration: 0.2 }}
                                     className="flex items-center justify-center"
                                 >
-                                    {theme === "dark" ? (
+                                    {mounted && resolvedTheme === "dark" ? (
                                         <Moon className="h-[1.2rem] w-[1.2rem]" />
                                     ) : (
                                         <Sun className="h-[1.2rem] w-[1.2rem]" />
