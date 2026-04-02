@@ -856,7 +856,8 @@ function ClientDetailContent() {
                                 <Receipt className="h-6 w-6 text-primary" />
                                 Financial Ledger
                             </h2>
-                            <div className="flex flex-wrap items-center gap-2">
+                            {/* Desktop action buttons — on mobile these live in the sticky bottom bar */}
+                            <div className="hidden lg:flex flex-wrap items-center gap-2">
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -879,7 +880,7 @@ function ClientDetailContent() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setShowAddDiscount(true)}
-                                    className="h-9 px-3 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold border-purple-200 text-purple-700 hover:bg-purple-50"
+                                    className="h-9 px-4 rounded-full text-xs font-bold border-purple-200 text-purple-700 hover:bg-purple-50"
                                 >
                                     - Discount
                                 </Button>
@@ -887,7 +888,7 @@ function ClientDetailContent() {
                                     variant="secondary"
                                     size="sm"
                                     onClick={() => setShowPhase2Calculator(true)}
-                                    className="h-9 px-3 sm:px-4 rounded-full text-[10px] sm:text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-none"
+                                    className="h-9 px-4 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-none"
                                 >
                                     Phase 2
                                 </Button>
@@ -895,7 +896,7 @@ function ClientDetailContent() {
                                     variant="default"
                                     size="sm"
                                     onClick={() => setShowAddPayment(true)}
-                                    className="h-9 px-4 sm:px-5 rounded-full text-[10px] sm:text-xs font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                                    className="h-9 px-5 rounded-full text-xs font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                                 >
                                     + Payment
                                 </Button>
