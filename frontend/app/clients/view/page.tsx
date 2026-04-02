@@ -723,20 +723,33 @@ function ClientDetailContent() {
             {/* ── Mobile Tab Bar ──────────────────────────────────────────────── */}
             <div className="lg:hidden mb-6">
                 <div className="flex rounded-2xl bg-secondary/50 p-1 gap-1">
-                    {(["ledger", "visits", "profile"] as const).map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setMobileTab(tab)}
-                            className={cn(
-                                "flex-1 py-2.5 text-xs font-bold capitalize rounded-xl transition-all",
-                                mobileTab === tab
-                                    ? "bg-background text-foreground shadow-sm"
-                                    : "text-muted-foreground hover:text-foreground"
-                            )}
-                        >
-                            {tab === 'ledger' ? '💰 Ledger' : tab === 'visits' ? '📋 Visits' : '👤 Profile'}
-                        </button>
-                    ))}
+                    {(["ledger", "visits", "profile"] as const).map((tab) => {
+                            const badge = tab === 'ledger'
+                                ? (ledger?.history?.length ?? 0)
+                                : tab === 'visits'
+                                ? visits.length
+                                : null;
+                            return (
+                                <button
+                                    key={tab}
+                                    onClick={() => setMobileTab(tab)}
+                                    className={cn(
+                                        "flex-1 py-2.5 text-xs font-bold capitalize rounded-xl transition-all flex items-center justify-center gap-1",
+                                        mobileTab === tab
+                                            ? "bg-background text-foreground shadow-sm"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    {tab === 'ledger' ? '💰 Ledger' : tab === 'visits' ? '📋 Visits' : '👤 Profile'}
+                                    {badge !== null && badge > 0 && (
+                                        <span className={cn(
+                                            "text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none",
+                                            mobileTab === tab ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                                        )}>{badge}</span>
+                                    )}
+                                </button>
+                            );
+                        })}
                 </div>
             </div>
 
