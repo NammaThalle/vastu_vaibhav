@@ -851,6 +851,23 @@ function ClientDetailContent() {
                 )}>
                     {/* Financial Ledger Section */}
                     <section className={cn("space-y-6", mobileTab !== 'ledger' ? "hidden lg:block" : "")}>
+
+                        {/* ── Mobile-only summary bar ────────────────────────────────── */}
+                        {ledger && (
+                            <div className="lg:hidden grid grid-cols-3 gap-2">
+                                {[
+                                    { label: 'Total Fees', value: formatCurrency(ledger.summary?.total_charges ?? 0), color: 'text-foreground' },
+                                    { label: 'Paid', value: formatCurrency(ledger.summary?.total_payments ?? 0), color: 'text-emerald-600' },
+                                    { label: 'Balance', value: formatCurrency(ledger.summary?.outstanding_balance ?? 0), color: ledger.summary?.outstanding_balance > 0 ? 'text-destructive' : 'text-emerald-600' },
+                                ].map(({ label, value, color }) => (
+                                    <div key={label} className="bg-card border border-border/50 rounded-2xl px-3 py-2.5 text-center">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+                                        <p className={cn("text-sm font-black mt-0.5 truncate", color)}>{value}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 uppercase">
                                 <Receipt className="h-6 w-6 text-primary" />
