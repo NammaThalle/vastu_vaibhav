@@ -192,7 +192,7 @@ function ClientDetailContent() {
     const [error, setError] = useState('');
 
     // Mobile tab state: 'profile' | 'ledger' | 'visits'
-    const [mobileTab, setMobileTab] = useState<'profile' | 'ledger' | 'visits'>('profile');
+    const [mobileTab, setMobileTab] = useState<'ledger' | 'visits' | 'profile'>('ledger');
 
     // Modals Visibility
     const [showAddVisit, setShowAddVisit] = useState(false);
@@ -493,34 +493,43 @@ function ClientDetailContent() {
         try {
             const blob = await ledgerApi.downloadBill(id as string);
 
-            // Build a clean filename: "Bill_Rajesh_Kumar_2025-01-15.pdf"
-            const safeName = client.full_name.replace(/\s+/g, '_');
+            // Filename: invoice-{client-name}-{YYYY-MM-DD}.pdf
+            const safeName = client.full_name.replace(/\s+/g, '-');
             const dateStr = new Date().toISOString().split('T')[0];
-            const fileName = `Bill_${safeName}_${dateStr}.pdf`;
+            const fileName = `invoice-${safeName}-${dateStr}.pdf`;
 
-            // ── iOS / Android: Web Share API with file support ────────────
-            // This triggers the native share sheet (AirDrop, Save to Files,
-            // WhatsApp, Mail, etc.) — exactly what the user expects on iPhone.
+            // ── Mobile (iOS/Android): Web Share API → native share sheet ─────
+            // navigator.share({ files }) triggers AirDrop, Save to Files, etc.
             const file = new File([blob], fileName, { type: 'application/pdf' });
-
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            if (
+                typeof navigator !== 'undefined' &&
+                navigator.canShare &&
+                navigator.canShare({ files: [file] })
+            ) {
                 await navigator.share({
                     files: [file],
-                    title: `Bill — ${client.full_name}`,
-                    text: `Vastu Vaibhav invoice for ${client.full_name}`,
+                    title: `Invoice — ${client.full_name}`,
                 });
                 setBillStatus('success');
-            } else {
-                // ── Desktop / unsupported: open in new tab for preview/print ─
-                const url = window.URL.createObjectURL(blob);
-                window.open(url, '_blank');
-                setTimeout(() => window.URL.revokeObjectURL(url), 5000);
-                setBillStatus('success');
+                setTimeout(() => setBillStatus('idle'), 2000);
+                return;
             }
 
+            // ── Desktop: <a download> → browser native "Save As" dialog ──────
+            // Pre-fills the filename, goes to Downloads — no new tab, no renaming.
+            const url = window.URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = fileName;
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+            setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+
+            setBillStatus('success');
             setTimeout(() => setBillStatus('idle'), 2000);
         } catch (err: any) {
-            // navigator.share throws AbortError if user dismisses the sheet — not an error
+            // User dismissed the iOS share sheet — not an error
             if (err?.name === 'AbortError') {
                 setBillStatus('idle');
                 return;
@@ -713,7 +722,7 @@ function ClientDetailContent() {
             {/* ── Mobile Tab Bar ──────────────────────────────────────────────── */}
             <div className="lg:hidden mb-6">
                 <div className="flex rounded-2xl bg-secondary/50 p-1 gap-1">
-                    {(["profile", "ledger", "visits"] as const).map((tab) => (
+                    {(["ledger", "visits", "profile"] as const).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setMobileTab(tab)}
@@ -724,7 +733,7 @@ function ClientDetailContent() {
                                     : "text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            {tab === 'profile' ? '👤 Profile' : tab === 'ledger' ? '💰 Ledger' : '📋 Visits'}
+                            {tab === 'ledger' ? '💰 Ledger' : tab === 'visits' ? '📋 Visits' : '👤 Profile'}
                         </button>
                     ))}
                 </div>
@@ -840,7 +849,7 @@ function ClientDetailContent() {
                     mobileTab === 'profile' ? "hidden lg:block" : ""
                 )}>
                     {/* Financial Ledger Section */}
-                    <section className="space-y-6">
+                    <section className={cn("space-y-6", mobileTab !== 'ledger' ? "hidden lg:block" : "")}>
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 uppercase">
                                 <Receipt className="h-6 w-6 text-primary" />
@@ -892,9 +901,63 @@ function ClientDetailContent() {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-3xl shadow-sm border border-border/50 overflow-hidden">
+                        {/* ── Mobile card list (lg:hidden) ─────────────────── */}
+                        <div className="lg:hidden space-y-2">
+                            {(!ledger?.history || ledger.history.length === 0) ? (
+                                <div className="text-center py-12 text-muted-foreground italic text-sm">
+                                    No financial activity recorded.
+                                </div>
+                            ) : ledger.history.map((entry: any, i: number) => {
+                                const isPayment = entry.type === 'payment';
+                                const isDiscount = entry.type === 'charge' && entry.amount < 0;
+                                const dotColor = isDiscount ? 'bg-purple-500' : isPayment ? 'bg-emerald-500' : 'bg-orange-500';
+                                const amtColor = isPayment ? 'text-emerald-600' : isDiscount ? 'text-purple-600' : 'text-foreground';
+                                return (
+                                    <div key={entry.id + i} className="bg-card border border-border/50 rounded-2xl px-4 py-3 flex items-start justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-sm text-foreground leading-snug truncate">{entry.description}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", dotColor)} />
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                                    {isDiscount ? 'discount' : entry.type}
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground">·</span>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                    {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                </span>
+                                            </div>
+                                            {!entry.visit_id && (
+                                                <div className="flex items-center gap-3 mt-2">
+                                                    <button
+                                                        onClick={() => entry.type === 'charge' ? startEditCharge(entry) : startEditPayment(entry)}
+                                                        className="text-[10px] font-bold text-primary uppercase"
+                                                    >Edit</button>
+                                                    {entry.id !== 'initial-fee' && (
+                                                        <button
+                                                            onClick={() => entry.type === 'charge' ? handleDeleteCharge(entry.id) : handleDeletePayment(entry.id)}
+                                                            className="text-[10px] font-bold text-destructive uppercase"
+                                                        >Delete</button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <p className={cn("font-black text-sm", amtColor)}>
+                                                {isPayment ? '-' : ''}{formatCurrency(entry.amount)}
+                                            </p>
+                                            <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                                                bal {formatCurrency(entry.balance_after)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* ── Desktop table (hidden on mobile) ─────────────── */}
+                        <div className="hidden lg:block bg-white rounded-3xl shadow-sm border border-border/50 overflow-hidden">
                             <div className="overflow-x-auto scrollbar-hide">
-                                <Table className="min-w-[600px] sm:min-w-full">
+                                <Table className="min-w-full">
                                     <TableHeader>
                                         <TableRow className="hover:bg-transparent border-b bg-secondary/30">
                                             <TableHead className="font-bold text-foreground h-14 pl-6">Date</TableHead>
@@ -913,20 +976,16 @@ function ClientDetailContent() {
                                                         {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                                     </span>
                                                     {!entry.visit_id && (
-                                                        <div className="flex items-center gap-3 mt-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                                            <button 
+                                                        <div className="flex items-center gap-3 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button
                                                                 onClick={() => entry.type === 'charge' ? startEditCharge(entry) : startEditPayment(entry)}
                                                                 className="text-[10px] font-bold text-primary hover:underline uppercase"
-                                                            >
-                                                                Edit
-                                                            </button>
+                                                            >Edit</button>
                                                             {entry.id !== 'initial-fee' && (
-                                                                <button 
+                                                                <button
                                                                     onClick={() => entry.type === 'charge' ? handleDeleteCharge(entry.id) : handleDeletePayment(entry.id)}
                                                                     className="text-[10px] font-bold text-destructive hover:underline uppercase"
-                                                                >
-                                                                    Delete
-                                                                </button>
+                                                                >Delete</button>
                                                             )}
                                                         </div>
                                                     )}
@@ -970,7 +1029,7 @@ function ClientDetailContent() {
                     </section>
 
                     {/* Consultation Visits Section — on mobile shown only on visits tab */}
-                    <section className={cn("space-y-8", mobileTab === 'ledger' ? "hidden lg:block" : "")}>
+                    <section className={cn("space-y-8", mobileTab !== 'visits' ? "hidden lg:block" : "")}>
                         <div className="flex items-center justify-between">
                             <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 uppercase">
                                 <ClipboardList className="h-6 w-6 text-primary" />
