@@ -493,10 +493,10 @@ function ClientDetailContent() {
         try {
             const blob = await ledgerApi.downloadBill(id as string);
 
-            // Filename: invoice-{client-name}-{YYYY-MM-DD}.pdf
+            // Filename: Invoice-{Client-Name}-{YYYY-MM-DD}.pdf
             const safeName = client.full_name.replace(/\s+/g, '-');
             const dateStr = new Date().toISOString().split('T')[0];
-            const fileName = `invoice-${safeName}-${dateStr}.pdf`;
+            const fileName = `Invoice-${safeName}-${dateStr}.pdf`;
 
             // ── Mobile (iOS/Android): Web Share API → native share sheet ─────
             // navigator.share({ files }) triggers AirDrop, Save to Files, etc.
@@ -509,6 +509,7 @@ function ClientDetailContent() {
                 await navigator.share({
                     files: [file],
                     title: `Invoice — ${client.full_name}`,
+                    text: '',   // empty string suppresses blob URL auto-caption in WhatsApp etc.
                 });
                 setBillStatus('success');
                 setTimeout(() => setBillStatus('idle'), 2000);
