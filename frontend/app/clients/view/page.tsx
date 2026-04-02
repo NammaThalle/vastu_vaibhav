@@ -1079,18 +1079,18 @@ function ClientDetailContent() {
                                         <div className="h-2 w-2 rounded-full bg-primary" />
                                     </div>
 
-                                    <div className="grid sm:grid-cols-[140px_1fr] gap-4 items-start">
-                                        <div className="pt-1.5">
+                                    <div className="grid sm:grid-cols-[140px_1fr] gap-3 items-start">
+                                        <div className="pt-1">
                                             <span className="text-xs font-black uppercase tracking-widest text-primary/70">
-                                                {new Date(v.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                                                {new Date(v.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                             </span>
                                         </div>
-                                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-border/50 group hover:border-primary/30 hover:shadow-md transition-all relative">
-                                            <div className="flex justify-between items-start mb-4">
-                                                <h3 className="text-lg font-bold text-foreground leading-tight">
+                                        <div className="bg-card p-4 sm:p-6 rounded-2xl shadow-sm border border-border/50 group hover:border-primary/30 hover:shadow-md transition-all relative">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <h3 className="text-base sm:text-lg font-bold text-foreground leading-tight pr-2">
                                                     {v.purpose}
                                                 </h3>
-                                                <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                <div className="flex gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => startEditVisit(v)}>
                                                         <Edit3 className="h-4 w-4" />
                                                     </Button>
@@ -1101,7 +1101,7 @@ function ClientDetailContent() {
                                             </div>
                                             <div className="relative">
                                                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/10 rounded-full" />
-                                                <p className="text-sm text-muted-foreground leading-relaxed pl-4 italic">
+                                                <p className="text-sm text-muted-foreground leading-relaxed pl-3 italic">
                                                     "{v.observations || "No specific observations recorded."}"
                                                 </p>
                                             </div>
@@ -1131,13 +1131,23 @@ function ClientDetailContent() {
                 className="lg:hidden fixed inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border/60 px-4 py-3 flex items-center gap-2"
                 style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
             >
-                <Button
-                    className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-500/30"
-                    onClick={() => setShowAddPayment(true)}
-                >
-                    <IndianRupee className="mr-1.5 h-4 w-4" />
-                    Record Payment
-                </Button>
+                {mobileTab === 'visits' ? (
+                    <Button
+                        className="flex-1 h-11 rounded-xl font-bold text-sm shadow-lg"
+                        onClick={() => setShowAddVisit(true)}
+                    >
+                        <Calendar className="mr-1.5 h-4 w-4" />
+                        Record Visit
+                    </Button>
+                ) : (
+                    <Button
+                        className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-500/30"
+                        onClick={() => setShowAddPayment(true)}
+                    >
+                        <IndianRupee className="mr-1.5 h-4 w-4" />
+                        Record Payment
+                    </Button>
+                )}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl shrink-0">
