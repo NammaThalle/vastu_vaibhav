@@ -516,16 +516,21 @@ function ClientDetailContent() {
                 return;
             }
 
-            // ── Desktop: <a download> → browser native "Save As" dialog ──────
-            // Pre-fills the filename, goes to Downloads — no new tab, no renaming.
+            // ── Fallback: anchor <a download> — works on HTTP, no blob URL shown ─
+            // Using download attribute avoids opening a new tab with the blob URL
+            // visible in the address bar. On iOS this triggers "Open In / Save to Files".
             const url = window.URL.createObjectURL(blob);
             const anchor = document.createElement('a');
             anchor.href = url;
             anchor.download = fileName;
+            anchor.style.display = 'none';
             document.body.appendChild(anchor);
             anchor.click();
-            document.body.removeChild(anchor);
-            setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+            // Small delay before cleanup so iOS has time to initiate the download
+            setTimeout(() => {
+                document.body.removeChild(anchor);
+                window.URL.revokeObjectURL(url);
+            }, 3000);
 
             setBillStatus('success');
             setTimeout(() => setBillStatus('idle'), 2000);
@@ -934,7 +939,7 @@ function ClientDetailContent() {
                         </div>
 
                         {/* ── Mobile card list (lg:hidden) ─────────────────── */}
-                        <div className="lg:hidden space-y-2">
+                        <div className="lg:hidden space-y-2 w-full">
                             {(!ledger?.history || ledger.history.length === 0) ? (
                                 <div className="text-center py-12 text-muted-foreground italic text-sm">
                                     No financial activity recorded.
@@ -1067,11 +1072,12 @@ function ClientDetailContent() {
                                 <ClipboardList className="h-6 w-6 text-primary" />
                                 Consultation History
                             </h2>
+                            {/* Hidden on mobile — bottom action bar handles this */}
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setShowAddVisit(true)}
-                                className="h-10 px-5 rounded-full text-xs font-bold border-primary/20 text-primary hover:bg-primary/5 shadow-sm"
+                                className="hidden lg:inline-flex h-10 px-5 rounded-full text-xs font-bold border-primary/20 text-primary hover:bg-primary/5 shadow-sm"
                             >
                                 <Plus className="mr-2 h-4 w-4" />
                                 Record Visit
