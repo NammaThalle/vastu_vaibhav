@@ -487,7 +487,7 @@ function ClientDetailContent() {
         setShowAddPayment(true);
     };
 
-    const handleDownloadBill = async () => {
+     const handleDownloadBill = async () => {
         setBillStatus('loading');
         setBillError('');
         try {
@@ -498,8 +498,8 @@ function ClientDetailContent() {
             const dateStr = new Date().toISOString().split('T')[0];
             const fileName = `Invoice-${safeName}-${dateStr}.pdf`;
 
-            // ── Mobile (iOS/Android): Web Share API → native share sheet ─────
-            // navigator.share({ files }) triggers AirDrop, Save to Files, etc.
+            // ── HTTPS: Web Share API → native iOS share sheet ────────────────
+            // Gives AirDrop, Save to Files, WhatsApp etc. Requires HTTPS.
             const file = new File([blob], fileName, { type: 'application/pdf' });
             if (
                 typeof navigator !== 'undefined' &&
@@ -509,37 +509,37 @@ function ClientDetailContent() {
                 await navigator.share({
                     files: [file],
                     title: `Invoice — ${client.full_name}`,
-                    text: '',   // empty string suppresses blob URL auto-caption in WhatsApp etc.
+                    text: '',
                 });
                 setBillStatus('success');
                 setTimeout(() => setBillStatus('idle'), 2000);
                 return;
             }
 
-            // ── Fallback: anchor <a download> — works on HTTP, no blob URL shown ─
-            // Using download attribute avoids opening a new tab with the blob URL
-            // visible in the address bar. On iOS this triggers "Open In / Save to Files".
-            const url = window.URL.createObjectURL(blob);
-            const anchor = document.createElement('a');
-            anchor.href = url;
-            anchor.download = fileName;
-            anchor.style.display = 'none';
-            document.body.appendChild(anchor);
-            anchor.click();
-            // Small delay before cleanup so iOS has time to initiate the download
-            setTimeout(() => {
+            // ── HTTP fallback: data URL via FileReader ────────────────────────
+            // Converts the blob to a base64 data URL (data:application/pdf;base64,...)
+            // instead of a blob URL (blob:http://...). A data URL has no domain/host,
+            // so it CANNOT appear as a link/caption in WhatsApp or any share target.
+            // On iOS Safari this triggers the native PDF viewer with the system
+            // "Open In / Share" button — the user can share to WhatsApp from there.
+            // On desktop browsers the anchor download attribute saves it directly.
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                const anchor = document.createElement('a');
+                anchor.href = dataUrl;
+                anchor.download = fileName;
+                anchor.style.display = 'none';
+                document.body.appendChild(anchor);
+                anchor.click();
                 document.body.removeChild(anchor);
-                window.URL.revokeObjectURL(url);
-            }, 3000);
+            };
+            reader.readAsDataURL(blob);
 
             setBillStatus('success');
             setTimeout(() => setBillStatus('idle'), 2000);
         } catch (err: any) {
-            // User dismissed the iOS share sheet — not an error
-            if (err?.name === 'AbortError') {
-                setBillStatus('idle');
-                return;
-            }
+            if (err?.name === 'AbortError') { setBillStatus('idle'); return; }
             setBillError(err.message || 'Failed to generate bill');
             setBillStatus('error');
         }
@@ -759,7 +759,7 @@ function ClientDetailContent() {
             </div>
 
             {/* ── Sidebar+Main Grid ────────────────────────────────────────────── */}
-            <div className="flex flex-col lg:grid lg:grid-cols-[350px_1fr] gap-10 items-start">
+            <div className="flex flex-col lg:grid lg:grid-cols-[350px_1fr] gap-10 lg:items-start">
                 {/* Left Sidebar: Profile & KPIs — hidden on mobile when not on profile tab */}
                 <aside className={cn(
                     "space-y-8 lg:sticky lg:top-24 w-full",
