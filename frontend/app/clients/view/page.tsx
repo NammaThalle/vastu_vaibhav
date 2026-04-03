@@ -491,50 +491,58 @@ function ClientDetailContent() {
         setBillStatus('loading');
         setBillError('');
         try {
-            const blob = await ledgerApi.downloadBill(id as string);
-
-            // Filename: Invoice-{Client-Name}-{YYYY-MM-DD}.pdf
             const safeName = client.full_name.replace(/\s+/g, '-');
             const dateStr = new Date().toISOString().split('T')[0];
             const fileName = `Invoice-${safeName}-${dateStr}.pdf`;
 
             // ── HTTPS: Web Share API → native iOS share sheet ────────────────
-            // Gives AirDrop, Save to Files, WhatsApp etc. Requires HTTPS.
-            const file = new File([blob], fileName, { type: 'application/pdf' });
+            // Try fetching the blob first only when Web Share with files is available
             if (
                 typeof navigator !== 'undefined' &&
-                navigator.canShare &&
-                navigator.canShare({ files: [file] })
+                navigator.canShare
             ) {
-                await navigator.share({
-                    files: [file],
-                    title: `Invoice — ${client.full_name}`,
-                    text: '',
-                });
+                const blob = await ledgerApi.downloadBill(id as string);
+                const file = new File([blob], fileName, { type: 'application/pdf' });
+                if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: `Invoice — ${client.full_name}`,
+                        text: '',
+                    });
+                    setBillStatus('success');
+                    setTimeout(() => setBillStatus('idle'), 2000);
+                    return;
+                }
+            }
+
+            // ── iOS on HTTP (no HTTPS): open the invoice page directly ────────
+            // blob URLs and data URLs both fail silently on iOS Safari PWA.
+            // Instead, fetch the invoice JSON and open /invoice/?data=... — a real
+            // http:// URL that Safari can render. The user then taps Safari's
+            // native share button (box+arrow) to forward to WhatsApp / AirDrop.
+            const isMobile = typeof window !== 'undefined' &&
+                /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile) {
+                const invoiceData = await ledgerApi.getInvoiceData(id as string);
+                const encoded = encodeURIComponent(JSON.stringify(invoiceData));
+                const invoiceUrl = `${window.location.origin}/invoice/?data=${encoded}`;
+                window.open(invoiceUrl, '_blank');
                 setBillStatus('success');
                 setTimeout(() => setBillStatus('idle'), 2000);
                 return;
             }
 
-            // ── HTTP fallback: data URL via FileReader ────────────────────────
-            // Converts the blob to a base64 data URL (data:application/pdf;base64,...)
-            // instead of a blob URL (blob:http://...). A data URL has no domain/host,
-            // so it CANNOT appear as a link/caption in WhatsApp or any share target.
-            // On iOS Safari this triggers the native PDF viewer with the system
-            // "Open In / Share" button — the user can share to WhatsApp from there.
-            // On desktop browsers the anchor download attribute saves it directly.
-            const reader = new FileReader();
-            reader.onload = () => {
-                const dataUrl = reader.result as string;
-                const anchor = document.createElement('a');
-                anchor.href = dataUrl;
-                anchor.download = fileName;
-                anchor.style.display = 'none';
-                document.body.appendChild(anchor);
-                anchor.click();
-                document.body.removeChild(anchor);
-            };
-            reader.readAsDataURL(blob);
+            // ── Desktop: anchor <a download> → browser "Save As" dialog ──────
+            const blob = await ledgerApi.downloadBill(id as string);
+            const url = window.URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = fileName;
+            anchor.style.display = 'none';
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+            setTimeout(() => window.URL.revokeObjectURL(url), 3000);
 
             setBillStatus('success');
             setTimeout(() => setBillStatus('idle'), 2000);
