@@ -495,38 +495,42 @@ function ClientDetailContent() {
             const dateStr = new Date().toISOString().split('T')[0];
             const fileName = `Invoice-${safeName}-${dateStr}.pdf`;
 
-            // ── HTTPS: Web Share API → native iOS share sheet ────────────────
-            // Try fetching the blob first only when Web Share with files is available
-            if (
-                typeof navigator !== 'undefined' &&
-                navigator.canShare
-            ) {
-                const blob = await ledgerApi.downloadBill(id as string);
-                const file = new File([blob], fileName, { type: 'application/pdf' });
-                if (navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        files: [file],
-                        title: `Invoice — ${client.full_name}`,
-                        text: '',
-                    });
-                    setBillStatus('success');
-                    setTimeout(() => setBillStatus('idle'), 2000);
-                    return;
-                }
-            }
-
-            // ── iOS on HTTP (no HTTPS): open the invoice page directly ────────
-            // blob URLs and data URLs both fail silently on iOS Safari PWA.
-            // Instead, fetch the invoice JSON and open /invoice/?data=... — a real
-            // http:// URL that Safari can render. The user then taps Safari's
-            // native share button (box+arrow) to forward to WhatsApp / AirDrop.
+            // ── iOS on HTTP: open window SYNCHRONOUSLY before any await ──────
+            // iOS Safari (and PWA standalone) blocks window.open() called after
+            // an `await` — it's no longer directly triggered by the user gesture.
+            // Solution: open a blank window immediately, then navigate it to the
+            // invoice URL once the data has been fetched asynchronously.
             const isMobile = typeof window !== 'undefined' &&
                 /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
             if (isMobile) {
+                // Check if Web Share API with files is available (HTTPS only)
+                if (typeof navigator !== 'undefined' && navigator.canShare) {
+                    const blob = await ledgerApi.downloadBill(id as string);
+                    const file = new File([blob], fileName, { type: 'application/pdf' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: `Invoice — ${client.full_name}`,
+                            text: '',
+                        });
+                        setBillStatus('success');
+                        setTimeout(() => setBillStatus('idle'), 2000);
+                        return;
+                    }
+                }
+
+                // HTTP fallback: open a blank tab immediately (synchronous, before await)
+                // then navigate it to the invoice page URL once data is ready.
+                const win = window.open('', '_blank');
                 const invoiceData = await ledgerApi.getInvoiceData(id as string);
                 const encoded = encodeURIComponent(JSON.stringify(invoiceData));
                 const invoiceUrl = `${window.location.origin}/invoice/?data=${encoded}`;
-                window.open(invoiceUrl, '_blank');
+                if (win) {
+                    win.location.href = invoiceUrl;
+                } else {
+                    // Popup was blocked — fall back to same-tab navigation
+                    window.location.href = invoiceUrl;
+                }
                 setBillStatus('success');
                 setTimeout(() => setBillStatus('idle'), 2000);
                 return;
