@@ -487,28 +487,47 @@ function ClientDetailContent() {
         setShowAddPayment(true);
     };
 
-     const handleDownloadBill = async () => {
+    const handleDownloadBill = async () => {
         setBillStatus('loading');
         setBillError('');
         try {
             const blob = await ledgerApi.downloadBill(id as string);
+
+            // Filename: Invoice-{Client-Name}-{YYYY-MM-DD}.pdf
             const safeName = client.full_name.replace(/\s+/g, '-');
             const dateStr = new Date().toISOString().split('T')[0];
             const fileName = `Invoice-${safeName}-${dateStr}.pdf`;
 
-            const url = window.URL.createObjectURL(blob);
-            const win = window.open(url, '_blank');
-            // Revoke the object URL after the window has had time to load the PDF
-            setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+            // ── Try Web Share API first (works on HTTPS / native share sheet) ──
+            const file = new File([blob], fileName, { type: 'application/pdf' });
 
-            setBillStatus('success');
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: `Invoice — ${client.full_name}`,
+                    text: `Vastu Vaibhav invoice for ${client.full_name}`,
+                });
+                setBillStatus('success');
+            } else {
+                // ── Desktop / unsupported: open in new tab for preview/print ─
+                const url = window.URL.createObjectURL(blob);
+                window.open(url, '_blank');
+                setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+                setBillStatus('success');
+            }
+
             setTimeout(() => setBillStatus('idle'), 2000);
         } catch (err: any) {
-            if (err?.name === 'AbortError') { setBillStatus('idle'); return; }
+            // navigator.share throws AbortError if user dismisses the sheet — not an error
+            if (err?.name === 'AbortError') {
+                setBillStatus('idle');
+                return;
+            }
             setBillError(err.message || 'Failed to generate bill');
             setBillStatus('error');
         }
     };
+
 
     const startEditClient = () => {
         setClientForm({
