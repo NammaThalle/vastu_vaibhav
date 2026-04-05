@@ -491,42 +491,60 @@ function ClientDetailContent() {
         setBillStatus('loading');
         setBillError('');
         try {
-            const blob = await ledgerApi.downloadBill(id as string);
-
-            // Filename: Invoice-{Client-Name}-{YYYY-MM-DD}.pdf
             const safeName = client.full_name.replace(/\s+/g, '-');
             const dateStr = new Date().toISOString().split('T')[0];
             const fileName = `Invoice-${safeName}-${dateStr}.pdf`;
 
-            // ── Try Web Share API first (works on HTTPS / native share sheet) ──
-            const file = new File([blob], fileName, { type: 'application/pdf' });
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: `Invoice — ${client.full_name}`,
-                    text: `Vastu Vaibhav invoice for ${client.full_name}`,
-                });
-                setBillStatus('success');
-            } else {
-                // ── Desktop / unsupported: open in new tab for preview/print ─
-                const url = window.URL.createObjectURL(blob);
-                window.open(url, '_blank');
-                setTimeout(() => window.URL.revokeObjectURL(url), 5000);
-                setBillStatus('success');
-            }
+            if (isMobile) {
+                // ── HTTPS: native share sheet with PDF file ───────────────────
+                // canShare with files only works on HTTPS — try it first
+                if (navigator.canShare) {
+                    const blob = await ledgerApi.downloadBill(id as string);
+                    const file = new File([blob], fileName, { type: 'application/pdf' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], title: `Invoice — ${client.full_name}`, text: '' });
+                        setBillStatus('success');
+                        setTimeout(() => setBillStatus('idle'), 2000);
+                        return;
+                    }
+                }
 
-            setTimeout(() => setBillStatus('idle'), 2000);
-        } catch (err: any) {
-            // navigator.share throws AbortError if user dismisses the sheet — not an error
-            if (err?.name === 'AbortError') {
-                setBillStatus('idle');
+                // ── HTTP / iOS PWA: navigate current tab to invoice page ──────
+                // window.open() is blocked by iOS PWA after any await.
+                // window.location.href always works — navigates the current tab.
+                // The invoice page is already rendered at /invoice/?data=...
+                // User sees the invoice, taps Safari's ↑ share button to forward.
+                setBillStatus('success');
+                setTimeout(() => setBillStatus('idle'), 1000);
+                const invoiceData = await ledgerApi.getInvoiceData(id as string);
+                const encoded = encodeURIComponent(JSON.stringify(invoiceData));
+                window.location.href = `/invoice/?data=${encoded}`;
                 return;
             }
+
+            // ── Desktop: anchor <a download> → browser Save As dialog ────────
+            const blob = await ledgerApi.downloadBill(id as string);
+            const url = window.URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = fileName;
+            anchor.style.display = 'none';
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+            setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+            setBillStatus('success');
+            setTimeout(() => setBillStatus('idle'), 2000);
+
+        } catch (err: any) {
+            if (err?.name === 'AbortError') { setBillStatus('idle'); return; }
             setBillError(err.message || 'Failed to generate bill');
             setBillStatus('error');
         }
     };
+
 
 
     const startEditClient = () => {
