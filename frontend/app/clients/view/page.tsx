@@ -491,62 +491,15 @@ function ClientDetailContent() {
         setBillStatus('loading');
         setBillError('');
         try {
+            const blob = await ledgerApi.downloadBill(id as string);
             const safeName = client.full_name.replace(/\s+/g, '-');
             const dateStr = new Date().toISOString().split('T')[0];
             const fileName = `Invoice-${safeName}-${dateStr}.pdf`;
 
-            // ── iOS on HTTP: open window SYNCHRONOUSLY before any await ──────
-            // iOS Safari (and PWA standalone) blocks window.open() called after
-            // an `await` — it's no longer directly triggered by the user gesture.
-            // Solution: open a blank window immediately, then navigate it to the
-            // invoice URL once the data has been fetched asynchronously.
-            const isMobile = typeof window !== 'undefined' &&
-                /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            if (isMobile) {
-                // Check if Web Share API with files is available (HTTPS only)
-                if (typeof navigator !== 'undefined' && navigator.canShare) {
-                    const blob = await ledgerApi.downloadBill(id as string);
-                    const file = new File([blob], fileName, { type: 'application/pdf' });
-                    if (navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: `Invoice — ${client.full_name}`,
-                            text: '',
-                        });
-                        setBillStatus('success');
-                        setTimeout(() => setBillStatus('idle'), 2000);
-                        return;
-                    }
-                }
-
-                // HTTP fallback: open a blank tab immediately (synchronous, before await)
-                // then navigate it to the invoice page URL once data is ready.
-                const win = window.open('', '_blank');
-                const invoiceData = await ledgerApi.getInvoiceData(id as string);
-                const encoded = encodeURIComponent(JSON.stringify(invoiceData));
-                const invoiceUrl = `${window.location.origin}/invoice/?data=${encoded}`;
-                if (win) {
-                    win.location.href = invoiceUrl;
-                } else {
-                    // Popup was blocked — fall back to same-tab navigation
-                    window.location.href = invoiceUrl;
-                }
-                setBillStatus('success');
-                setTimeout(() => setBillStatus('idle'), 2000);
-                return;
-            }
-
-            // ── Desktop: anchor <a download> → browser "Save As" dialog ──────
-            const blob = await ledgerApi.downloadBill(id as string);
             const url = window.URL.createObjectURL(blob);
-            const anchor = document.createElement('a');
-            anchor.href = url;
-            anchor.download = fileName;
-            anchor.style.display = 'none';
-            document.body.appendChild(anchor);
-            anchor.click();
-            document.body.removeChild(anchor);
-            setTimeout(() => window.URL.revokeObjectURL(url), 3000);
+            const win = window.open(url, '_blank');
+            // Revoke the object URL after the window has had time to load the PDF
+            setTimeout(() => window.URL.revokeObjectURL(url), 10000);
 
             setBillStatus('success');
             setTimeout(() => setBillStatus('idle'), 2000);
