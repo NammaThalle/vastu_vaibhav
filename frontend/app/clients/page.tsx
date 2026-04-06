@@ -196,10 +196,11 @@ export default function ClientsPage() {
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
-                    <h1 className="text-4xl font-extrabold tracking-tight">Clients</h1>
+                    <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Clients</h1>
                     <p className="text-muted-foreground">Manage and track your consulting relationships.</p>
                 </div>
-                <Button asChild className="shadow-lg shadow-primary/20">
+                {/* Desktop-only Add button */}
+                <Button asChild className="hidden sm:flex shadow-lg shadow-primary/20">
                     <Link href="/clients/new" className="flex items-center">
                         <Plus className="mr-2 h-4 w-4" />
                         Add New Client
@@ -343,7 +344,59 @@ export default function ClientsPage() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                         >
-                            <Card className="overflow-hidden border-border/50">
+                            {/* ── Mobile list cards (< md) ────────────────────── */}
+                            <div className="md:hidden space-y-2">
+                                {filteredClients.map((client, i) => {
+                                    const currentStatus = STATUS_OPTIONS.find(s => s.value === (client.lead_status || "Inquiry")) || STATUS_OPTIONS[0]
+                                    return (
+                                        <motion.div
+                                            key={client.id}
+                                            initial={{ opacity: 0, y: 8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: i * 0.04 }}
+                                        >
+                                            <button
+                                                onClick={() => router.push(`/clients/view?id=${client.id}`)}
+                                                className="w-full flex items-center gap-3 p-4 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm active:bg-accent/50 transition-colors text-left"
+                                            >
+                                                {/* Avatar */}
+                                                <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                                                    <span className="text-xs font-bold text-primary">
+                                                        {client.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                                                    </span>
+                                                </div>
+                                                {/* Name + address */}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-sm truncate">{client.full_name}</p>
+                                                    <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                                                        <MapPin className="h-3 w-3 shrink-0" />
+                                                        {client.project_address || "No address"}
+                                                    </p>
+                                                </div>
+                                                {/* Status + Balance */}
+                                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                                    <span className={cn(
+                                                        "text-[9px] font-bold uppercase tracking-tight px-2 py-0.5 rounded-full border",
+                                                        currentStatus.color
+                                                    )}>
+                                                        {currentStatus.label}
+                                                    </span>
+                                                    <span className={cn(
+                                                        "text-[10px] font-mono font-bold",
+                                                        client.current_balance <= 0 ? "text-emerald-600" : "text-destructive"
+                                                    )}>
+                                                        {client.current_balance <= 0 ? "Settled" : formatCurrency(client.current_balance)}
+                                                    </span>
+                                                </div>
+                                                <ArrowUpRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                                            </button>
+                                        </motion.div>
+                                    )
+                                })}
+                            </div>
+
+                            {/* ── Desktop table (≥ md) ─────────────────────────── */}
+                            <Card className="hidden md:block overflow-hidden border-border/50">
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="bg-muted/30">
@@ -447,11 +500,20 @@ export default function ClientsPage() {
                     </div>
                     <div className="space-y-1">
                         <h3 className="text-xl font-bold">No results found</h3>
-                        <p className="text-muted-foreground">Try adjusting your search or filters to find what you're looking for.</p>
+                        <p className="text-muted-foreground">Try adjusting your search or filters to find what you&apos;re looking for.</p>
                     </div>
                     <Button variant="outline" onClick={() => setSearchQuery("")}>Clear search</Button>
                 </div>
             )}
+
+            {/* ── Mobile FAB: Add New Client ───────────────────────────────── */}
+            <Link
+                href="/clients/new"
+                className="sm:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom)+12px)] right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
+                aria-label="Add new client"
+            >
+                <Plus className="h-6 w-6" />
+            </Link>
         </div>
     )
 }

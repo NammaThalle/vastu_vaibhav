@@ -143,7 +143,7 @@ export default function Dashboard() {
             {/* Welcome Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="space-y-1">
-                    <h1 className="text-4xl font-extrabold tracking-tight">Executive Dashboard</h1>
+                    <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Executive Dashboard</h1>
                     <p className="text-muted-foreground flex items-center gap-2">
                         Professional Vastu Consulting Metrics
                         <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground">Live</span>
@@ -174,7 +174,7 @@ export default function Dashboard() {
             </div>
 
             {/* Grid: Stat Cards */}
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {statCards.map((stat, i) => (
                     <motion.div
                         key={stat.title}
@@ -190,7 +190,7 @@ export default function Dashboard() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-3xl font-bold tracking-tight">
+                                <div className="text-2xl sm:text-3xl font-bold tracking-tight">
                                     {loading ? (
                                         <div className="h-8 w-24 bg-muted animate-pulse rounded" />
                                     ) : (
@@ -311,7 +311,7 @@ export default function Dashboard() {
                 {[
                     { label: "Client Directory", href: "/clients", icon: Users, color: "bg-blue-500/10 text-blue-500" },
                     { label: "New Project", href: "/clients/new", icon: Plus, color: "bg-purple-500/10 text-purple-500" },
-                    { label: "Ledger Analysis", href: "/clients", icon: IndianRupee, color: "bg-orange-500/10 text-orange-500" },
+                    { label: "Billing", href: "/clients", icon: IndianRupee, color: "bg-orange-500/10 text-orange-500" },
                     { label: "Settings", href: "/", icon: Settings, color: "bg-gray-500/10 text-gray-500" },
                 ].map((item) => (
                     <Link key={item.label} href={item.href}>
