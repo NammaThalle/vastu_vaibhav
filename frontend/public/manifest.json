@@ -1,6 +1,6 @@
 {
     "name": "Vastu Vaibhav CRM",
-    "short_name": "Vastu CRM",
+    "short_name": "Vastu Vaibhav",
     "description": "Professional Vastu Consulting CRM — manage clients, visits, and financials.",
     "start_url": "/",
     "display": "standalone",
@@ -27,6 +27,9 @@
             "purpose": "any"
         }
     ],
-    "categories": ["business", "productivity"],
+    "categories": [
+        "business",
+        "productivity"
+    ],
     "lang": "en-IN"
 }
