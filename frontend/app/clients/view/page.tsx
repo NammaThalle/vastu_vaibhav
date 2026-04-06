@@ -512,7 +512,7 @@ function ClientDetailContent() {
                     text: '',   // empty string suppresses blob URL auto-caption in WhatsApp etc.
                 });
                 setBillStatus('success');
-                setTimeout(() => setBillStatus('idle'), 2000);
+                setTimeout(() => setBillStatus('idle'), 1500);
                 return;
             }
 
@@ -533,7 +533,7 @@ function ClientDetailContent() {
             }, 3000);
 
             setBillStatus('success');
-            setTimeout(() => setBillStatus('idle'), 2000);
+            setTimeout(() => setBillStatus('idle'), 1500);
         } catch (err: any) {
             // User dismissed the iOS share sheet — not an error
             if (err?.name === 'AbortError') {
