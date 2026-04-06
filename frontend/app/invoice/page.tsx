@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { useRouter } from "next/navigation"
 
 type InvoiceData = {
   company: {
@@ -96,40 +95,8 @@ function InvoicePageContent() {
     )
   }
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: `Invoice — ${invoice.customer.name}`, text: `Vastu Vaibhav invoice for ${invoice.customer.name}`, url: window.location.href })
-      } catch {}
-    } else {
-      window.print()
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-stone-100 text-slate-900 print:bg-white print:p-0">
-      {/* ── Mobile action bar — hidden when printing ─────────────────────── */}
-      <div className="sticky top-0 z-50 flex items-center justify-between gap-3 bg-white/90 backdrop-blur-sm border-b border-slate-100 px-4 py-3 print:hidden">
-        <button
-          onClick={() => window.history.back()}
-          className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-[13px] font-semibold text-slate-700 active:bg-slate-200"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M12 5l-7 7 7 7"/>
-          </svg>
-          Back
-        </button>
-        <button
-          onClick={handleShare}
-          className="flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-1.5 text-[13px] font-semibold text-white active:bg-indigo-700"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
-          </svg>
-          Share
-        </button>
-      </div>
-      <div className="px-3 py-4">
+    <div className="min-h-screen bg-stone-100 px-3 py-4 text-slate-900 print:bg-white print:p-0">
       <div className="mx-auto w-full max-w-[780px] overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.06)] print:max-w-none print:rounded-none print:border-0 print:shadow-none">
         <div className="px-7 pt-2 pb-0">
           <div className="relative flex items-center justify-center min-h-[130px]">
@@ -326,7 +293,6 @@ function InvoicePageContent() {
             </div>
           </div>
         </div>
-      </div>
       </div>
     </div>
   )

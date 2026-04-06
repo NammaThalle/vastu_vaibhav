@@ -491,41 +491,34 @@ function ClientDetailContent() {
         setBillStatus('loading');
         setBillError('');
         try {
+            const blob = await ledgerApi.downloadBill(id as string);
+
+            // Filename: Invoice-{Client-Name}-{YYYY-MM-DD}.pdf
             const safeName = client.full_name.replace(/\s+/g, '-');
             const dateStr = new Date().toISOString().split('T')[0];
             const fileName = `Invoice-${safeName}-${dateStr}.pdf`;
 
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-            if (isMobile) {
-                // ── HTTPS: native share sheet with PDF file ───────────────────
-                // canShare with files only works on HTTPS — try it first
-                if (navigator.canShare) {
-                    const blob = await ledgerApi.downloadBill(id as string);
-                    const file = new File([blob], fileName, { type: 'application/pdf' });
-                    if (navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], title: `Invoice — ${client.full_name}`, text: '' });
-                        setBillStatus('success');
-                        setTimeout(() => setBillStatus('idle'), 2000);
-                        return;
-                    }
-                }
-
-                // ── HTTP / iOS PWA: navigate current tab to invoice page ──────
-                // window.open() is blocked by iOS PWA after any await.
-                // window.location.href always works — navigates the current tab.
-                // The invoice page is already rendered at /invoice/?data=...
-                // User sees the invoice, taps Safari's ↑ share button to forward.
+            // ── Mobile (iOS/Android): Web Share API → native share sheet ─────
+            // navigator.share({ files }) triggers AirDrop, Save to Files, etc.
+            const file = new File([blob], fileName, { type: 'application/pdf' });
+            if (
+                typeof navigator !== 'undefined' &&
+                navigator.canShare &&
+                navigator.canShare({ files: [file] })
+            ) {
+                await navigator.share({
+                    files: [file],
+                    title: `Invoice — ${client.full_name}`,
+                    text: '',   // empty string suppresses blob URL auto-caption in WhatsApp etc.
+                });
                 setBillStatus('success');
-                setTimeout(() => setBillStatus('idle'), 1000);
-                const invoiceData = await ledgerApi.getInvoiceData(id as string);
-                const encoded = encodeURIComponent(JSON.stringify(invoiceData));
-                window.location.href = `/invoice/?data=${encoded}`;
+                setTimeout(() => setBillStatus('idle'), 2000);
                 return;
             }
 
-            // ── Desktop: anchor <a download> → browser Save As dialog ────────
-            const blob = await ledgerApi.downloadBill(id as string);
+            // ── Fallback: anchor <a download> — works on HTTP, no blob URL shown ─
+            // Using download attribute avoids opening a new tab with the blob URL
+            // visible in the address bar. On iOS this triggers "Open In / Save to Files".
             const url = window.URL.createObjectURL(blob);
             const anchor = document.createElement('a');
             anchor.href = url;
@@ -533,19 +526,24 @@ function ClientDetailContent() {
             anchor.style.display = 'none';
             document.body.appendChild(anchor);
             anchor.click();
-            document.body.removeChild(anchor);
-            setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+            // Small delay before cleanup so iOS has time to initiate the download
+            setTimeout(() => {
+                document.body.removeChild(anchor);
+                window.URL.revokeObjectURL(url);
+            }, 3000);
+
             setBillStatus('success');
             setTimeout(() => setBillStatus('idle'), 2000);
-
         } catch (err: any) {
-            if (err?.name === 'AbortError') { setBillStatus('idle'); return; }
+            // User dismissed the iOS share sheet — not an error
+            if (err?.name === 'AbortError') {
+                setBillStatus('idle');
+                return;
+            }
             setBillError(err.message || 'Failed to generate bill');
             setBillStatus('error');
         }
     };
-
-
 
     const startEditClient = () => {
         setClientForm({
