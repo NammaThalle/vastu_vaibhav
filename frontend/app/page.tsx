@@ -311,7 +311,7 @@ export default function Dashboard() {
                 {[
                     { label: "Client Directory", href: "/clients", icon: Users, color: "bg-blue-500/10 text-blue-500" },
                     { label: "New Project", href: "/clients/new", icon: Plus, color: "bg-purple-500/10 text-purple-500" },
-                    { label: "Ledger Analysis", href: "/clients", icon: IndianRupee, color: "bg-orange-500/10 text-orange-500" },
+                    { label: "Billing", href: "/clients", icon: IndianRupee, color: "bg-orange-500/10 text-orange-500" },
                     { label: "Settings", href: "/", icon: Settings, color: "bg-gray-500/10 text-gray-500" },
                 ].map((item) => (
                     <Link key={item.label} href={item.href}>

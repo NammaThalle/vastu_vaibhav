@@ -270,7 +270,7 @@ export default function NewClientPage() {
                 <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <p className="text-xs text-muted-foreground leading-relaxed">
                     * Required fields must be completed. Finalizing this form will create a unique consulting ID for the client.
-                    You can track visits and maintain the ledger after the profile is active.
+                    You can track visits and manage billing after the profile is active.
                 </p>
             </div>
         </div>

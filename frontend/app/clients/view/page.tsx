@@ -398,7 +398,7 @@ function ClientDetailContent() {
     const handleDeleteCharge = async (chargeId: string) => {
         showConfirm(
             "Delete Charge",
-            "Are you sure you want to remove this charge from the ledger? This action cannot be undone.",
+            "Are you sure you want to remove this charge from billing? This action cannot be undone.",
             async () => {
                 try {
                     await ledgerApi.deleteService(chargeId);
@@ -745,7 +745,7 @@ function ClientDetailContent() {
                                             : "text-muted-foreground hover:text-foreground"
                                     )}
                                 >
-                                    {tab === 'ledger' ? '💰 Ledger' : tab === 'visits' ? '📋 Visits' : '👤 Profile'}
+                                    {tab === 'ledger' ? '💰 Billing' : tab === 'visits' ? '📋 Visits' : '👤 Profile'}
                                     {badge !== null && badge > 0 && (
                                         <span className={cn(
                                             "text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none",
@@ -861,13 +861,13 @@ function ClientDetailContent() {
                     </div>
                 </aside>
 
-                {/* Right Column: Ledger & Visits — on mobile show based on tab */}
+                {/* Right Column: Billing & Visits — on mobile show based on tab */}
                 <main className={cn(
                     "space-y-12",
                     // On mobile: hidden when profile tab active
                     mobileTab === 'profile' ? "hidden lg:block" : ""
                 )}>
-                    {/* Financial Ledger Section */}
+                    {/* Billing Section */}
                     <section className={cn("space-y-6", mobileTab !== 'ledger' ? "hidden lg:block" : "")}>
 
                         {/* ── Mobile-only summary bar ────────────────────────────────── */}
@@ -889,7 +889,7 @@ function ClientDetailContent() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 uppercase">
                                 <Receipt className="h-6 w-6 text-primary" />
-                                Financial Ledger
+                                Billing
                             </h2>
                             {/* Desktop action buttons — on mobile these live in the sticky bottom bar */}
                             <div className="hidden lg:flex flex-wrap items-center gap-2">
@@ -1269,7 +1269,7 @@ function ClientDetailContent() {
                                 <CardHeader className="bg-orange-500/5 pb-6">
                                     <CardTitle>{editingCharge ? 'Edit' : 'Add'} Extra Service Charge</CardTitle>
                                     <CardDescription>
-                                        {editingCharge ? 'Modify existing ledger entry details.' : 'Include professional remedies or travel expenses.'}
+                                        {editingCharge ? 'Modify this billing entry.' : 'Include professional remedies or travel expenses.'}
                                     </CardDescription>
                                 </CardHeader>
                                 <form onSubmit={handleAddCharge}>
@@ -1652,7 +1652,7 @@ function ClientDetailContent() {
                                                     client_id: id as string
                                                 };
                                                 await ledgerApi.addService(payload);
-                                                toast.success('Phase 2 Service added to ledger');
+                                                toast.success('Phase 2 Service added to billing');
                                                 setShowPhase2Calculator(false);
                                                 loadData();
                                             } catch(err: any) {
