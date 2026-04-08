@@ -26,13 +26,28 @@ Vastu Vaibhav is a specialized CRM and Financial Ledger application designed for
 - Python 3.10+ (for local development)
 - Node.js 18+ (for local development)
 
-### Running with Docker
+### Running with Docker (Local Development)
 1. Clone the repository.
 2. Run the following command:
    ```bash
    docker-compose up --build
    ```
-3. Access the application at `http://localhost:3000`.
+3. Access the application at `http://localhost:8000`.
+
+### Private Server Deployment (Using GHCR & Watchtower)
+For deploying to a private home server, this repository uses GitHub Actions to publish a Docker image to the GitHub Container Registry (GHCR), which is then automatically pulled and updated by Watchtower.
+
+1. **Generate a GitHub PAT (Personal Access Token)** with `read:packages` permission.
+2. **Authenticate Docker on your Server**:
+   ```bash
+   echo "YOUR_PAT_TOKEN" | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+   ```
+3. **Configure Environment variables**: Create `backend/.env` with your secure `SECRET_KEY` and `DATABASE_URL`.
+4. **Deploy**:
+   ```bash
+   docker-compose up -d
+   ```
+Watchtower will automatically check for new images built by GitHub Actions every 5 minutes and update the container seamlessly.
 
 ### Local Development (Backend)
 1. Navigate to `/backend`.
