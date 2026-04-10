@@ -11,8 +11,14 @@ from alembic.config import Config
 
 from app.core.config import settings
 from app.api.api_v1.api import api_router
+from app.utils.logger import setup_logging, logger
+
+# Initialize custom logging
+setup_logging()
 
 app = FastAPI(title=settings.PROJECT_NAME, version="1.0.0")
+
+logger.info("Initializing %s API", settings.PROJECT_NAME)
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,11 +32,13 @@ app.include_router(api_router, prefix="/api/v1")
 
 
 def run_database_migrations() -> None:
+    logger.info("Running database migrations...")
     base_dir = Path(__file__).resolve().parents[1]
     alembic_ini = base_dir / "alembic.ini"
     alembic_cfg = Config(str(alembic_ini))
     alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
     command.upgrade(alembic_cfg, "head")
+    logger.info("Database migrations completed successfully")
 
 
 @app.on_event("startup")
@@ -45,6 +53,7 @@ static_dir = "/app/static"
 
 @app.get("/health")
 def health_check():
+    logger.debug("Health check requested")
     return {"status": "ok", "db_type": "sqlite"}
 
 # API must differ from UI routes. 
