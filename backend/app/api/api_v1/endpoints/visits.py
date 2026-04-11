@@ -11,6 +11,7 @@ from app.models.service_addon import ServiceAddon as AddonModel
 from app.models.service import ServiceEntry as LedgerModel
 from app.schemas.visit import Visit, VisitCreate, VisitUpdate
 from sqlalchemy import func
+from app.utils.logger import logger
 
 router = APIRouter()
 
@@ -82,12 +83,14 @@ async def create_visit(
         raise HTTPException(status_code=404, detail="Client not found")
         
     # 2. Add the physical Visit Record
+    logger.info("Recording visit for client ID: %s, Purpose: %s", visit_in.client_id, visit_in.purpose)
     visit = VisitModel(**visit_in.dict())
     db.add(visit)
     await db.flush() # Secure the ID but don't commit fully yet
     
     # 3. Manual visit amount owns the visit-linked charge for this visit.
     if visit.amount is not None and visit.amount > 0:
+        logger.info("Manual visit charge detected: %s", visit.amount)
         await sync_visit_charge(db, visit)
     # 4. Only fall back to supplementary auto-billing when no manual amount is provided.
     elif client.service_id:
@@ -117,6 +120,7 @@ async def create_visit(
                     charge_amount = visit_addon.price
                 
                 # E. Inject Charge into Ledger
+                logger.info("Auto-billing supplementary visit #%d for client %s", current_visit_count, client.id)
                 visit.is_supplementary = True
                 visit.fee_incurred = charge_amount
                 db.add(
@@ -131,6 +135,7 @@ async def create_visit(
 
     await db.commit()
     await db.refresh(visit)
+    logger.info("Visit recorded successfully: %s", visit.id)
     return visit
 
 @router.put("/{id}", response_model=Visit)
@@ -196,13 +201,17 @@ async def delete_visit(
     """
     Delete a visit.
     """
+    logger.info("Deleting visit ID: %s", id)
     result = await db.execute(select(VisitModel).where(VisitModel.id == id))
     visit = result.scalars().first()
     if not visit:
+        logger.warning("Deletion failed - visit ID %s not found", id)
         raise HTTPException(status_code=404, detail="Visit not found")
     linked_entry = await get_visit_charge_entry(db, visit.id)
     if linked_entry:
+        logger.info("Removing linked ledger charge for visit ID: %s", id)
         await db.delete(linked_entry)
     await db.delete(visit)
     await db.commit()
+    logger.info("Visit deleted successfully: %s", id)
     return visit

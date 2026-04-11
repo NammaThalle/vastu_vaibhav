@@ -9,6 +9,7 @@ from app.models.service_addon import ServiceAddon as ServiceAddonModel
 from app.schemas.service_addon import ServiceAddon, ServiceAddonCreate, ServiceAddonUpdate
 from pydantic import BaseModel
 import json
+from app.utils.logger import logger
 
 router = APIRouter()
 
@@ -60,10 +61,12 @@ async def create_service_catalog(
     """
     Create a new service in the catalog (Admin only).
     """
+    logger.info("Creating new catalog item: %s", catalog_in.name)
     catalog_item = ServiceCatalogModel(**catalog_in.dict())
     db.add(catalog_item)
     await db.commit()
     await db.refresh(catalog_item)
+    logger.info("Catalog item created with ID: %s", catalog_item.id)
     return catalog_item
 
 @router.put("/catalog/{id}", response_model=ServiceCatalog)
@@ -200,11 +203,12 @@ async def calculate_estimate(
     Dynamically calculate the estimated fee based on Services.md rules.
     """
     # 1. Fetch the base service to know its logic
-    # (In a real app, logic might be hardcoded per service ID or name)
+    logger.debug("Calculating estimate for service ID: %s, Property: %s", request.service_id, request.property_type)
     result = await db.execute(select(ServiceCatalogModel).where(ServiceCatalogModel.id == request.service_id))
     service = result.scalars().first()
     
     if not service:
+        logger.warning("Calculation failed - Service ID %s not found", request.service_id)
         raise HTTPException(status_code=404, detail="Service not found in catalog")
 
     total = 0.0
@@ -273,5 +277,6 @@ async def calculate_estimate(
         visits_cost = request.extra_visits * 500
         total += visits_cost
         breakdown[f"{request.extra_visits} Extra Visits"] = visits_cost
-        
+    
+    logger.info("Estimate calculated for %s: Total=%s", service.name, total)
     return CalculateResponse(estimated_total=total, breakdown=breakdown)
