@@ -540,6 +540,8 @@ function ClientDetailContent() {
             // ── Fallback: anchor <a download> — works on HTTP, no blob URL shown ─
             // Using download attribute avoids opening a new tab with the blob URL
             // visible in the address bar. On iOS this triggers "Open In / Save to Files".
+            logger.info("Downloading invoice via browser fallback", { clientName: client.full_name, fileName });
+            
             const url = window.URL.createObjectURL(blob);
             const anchor = document.createElement('a');
             anchor.href = url;
