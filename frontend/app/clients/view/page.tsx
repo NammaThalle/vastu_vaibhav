@@ -172,6 +172,19 @@ function ClientDetailContent() {
     const profileCardRef = useRef<HTMLDivElement>(null);
     const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
     const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+    useEffect(() => {
+        setPortalTarget(document.body);
+        const el = profileCardRef.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                // Show ribbon when card is NOT intersecting (fully scrolled away)
+                setIsHeaderCollapsed(!entry.isIntersecting);
+            },
+            { threshold: 0 }
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
     }, [client]); // re-attach when client loads
     
     // PWA Check and Tab Logging
