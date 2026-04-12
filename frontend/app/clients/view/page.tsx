@@ -199,9 +199,7 @@ function ClientDetailContent() {
         }
     }, [id]);
 
-    useEffect(() => {
-        logger.debug("Tab switched", { tab: mobileTab, clientId: id });
-    }, [mobileTab]);
+
 
     // New State for dynamic forms
     const [availableAddons, setAvailableAddons] = useState<any[]>([]);
@@ -211,6 +209,10 @@ function ClientDetailContent() {
 
     // Mobile tab state: 'profile' | 'ledger' | 'visits'
     const [mobileTab, setMobileTab] = useState<'ledger' | 'visits' | 'profile'>('ledger');
+
+    useEffect(() => {
+        logger.debug("Tab switched", { tab: mobileTab, clientId: id });
+    }, [mobileTab, id]);
 
     // Modals Visibility
     const [showAddVisit, setShowAddVisit] = useState(false);
