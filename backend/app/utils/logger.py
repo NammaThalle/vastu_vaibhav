@@ -10,16 +10,26 @@ class ColoredFormatter(logging.Formatter):
         "ERROR": "\033[31m",      # Red
         "CRITICAL": "\033[35m",   # Magenta
     }
+    SOURCE_COLORS = {
+        "BACKEND": "\033[1;37m",  # Bold White
+        "FRONTEND": "\033[1;34m", # Bold Blue
+    }
     RESET = "\033[0m"
 
     def format(self, record):
         levelname = record.levelname
         color = self.COLORS.get(levelname, self.RESET)
         
+        # Get source from record, default to BACKEND
+        source = getattr(record, "source", "BACKEND")
+        source_color = self.SOURCE_COLORS.get(source, self.RESET)
+        
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(record.created))
         
+        # Format: 2025-12-12 12:35:57 - [BACKEND] - INFO - filename:line - message
         message = (
-            f"{timestamp} - {color}{levelname}{self.RESET} - "
+            f"{timestamp} - {source_color}[{source}]{self.RESET} - "
+            f"{color}{levelname}{self.RESET} - "
             f"{record.filename}:{record.lineno} - {record.getMessage()}"
         )
         return message
