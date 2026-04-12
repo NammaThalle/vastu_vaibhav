@@ -303,6 +303,10 @@ async def download_client_bill(
     filename = f"Bill_{client.full_name.replace(' ', '_')}_{client_id[:6]}.pdf"
     logger.info("Generating invoice PDF for client %s (%s) -> %s", client.full_name, client_id, filename)
     
+    # Generate the payload
+    ledger_data = await get_client_ledger(client_id, db)
+    invoice_payload = build_invoice_payload(client, ledger_data)
+    
     frontend_base_url = settings.FRONTEND_URL.rstrip("/")
     encoded_invoice = quote(json.dumps(invoice_payload, separators=(",", ":")))
     invoice_url = f"{frontend_base_url}/invoice/?data={encoded_invoice}"
