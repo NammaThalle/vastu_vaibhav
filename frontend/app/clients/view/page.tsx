@@ -92,6 +92,7 @@ import { clientsApi, visitsApi, ledgerApi, servicesApi } from "@/services/api"
 import { formatCurrency, cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { ServiceCalculator } from "@/components/ServiceCalculator"
+import { logger } from "@/lib/logger"
 
 const STATUS_OPTIONS = [
     { label: "Inquiry", value: "Inquiry", color: "text-blue-600 bg-blue-500/10 border-blue-500/20", icon: AlertCircle },
@@ -171,20 +172,24 @@ function ClientDetailContent() {
     const profileCardRef = useRef<HTMLDivElement>(null);
     const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
     const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
-    useEffect(() => {
-        setPortalTarget(document.body);
-        const el = profileCardRef.current;
-        if (!el) return;
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                // Show ribbon when card is NOT intersecting (fully scrolled away)
-                setIsHeaderCollapsed(!entry.isIntersecting);
-            },
-            { threshold: 0 }
-        );
-        observer.observe(el);
-        return () => observer.disconnect();
     }, [client]); // re-attach when client loads
+    
+    // PWA Check and Tab Logging
+    useEffect(() => {
+        if (id) {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            logger.info("Client view opened", { 
+                clientId: id, 
+                isPWA: isStandalone, 
+                platform: navigator.platform 
+            });
+        }
+    }, [id]);
+
+    useEffect(() => {
+        logger.debug("Tab switched", { tab: mobileTab, clientId: id });
+    }, [mobileTab]);
+
     // New State for dynamic forms
     const [availableAddons, setAvailableAddons] = useState<any[]>([]);
 
@@ -506,6 +511,7 @@ function ClientDetailContent() {
                 navigator.canShare &&
                 navigator.canShare({ files: [file] })
             ) {
+                logger.info("Sharing invoice via native share sheet", { clientName: client.full_name });
                 await navigator.share({
                     files: [file],
                     title: `Invoice — ${client.full_name}`,
