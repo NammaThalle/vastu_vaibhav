@@ -167,7 +167,7 @@ export default function Dashboard() {
                     <Button 
                         variant="outline" 
                         className="hidden sm:flex items-center"
-                        onClick={() => logger.info("User requested full executive report")}
+                        onClick={() => logger.info("Full executive report requested")}
                     >
                         <FileText className="mr-2 h-4 w-4" />
                         Full Report

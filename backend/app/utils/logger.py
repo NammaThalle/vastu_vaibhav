@@ -11,7 +11,7 @@ class ColoredFormatter(logging.Formatter):
         "CRITICAL": "\033[35m",   # Magenta
     }
     SOURCE_COLORS = {
-        "BACKEND": "\033[1;37m",  # Bold White
+        "BACKEND": "\033[1;36m",  # Bold Cyan
         "FRONTEND": "\033[1;34m", # Bold Blue
     }
     RESET = "\033[0m"

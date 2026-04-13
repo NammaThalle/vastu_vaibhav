@@ -191,11 +191,8 @@ function ClientDetailContent() {
     useEffect(() => {
         if (id) {
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-            logger.info("Client view opened", { 
-                clientId: id, 
-                isPWA: isStandalone, 
-                platform: navigator.platform 
-            });
+            const mode = isStandalone ? "PWA" : "Web";
+            logger.info(`View: ${id.slice(0, 6)} (${mode})`);
         }
     }, [id]);
 
@@ -211,7 +208,7 @@ function ClientDetailContent() {
     const [mobileTab, setMobileTab] = useState<'ledger' | 'visits' | 'profile'>('ledger');
 
     useEffect(() => {
-        logger.debug("Tab switched", { tab: mobileTab, clientId: id });
+        logger.debug(`Tab: ${mobileTab}`);
     }, [mobileTab, id]);
 
     // Modals Visibility
@@ -526,7 +523,7 @@ function ClientDetailContent() {
                 navigator.canShare &&
                 navigator.canShare({ files: [file] })
             ) {
-                logger.info("Sharing invoice via native share sheet", { clientName: client.full_name });
+                logger.info(`Sharing invoice: ${client.full_name}`);
                 await navigator.share({
                     files: [file],
                     title: `Invoice — ${client.full_name}`,
@@ -540,7 +537,7 @@ function ClientDetailContent() {
             // ── Fallback: anchor <a download> — works on HTTP, no blob URL shown ─
             // Using download attribute avoids opening a new tab with the blob URL
             // visible in the address bar. On iOS this triggers "Open In / Save to Files".
-            logger.info("Downloading invoice via browser fallback", { clientName: client.full_name, fileName });
+            logger.info(`Downloading invoice fallback: ${client.full_name}`);
             
             const url = window.URL.createObjectURL(blob);
             const anchor = document.createElement('a');

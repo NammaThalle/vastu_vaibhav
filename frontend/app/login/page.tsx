@@ -31,14 +31,14 @@ export default function LoginPage() {
         setLoading(true)
 
         try {
-            logger.info("User attempting login", { email })
+            logger.info(`Login attempt: ${email}`)
             const data = await authApi.login({ email, password })
             localStorage.setItem("token", data.access_token)
-            logger.info("User login successful", { email })
+            logger.info(`Login successful: ${email}`)
             toast.success("Welcome back, Consultant!")
             router.push("/")
         } catch (err: any) {
-            logger.error("User login failed", { email, error: err.message })
+            logger.error(`Login failed for ${email}: ${err.message}`)
             toast.error(err.message || "Invalid credentials. Please try again.")
         } finally {
             setLoading(false)

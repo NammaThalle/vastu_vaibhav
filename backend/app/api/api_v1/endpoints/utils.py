@@ -25,28 +25,13 @@ async def log_frontend_event(log: FrontendLog) -> Any:
     
     log_func = level_map.get(log.level.lower(), logger.info)
     
-    # ── Formatting for readability ──
+    # ── Simple Pass-through ──
     message = log.message
-    ctx = log.context or {}
+    ctx = log.context
     
-    # Example: "Client view opened" + {clientId: 'abc...'} -> "Client: abc"
-    if "Client view opened" in message and "clientId" in ctx:
-        pwa_tag = "PWA" if ctx.get("isPWA") else "Web"
-        platform = ctx.get("platform", "Unknown")
-        message = f"Client View: {ctx['clientId'][:6]} ({pwa_tag}/{platform})"
-    
-    elif "Tab switched" in message and "tab" in ctx:
-        message = f"Tab: {ctx['tab']}"
-    
-    elif "Sharing invoice" in message:
-        message = f"Share: {ctx.get('clientName', 'Invoice')}"
-    
-    elif "Downloading invoice" in message:
-        message = f"Download: {ctx.get('fileName', 'PDF')}"
-        
-    elif ctx:
-        # For other logs with context, just show a snippet
-        ctx_str = ", ".join([f"{k}: {str(v)[:10]}" for k, v in ctx.items()])
+    if ctx:
+        # If there's still metadata, append it concisely
+        ctx_str = ", ".join([f"{k}: {str(v)[:20]}" for k, v in ctx.items()])
         message = f"{message} ({ctx_str})"
 
     # Use 'extra' to pass the source to our custom formatter
