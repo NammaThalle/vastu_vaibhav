@@ -68,7 +68,7 @@ async def update_client(
     result = await db.execute(select(ClientModel).where(ClientModel.id == id))
     client = result.scalars().first()
     if not client:
-        logger.warning("Update failed - client ID %s not found", id)
+        logger.warning("Update failed: %s", id[:6])
         raise HTTPException(status_code=404, detail="Client not found")
     
     update_data = client_in.dict(exclude_unset=True)
@@ -103,7 +103,7 @@ async def delete_client(
     result = await db.execute(select(ClientModel).where(ClientModel.id == id))
     client = result.scalars().first()
     if not client:
-        logger.warning("Deletion failed - client ID %s not found", id)
+        logger.warning("Delete fail: %s", id[:6])
         raise HTTPException(status_code=404, detail="Client not found")
     await db.delete(client)
     await db.commit()

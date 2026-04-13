@@ -83,7 +83,8 @@ async def create_visit(
         raise HTTPException(status_code=404, detail="Client not found")
         
     # 2. Add the physical Visit Record
-    logger.info("Recording visit for client ID: %s, Purpose: %s", visit_in.client_id, visit_in.purpose)
+    logger.info("Recording visit for client ID: %s", visit_in.client_id)
+    logger.info("Purpose: %s", visit_in.purpose)
     visit = VisitModel(**visit_in.dict())
     db.add(visit)
     await db.flush() # Secure the ID but don't commit fully yet
@@ -213,5 +214,5 @@ async def delete_visit(
         await db.delete(linked_entry)
     await db.delete(visit)
     await db.commit()
-    logger.info("Visit deleted successfully: %s", id)
+    logger.info("Visit Deleted: %s", id[:6])
     return visit

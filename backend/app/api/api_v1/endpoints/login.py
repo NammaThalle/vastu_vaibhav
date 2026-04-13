@@ -38,11 +38,13 @@ async def login_access_token(
     # if not user.is_active: ...
 
     # 4. Generate Token
-    logger.info("User authenticated: %s. Generating token.", form_data.username)
+    logger.info("User authenticated: %s.", form_data.username)
+    logger.info("Generating token")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
         subject=user.id, expires_delta=access_token_expires
     )
+    logger.info("Token generated successfully")
     return Token(access_token=access_token, token_type="bearer")
 
 
@@ -62,7 +64,7 @@ async def register(
     Create new user without the need to be logged in (for initial setup)
     """
     # 1. Check if user exists
-    logger.info("Registration attempt for email: %s", user_in.email)
+    logger.info("Registering new user: %s", user_in.email)
     result = await db.execute(select(User).where(User.email == user_in.email))
     user = result.scalars().first()
     if user:

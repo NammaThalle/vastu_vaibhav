@@ -1,8 +1,9 @@
 
 services:
   vastu_app:
-    image: ghcr.io/${GITHUB_USER:-nammathalle}/vastu_vaibhav:latest
-    container_name: vastu_app
+    # image: ghcr.io/${GITHUB_USER:-nammathalle}/vastu_vaibhav:latest
+    build: .  # This tells Docker to use your local Dockerfile
+    # container_name: vastu_app
     restart: always
     volumes:
       - ./data:/data
@@ -12,13 +13,13 @@ services:
       - ./backend/.env
     # environment: (handled by .env file now for security)
 
-  watchtower:
-    image: containrrr/watchtower
-    container_name: vastu_watchtower
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ${DOCKER_CONFIG_PATH:-/root/.docker/config.json}:/config.json
-    command: --interval 300 --cleanup
-    environment:
-      - WATCHTOWER_POLL_INTERVAL=300
+  # watchtower:
+  #   image: containrrr/watchtower
+  #   container_name: vastu_watchtower
+  #   restart: always
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - ${DOCKER_CONFIG_PATH:-/root/.docker/config.json}:/config.json
+  #   command: --interval 300 --cleanup
+  #   environment:
+  #     - WATCHTOWER_POLL_INTERVAL=300
