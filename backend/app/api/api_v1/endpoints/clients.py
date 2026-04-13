@@ -64,7 +64,7 @@ async def update_client(
     id: str,
     client_in: ClientUpdate,
 ) -> Any:
-    logger.info("Updating client ID: %s", id)
+    logger.info("Updating client: %s", client_in.full_name)
     result = await db.execute(select(ClientModel).where(ClientModel.id == id))
     client = result.scalars().first()
     if not client:
@@ -78,7 +78,7 @@ async def update_client(
     db.add(client)
     await db.commit()
     await db.refresh(client)
-    logger.info("Client updated successfully: %s", id)
+    logger.info("Client updated successfully: %s", client.full_name)
     return client
 
 @router.get("/{id}", response_model=Client)
