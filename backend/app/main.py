@@ -41,10 +41,32 @@ def run_database_migrations() -> None:
     logger.info("Database migrations completed successfully")
 
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+import pytz
+from app.utils.backup import perform_db_backup
+
+scheduler = AsyncIOScheduler(timezone=pytz.timezone("Asia/Kolkata"))
+
 @app.on_event("startup")
 async def apply_pending_migrations() -> None:
     if settings.RUN_STARTUP_MIGRATIONS:
         await asyncio.to_thread(run_database_migrations)
+        
+    # Start backup scheduler
+    scheduler.add_job(
+        perform_db_backup,
+        CronTrigger(hour=2, minute=0),
+        id="daily_db_backup",
+        replace_existing=True
+    )
+    scheduler.start()
+    logger.info("Backup Job: Scheduled for 2:00 AM IST daily")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    scheduler.shutdown()
+    logger.info("Backup Job: Scheduler stopped")
 
 # Mount Static Files (Frontend)
 # We serve the 'static' directory which contains the Next.js export
