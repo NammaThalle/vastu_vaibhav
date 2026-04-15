@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 from app.api import deps
 from app.models.client import Client as ClientModel
 from app.schemas.client import Client, ClientCreate, ClientUpdate
+from app.utils.logger import logger
 
 router = APIRouter()
 
@@ -18,6 +19,7 @@ async def read_clients(
     """
     Retrieve clients with computed balances.
     """
+    logger.debug("Retrieving clients list (skip=%d, limit=%d)", skip, limit)
     stmt = select(ClientModel).options(
         selectinload(ClientModel.service_entries),
         selectinload(ClientModel.payments)
@@ -47,10 +49,12 @@ async def create_client(
     db: AsyncSession = Depends(deps.get_db),
     client_in: ClientCreate,
 ) -> Any:
+    logger.info("Creating new client: %s", client_in.name)
     client = ClientModel(**client_in.dict())
     db.add(client)
     await db.commit()
     await db.refresh(client)
+    logger.info("Client created successfully with ID: %s", client.id)
     return client
 
 @router.put("/{id}", response_model=Client)
@@ -60,9 +64,11 @@ async def update_client(
     id: str,
     client_in: ClientUpdate,
 ) -> Any:
+    logger.info("Updating client: %s", client_in.full_name)
     result = await db.execute(select(ClientModel).where(ClientModel.id == id))
     client = result.scalars().first()
     if not client:
+        logger.warning("Update failed: %s", id[:6])
         raise HTTPException(status_code=404, detail="Client not found")
     
     update_data = client_in.dict(exclude_unset=True)
@@ -72,6 +78,7 @@ async def update_client(
     db.add(client)
     await db.commit()
     await db.refresh(client)
+    logger.info("Client updated successfully: %s", client.full_name)
     return client
 
 @router.get("/{id}", response_model=Client)
@@ -92,10 +99,13 @@ async def delete_client(
     db: AsyncSession = Depends(deps.get_db),
     id: str,
 ) -> Any:
+    logger.info("Deleting client ID: %s", id)
     result = await db.execute(select(ClientModel).where(ClientModel.id == id))
     client = result.scalars().first()
     if not client:
+        logger.warning("Delete fail: %s", id[:6])
         raise HTTPException(status_code=404, detail="Client not found")
     await db.delete(client)
     await db.commit()
+    logger.info("Client deleted successfully: %s", id)
     return client

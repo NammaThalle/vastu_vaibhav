@@ -10,6 +10,7 @@ from sqlalchemy import select
 from app.db.base import AsyncSessionLocal
 from app.models.service_catalog import ServiceCatalog
 from app.models.service_addon import ServiceAddon
+from app.utils.logger import logger
 
 SERVICES = [
     {
@@ -75,7 +76,7 @@ SERVICES = [
 ]
 
 async def seed_services():
-    print("Connecting to database specifically to seed Service Catalog...")
+    logger.info("Connecting to database specifically to seed Service Catalog...")
     async with AsyncSessionLocal() as db:
         for s_data in SERVICES:
             result = await db.execute(select(ServiceCatalog).where(ServiceCatalog.name == s_data["name"]))
@@ -85,14 +86,14 @@ async def seed_services():
             addons_data = s_data.pop("addons", [])
             
             if not existing:
-                print(f"Adding service: {s_data['name']}")
+                logger.info("Adding service: %s", s_data['name'])
                 new_service = ServiceCatalog(**s_data)
                 db.add(new_service)
                 await db.flush() # get ID
                 for addon in addons_data:
                     db.add(ServiceAddon(**addon, service_catalog_id=new_service.id))
             else:
-                print(f"Updating service: {s_data['name']}")
+                logger.info("Updating service: %s", s_data['name'])
                 for k, v in s_data.items():
                     setattr(existing, k, v)
                     
@@ -107,7 +108,7 @@ async def seed_services():
         # Here we just keep things safe.
 
         await db.commit()
-    print("Service Catalog Seeding Complete!")
+    logger.info("Service Catalog Seeding Complete!")
 
 if __name__ == "__main__":
     asyncio.run(seed_services())

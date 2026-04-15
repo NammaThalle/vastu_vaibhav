@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { dashboardApi } from "@/services/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { logger } from "@/lib/logger"
 
 export default function Dashboard() {
     const [period, setPeriod] = React.useState("month")
@@ -150,7 +151,10 @@ export default function Dashboard() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Select value={period} onValueChange={setPeriod}>
+                    <Select value={period} onValueChange={(val) => {
+                        setPeriod(val)
+                        logger.debug("Dashboard period changed", { period: val })
+                    }}>
                         <SelectTrigger className="w-[140px] bg-background">
                             <SelectValue placeholder="Period" />
                         </SelectTrigger>
@@ -160,7 +164,11 @@ export default function Dashboard() {
                             <SelectItem value="total">All Time</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button variant="outline" className="hidden sm:flex items-center">
+                    <Button 
+                        variant="outline" 
+                        className="hidden sm:flex items-center"
+                        onClick={() => logger.info("Full executive report requested")}
+                    >
                         <FileText className="mr-2 h-4 w-4" />
                         Full Report
                     </Button>

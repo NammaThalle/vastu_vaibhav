@@ -19,6 +19,7 @@ from app.schemas.ledger import (
     Payment, PaymentCreate, PaymentUpdate,
     ClientLedger, LedgerEntry
 )
+from app.utils.logger import logger
 
 router = APIRouter()
 
@@ -84,10 +85,12 @@ async def create_service_entry(
     """
     Add a service charge to the ledger.
     """
+    logger.info("Adding service: %s (₹%s)", entry_in.client_id[:6], entry_in.amount)
     entry = ServiceModel(**entry_in.dict())
     db.add(entry)
     await db.commit()
     await db.refresh(entry)
+    logger.info("Service entry created successfully: %s", entry.id[:6])
     return entry
 
 @router.put("/services/{id}", response_model=ServiceEntry)
@@ -140,10 +143,12 @@ async def create_payment(
     """
     Add a payment to the ledger.
     """
+    logger.info("Creating payment entry: %s (₹%s)", payment_in.client_id[:6], payment_in.amount)
     payment = PaymentModel(**payment_in.dict())
     db.add(payment)
     await db.commit()
     await db.refresh(payment)
+    logger.info("Payment logged succesfully: %s", payment.id[:6])
     return payment
 
 @router.put("/payments/{id}", response_model=Payment)
@@ -195,10 +200,12 @@ async def get_client_ledger(
     """
     Get the full ledger history and current balance for a client.
     """
+    logger.debug("Fetching ledger: %s", client_id[:6])
     # 1. Verify Client and get fixed fee
     result = await db.execute(select(ClientModel).where(ClientModel.id == client_id))
     client = result.scalars().first()
     if not client:
+        logger.warning("Failed to fetch ledger: %s not found", client_id[:6])
         raise HTTPException(status_code=404, detail="Client not found")
 
     # 2. Get all services
@@ -293,8 +300,13 @@ async def download_client_bill(
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
 
+    filename = f"Bill_{client.full_name.replace(' ', '_')}_{client_id[:6]}.pdf"
+    logger.info("Generating invoice: %s", client.full_name)
+    
+    # Generate the payload
     ledger_data = await get_client_ledger(client_id, db)
     invoice_payload = build_invoice_payload(client, ledger_data)
+    
     frontend_base_url = settings.FRONTEND_URL.rstrip("/")
     encoded_invoice = quote(json.dumps(invoice_payload, separators=(",", ":")))
     invoice_url = f"{frontend_base_url}/invoice/?data={encoded_invoice}"
@@ -304,6 +316,7 @@ async def download_client_bill(
         pdf_path = Path(tmp.name)
 
     try:
+        logger.debug("Executing Puppeteer script at %s", script_path)
         proc = await asyncio.create_subprocess_exec(
             "node", str(script_path), invoice_url, str(pdf_path),
             stdout=asyncio.subprocess.PIPE,
@@ -311,11 +324,13 @@ async def download_client_bill(
         )
         stdout, stderr = await proc.communicate()
         if proc.returncode != 0:
+            logger.error("Puppeteer PDF generation failed: %s", stderr.decode())
             raise subprocess.CalledProcessError(
                 proc.returncode, "node",
                 output=stdout.decode(),
                 stderr=stderr.decode(),
             )
+        logger.info("Invoice generated successfully: %s", filename)
     except subprocess.CalledProcessError as exc:
         pdf_path.unlink(missing_ok=True)
         raise HTTPException(
