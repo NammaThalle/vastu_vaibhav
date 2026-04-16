@@ -1,10 +1,10 @@
 # Vastu Vaibhav 🏠📊
 
-Vastu Vaibhav is a specialized CRM and Financial Ledger application designed for Vastu Consultants. It streamlines client management, site visit logging, and financial tracking, providing a professional platform for managing energy audit portfolios.
+Vastu Vaibhav is a specialized Financial Ledger and Platform designed for Vastu Consultants. It streamlines client management, site visit logging, and financial tracking, providing a professional platform for managing energy audit portfolios.
 
 ## 🚀 Features
 
-- **Client CRM**: Manage detailed client profiles, contact information, and project locations.
+- **Client Management**: Manage detailed client profiles, contact information, and project locations.
 - **Visit Tracking**: Log site visits with specific observations and energy audit data.
 - **Financial Ledger**: Professional double-entry style ledger for tracking service charges and payments.
 - **Automated Invoicing**: Professional React-based invoice template with customizable central configuration (`data/invoice-data.js`).
@@ -72,7 +72,7 @@ For deep technical details and project evolution, please refer to our internal d
 1. **Infra**: Docker orchestration and environmental configuration.
 2. **Backend Core**: Secure API scaffolding and DB architecture.
 3. **Frontend Core**: Modern UI design system and theme implementation.
-4. **CRM**: Comprehensive client and visit life-cycle management.
+4. **Client System**: Comprehensive client and visit life-cycle management.
 5. **Ledger**: Advanced financial tracking and running balance logic.
 6. **Invoicing**: Automated PDF billing and consultant reporting.
 7. **Refinement**: UI/UX modernization and operational dashboard.

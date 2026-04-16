@@ -207,7 +207,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             {/* ── Footer (desktop only) ───────────────────────────────────────── */}
             <footer className="hidden md:block border-t py-4 bg-muted/30">
                 <div className="container mx-auto px-4 text-center text-xs text-muted-foreground italic">
-                    {AppSettings.project.name} CRM &middot; © {new Date().getFullYear()} {AppSettings.project.organization}
+                    {AppSettings.project.name} &middot; © {new Date().getFullYear()} {AppSettings.project.organization}
                 </div>
             </footer>
 
