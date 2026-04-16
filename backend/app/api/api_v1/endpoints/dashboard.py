@@ -13,6 +13,7 @@ from app.models.payment import Payment as PaymentModel
 from app.models.service import ServiceEntry as ServiceModel
 from app.models.visit import Visit as VisitModel
 from app.schemas.dashboard import DashboardActivityItem, DashboardSummary
+from app.utils.logger import logger
 
 router = APIRouter()
 
@@ -142,6 +143,8 @@ async def get_dashboard_summary(
             total_revenue += amount
             if lot_date >= period_start:
                 goal_for_period += amount
+
+    logger.debug("Dashboard summary calculated: revenue=%s, pending=%s, overdue=%s", total_revenue, pending_balance, overdue_balance)
 
     visits_this_week_result = await db.execute(
         select(func.count(VisitModel.id)).where(VisitModel.created_at >= week_start)

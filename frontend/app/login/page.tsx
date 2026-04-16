@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authApi } from "@/services/api"
 import { toast } from "sonner"
+import { logger } from "@/lib/logger"
 
 export default function LoginPage() {
     const [email, setEmail] = React.useState("")
@@ -30,11 +31,14 @@ export default function LoginPage() {
         setLoading(true)
 
         try {
+            logger.info(`Login attempt: ${email}`)
             const data = await authApi.login({ email, password })
             localStorage.setItem("token", data.access_token)
+            logger.info(`Login successful: ${email}`)
             toast.success("Welcome back, Consultant!")
             router.push("/")
         } catch (err: any) {
+            logger.error(`Login failed for ${email}: ${err.message}`)
             toast.error(err.message || "Invalid credentials. Please try again.")
         } finally {
             setLoading(false)

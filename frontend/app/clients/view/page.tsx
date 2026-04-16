@@ -92,6 +92,7 @@ import { clientsApi, visitsApi, ledgerApi, servicesApi } from "@/services/api"
 import { formatCurrency, cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { ServiceCalculator } from "@/components/ServiceCalculator"
+import { logger } from "@/lib/logger"
 
 const STATUS_OPTIONS = [
     { label: "Inquiry", value: "Inquiry", color: "text-blue-600 bg-blue-500/10 border-blue-500/20", icon: AlertCircle },
@@ -121,7 +122,7 @@ function StatusBadge({ client, onUpdate }: { client: any, onUpdate: () => void }
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <button 
+                <button
                     disabled={updating}
                     className={cn(
                         "flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-tighter transition-all hover:scale-105 active:scale-95 whitespace-nowrap",
@@ -166,7 +167,7 @@ function ClientDetailContent() {
     const [client, setClient] = useState<any>(null);
     const [visits, setVisits] = useState<any[]>([]);
     const [ledger, setLedger] = useState<any>(null);
-    
+
     // Collapsed ribbon: show only when profile card is fully scrolled out of view
     const profileCardRef = useRef<HTMLDivElement>(null);
     const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
@@ -185,6 +186,17 @@ function ClientDetailContent() {
         observer.observe(el);
         return () => observer.disconnect();
     }, [client]); // re-attach when client loads
+
+    // PWA Check and Tab Logging
+    useEffect(() => {
+        if (id) {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const mode = isStandalone ? "PWA" : "Web";
+        }
+    }, [id]);
+
+
+
     // New State for dynamic forms
     const [availableAddons, setAvailableAddons] = useState<any[]>([]);
 
@@ -193,6 +205,10 @@ function ClientDetailContent() {
 
     // Mobile tab state: 'profile' | 'ledger' | 'visits'
     const [mobileTab, setMobileTab] = useState<'ledger' | 'visits' | 'profile'>('ledger');
+
+    useEffect(() => {
+        logger.debug(`Tab: ${mobileTab}`);
+    }, [mobileTab, id]);
 
     // Modals Visibility
     const [showAddVisit, setShowAddVisit] = useState(false);
@@ -213,7 +229,7 @@ function ClientDetailContent() {
         title: string;
         description: string;
         onConfirm: () => void;
-    }>({ open: false, title: '', description: '', onConfirm: () => {} });
+    }>({ open: false, title: '', description: '', onConfirm: () => { } });
 
     const showConfirm = (title: string, description: string, onConfirm: () => void) => {
         setConfirmDialog({ open: true, title, description, onConfirm });
@@ -350,7 +366,7 @@ function ClientDetailContent() {
                 if (editingCharge.id === 'initial-fee') {
                     // Update client created_at which sets the initial fee date
                     // and total_fees_fixed to update the amount
-                    await clientsApi.update(id as string, { 
+                    await clientsApi.update(id as string, {
                         created_at: payload.date || undefined,
                         total_fees_fixed: payload.amount
                     });
@@ -386,7 +402,7 @@ function ClientDetailContent() {
             payload.client_id = id as string;
             await ledgerApi.addService(payload);
             toast.success('Discount applied successfully');
-            
+
             setDiscountForm({ description: 'Special Discount', amount: 0, date: '' });
             setShowAddDiscount(false);
             loadData();
@@ -413,9 +429,9 @@ function ClientDetailContent() {
 
     const startEditCharge = (entry: any) => {
         setEditingCharge(entry);
-        setChargeForm({ 
-            description: entry.description, 
-            amount: entry.amount, 
+        setChargeForm({
+            description: entry.description,
+            amount: entry.amount,
             addon_type: 'custom',
             date: formatVisitDateForInput(entry.date)
         });
@@ -506,6 +522,7 @@ function ClientDetailContent() {
                 navigator.canShare &&
                 navigator.canShare({ files: [file] })
             ) {
+                logger.info(`Sharing invoice: ${client.full_name}`);
                 await navigator.share({
                     files: [file],
                     title: `Invoice — ${client.full_name}`,
@@ -519,6 +536,8 @@ function ClientDetailContent() {
             // ── Fallback: anchor <a download> — works on HTTP, no blob URL shown ─
             // Using download attribute avoids opening a new tab with the blob URL
             // visible in the address bar. On iOS this triggers "Open In / Save to Files".
+            logger.info(`Downloading invoice fallback: ${client.full_name}`);
+
             const url = window.URL.createObjectURL(blob);
             const anchor = document.createElement('a');
             anchor.href = url;
@@ -701,9 +720,9 @@ function ClientDetailContent() {
             </AnimatePresence>
             {/* Top Navigation */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
-                <Button 
-                    variant="ghost" 
-                    onClick={() => router.back()} 
+                <Button
+                    variant="ghost"
+                    onClick={() => router.back()}
                     className="text-muted-foreground hover:text-foreground transition-colors group px-0"
                 >
                     <ChevronLeft className="mr-1 h-5 w-5 transition-transform group-hover:-translate-x-1" />
@@ -713,8 +732,8 @@ function ClientDetailContent() {
                     <div className="px-3 py-1 bg-secondary text-[10px] font-mono tracking-wider rounded-full text-muted-foreground border border-border">
                         ID: {id?.slice(0, 8)}
                     </div>
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         size="sm"
                         onClick={handleDeleteClient}
                         className="text-destructive border-destructive/20 hover:bg-destructive/5 h-9"
@@ -729,32 +748,32 @@ function ClientDetailContent() {
             <div className="lg:hidden mb-6">
                 <div className="flex rounded-2xl bg-secondary/50 p-1 gap-1">
                     {(["ledger", "visits", "profile"] as const).map((tab) => {
-                            const badge = tab === 'ledger'
-                                ? (ledger?.history?.length ?? 0)
-                                : tab === 'visits'
+                        const badge = tab === 'ledger'
+                            ? (ledger?.history?.length ?? 0)
+                            : tab === 'visits'
                                 ? visits.length
                                 : null;
-                            return (
-                                <button
-                                    key={tab}
-                                    onClick={() => setMobileTab(tab)}
-                                    className={cn(
-                                        "flex-1 py-2.5 text-xs font-bold capitalize rounded-xl transition-all flex items-center justify-center gap-1",
-                                        mobileTab === tab
-                                            ? "bg-background text-foreground shadow-sm"
-                                            : "text-muted-foreground hover:text-foreground"
-                                    )}
-                                >
-                                    {tab === 'ledger' ? '💰 Billing' : tab === 'visits' ? '📋 Visits' : '👤 Profile'}
-                                    {badge !== null && badge > 0 && (
-                                        <span className={cn(
-                                            "text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none",
-                                            mobileTab === tab ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                                        )}>{badge}</span>
-                                    )}
-                                </button>
-                            );
-                        })}
+                        return (
+                            <button
+                                key={tab}
+                                onClick={() => setMobileTab(tab)}
+                                className={cn(
+                                    "flex-1 py-2.5 text-xs font-bold capitalize rounded-xl transition-all flex items-center justify-center gap-1",
+                                    mobileTab === tab
+                                        ? "bg-background text-foreground shadow-sm"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                {tab === 'ledger' ? '💰 Billing' : tab === 'visits' ? '📋 Visits' : '👤 Profile'}
+                                {badge !== null && badge > 0 && (
+                                    <span className={cn(
+                                        "text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none",
+                                        mobileTab === tab ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                                    )}>{badge}</span>
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -826,8 +845,8 @@ function ClientDetailContent() {
                             </div>
                         </div>
 
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             className="w-full border-primary/20 text-primary hover:bg-primary/5 hover:border-primary font-bold py-6 rounded-xl transition-all"
                             onClick={startEditClient}
                         >
@@ -844,8 +863,8 @@ function ClientDetailContent() {
                             </div>
                             <div className={cn(
                                 "p-5 rounded-2xl shadow-sm border space-y-1 transition-all",
-                                (ledger?.current_balance > 0) 
-                                    ? "bg-red-50 border-red-100 text-red-900" 
+                                (ledger?.current_balance > 0)
+                                    ? "bg-red-50 border-red-100 text-red-900"
                                     : "bg-emerald-50 border-emerald-100 text-emerald-900"
                             )}>
                                 <p className="text-[10px] uppercase font-bold tracking-widest opacity-70">Outstanding Balance</p>
@@ -1004,62 +1023,62 @@ function ClientDetailContent() {
                                             <TableHead className="font-bold text-foreground h-14 text-right pr-6">Balance</TableHead>
                                         </TableRow>
                                     </TableHeader>
-                                <TableBody>
-                                    {ledger?.history.map((entry: any, i: number) => (
-                                        <TableRow key={entry.id + i} className="group hover:bg-secondary/20 transition-colors border-b last:border-0 h-16">
-                                            <TableCell className="pl-6">
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium text-sm">
-                                                        {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                    </span>
-                                                    {!entry.visit_id && (
-                                                        <div className="flex items-center gap-3 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button
-                                                                onClick={() => entry.type === 'charge' ? startEditCharge(entry) : startEditPayment(entry)}
-                                                                className="text-[10px] font-bold text-primary hover:underline uppercase"
-                                                            >Edit</button>
-                                                            {entry.id !== 'initial-fee' && (
+                                    <TableBody>
+                                        {ledger?.history.map((entry: any, i: number) => (
+                                            <TableRow key={entry.id + i} className="group hover:bg-secondary/20 transition-colors border-b last:border-0 h-16">
+                                                <TableCell className="pl-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-sm">
+                                                            {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                        </span>
+                                                        {!entry.visit_id && (
+                                                            <div className="flex items-center gap-3 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                 <button
-                                                                    onClick={() => entry.type === 'charge' ? handleDeleteCharge(entry.id) : handleDeletePayment(entry.id)}
-                                                                    className="text-[10px] font-bold text-destructive hover:underline uppercase"
-                                                                >Delete</button>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="font-bold text-foreground">{entry.description}</TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <div className={cn(
-                                                        "h-2 w-2 rounded-full",
-                                                        entry.type === 'charge' && entry.amount < 0 ? "bg-purple-500" :
-                                                        entry.type === 'charge' ? "bg-orange-500" : "bg-emerald-500"
-                                                    )} />
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">
-                                                        {entry.type === 'charge' && entry.amount < 0 ? 'discount' : entry.type}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className={cn(
-                                                "text-right font-black",
-                                                entry.type === 'payment' ? "text-emerald-600" : entry.amount < 0 ? "text-purple-600" : "text-foreground"
-                                            )}>
-                                                {entry.type === 'payment' ? '-' : ''}{formatCurrency(entry.amount)}
-                                            </TableCell>
-                                            <TableCell className="text-right pr-6 font-mono font-bold text-sm text-muted-foreground">
-                                                {formatCurrency(entry.balance_after)}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {(!ledger?.history || ledger.history.length === 0) && (
-                                        <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">
-                                                No financial activity recorded for this profile.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
+                                                                    onClick={() => entry.type === 'charge' ? startEditCharge(entry) : startEditPayment(entry)}
+                                                                    className="text-[10px] font-bold text-primary hover:underline uppercase"
+                                                                >Edit</button>
+                                                                {entry.id !== 'initial-fee' && (
+                                                                    <button
+                                                                        onClick={() => entry.type === 'charge' ? handleDeleteCharge(entry.id) : handleDeletePayment(entry.id)}
+                                                                        className="text-[10px] font-bold text-destructive hover:underline uppercase"
+                                                                    >Delete</button>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="font-bold text-foreground">{entry.description}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={cn(
+                                                            "h-2 w-2 rounded-full",
+                                                            entry.type === 'charge' && entry.amount < 0 ? "bg-purple-500" :
+                                                                entry.type === 'charge' ? "bg-orange-500" : "bg-emerald-500"
+                                                        )} />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">
+                                                            {entry.type === 'charge' && entry.amount < 0 ? 'discount' : entry.type}
+                                                        </span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className={cn(
+                                                    "text-right font-black",
+                                                    entry.type === 'payment' ? "text-emerald-600" : entry.amount < 0 ? "text-purple-600" : "text-foreground"
+                                                )}>
+                                                    {entry.type === 'payment' ? '-' : ''}{formatCurrency(entry.amount)}
+                                                </TableCell>
+                                                <TableCell className="text-right pr-6 font-mono font-bold text-sm text-muted-foreground">
+                                                    {formatCurrency(entry.balance_after)}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                        {(!ledger?.history || ledger.history.length === 0) && (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">
+                                                    No financial activity recorded for this profile.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
                                 </Table>
                             </div>
                         </div>
@@ -1617,7 +1636,7 @@ function ClientDetailContent() {
                         </motion.div>
                     </div>
                 )}
-                
+
                 {showPhase2Calculator && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm overflow-y-auto">
                         <motion.div
@@ -1627,8 +1646,8 @@ function ClientDetailContent() {
                             className="w-full sm:max-w-2xl max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl"
                         >
                             <Card className="shadow-2xl border-indigo-500/20 relative overflow-hidden rounded-3xl">
-                                <Button 
-                                    variant="ghost" 
+                                <Button
+                                    variant="ghost"
                                     size="icon"
                                     className="absolute right-4 top-4 text-muted-foreground hover:bg-muted rounded-full z-20"
                                     onClick={() => setShowPhase2Calculator(false)}
@@ -1643,7 +1662,7 @@ function ClientDetailContent() {
                                     <div className="absolute top-0 right-0 h-32 w-32 bg-indigo-500/10 blur-3xl -z-10 rounded-full" />
                                 </CardHeader>
                                 <CardContent className="pt-8 px-8">
-                                    <ServiceCalculator 
+                                    <ServiceCalculator
                                         onCalculated={async (fee, serviceId) => {
                                             try {
                                                 const payload = {
@@ -1655,10 +1674,10 @@ function ClientDetailContent() {
                                                 toast.success('Phase 2 Service added to billing');
                                                 setShowPhase2Calculator(false);
                                                 loadData();
-                                            } catch(err: any) {
+                                            } catch (err: any) {
                                                 toast.error(err.message || 'Failed to add Phase 2 charge');
                                             }
-                                        }} 
+                                        }}
                                     />
                                 </CardContent>
                             </Card>

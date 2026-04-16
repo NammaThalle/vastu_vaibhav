@@ -11,8 +11,14 @@ from alembic.config import Config
 
 from app.core.config import settings
 from app.api.api_v1.api import api_router
+from app.utils.logger import setup_logging, logger
+
+# Initialize custom logging
+setup_logging()
 
 app = FastAPI(title=settings.PROJECT_NAME, version="1.0.0")
+
+logger.info("Initializing %s API", settings.PROJECT_NAME)
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,17 +32,41 @@ app.include_router(api_router, prefix="/api/v1")
 
 
 def run_database_migrations() -> None:
+    logger.info("Running database migrations...")
     base_dir = Path(__file__).resolve().parents[1]
     alembic_ini = base_dir / "alembic.ini"
     alembic_cfg = Config(str(alembic_ini))
     alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
     command.upgrade(alembic_cfg, "head")
+    logger.info("Database migrations completed successfully")
 
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+import pytz
+from app.utils.backup import perform_db_backup
+
+scheduler = AsyncIOScheduler(timezone=pytz.timezone("Asia/Kolkata"))
 
 @app.on_event("startup")
 async def apply_pending_migrations() -> None:
     if settings.RUN_STARTUP_MIGRATIONS:
         await asyncio.to_thread(run_database_migrations)
+        
+    # Start backup scheduler
+    scheduler.add_job(
+        perform_db_backup,
+        CronTrigger(hour=2, minute=0),
+        id="daily_db_backup",
+        replace_existing=True
+    )
+    scheduler.start()
+    logger.info("Backup Job: Scheduled for 2:00 AM IST daily")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    scheduler.shutdown()
+    logger.info("Backup Job: Scheduler stopped")
 
 # Mount Static Files (Frontend)
 # We serve the 'static' directory which contains the Next.js export
@@ -45,6 +75,7 @@ static_dir = "/app/static"
 
 @app.get("/health")
 def health_check():
+    logger.debug("Health check requested")
     return {"status": "ok", "db_type": "sqlite"}
 
 # API must differ from UI routes. 

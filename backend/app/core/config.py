@@ -18,3 +18,7 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 settings = Settings()
+
+from app.utils.logger import logger
+if settings.SECRET_KEY == "change_me_in_production":
+    logger.warning("SECURITY WARNING: Running with default SECRET_KEY. Change this in production via .env!")
