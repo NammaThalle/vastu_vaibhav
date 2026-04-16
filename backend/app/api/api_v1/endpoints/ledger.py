@@ -39,10 +39,11 @@ def build_invoice_payload(client: ClientModel, ledger_data: ClientLedger) -> dic
     ]
     payment_entries = [entry for entry in ledger_data.history if entry.type == "payment"]
 
+    app_cfg = settings.APP_CONFIG
     return {
         "company": {
-            "name": "VASTU VAIBHAV",
-            "memberLabel": "BNI MEMBER",
+            "name": app_cfg.get("project", {}).get("name", "VASTU VAIBHAV"),
+            "memberLabel": app_cfg.get("invoice", {}).get("memberLabel", "BNI MEMBER"),
         },
         "meta": {
             "invoiceNo": f"VV-{client.id[:6].upper()}-{now.strftime('%Y%m%d')}",
@@ -58,21 +59,21 @@ def build_invoice_payload(client: ClientModel, ledger_data: ClientLedger) -> dic
         "items": charge_items,
         "summary": {
             "subtotal": ledger_data.total_billed,
-            "taxRate": 0,
-            "taxAmount": 0,
+            "taxRate": app_cfg.get("payment", {}).get("taxRate", 0),
+            "taxAmount": 0, # Depending on logic, this could be calculated if taxRate > 0
             "amountPaid": ledger_data.total_paid,
             "balanceAmount": ledger_data.current_balance,
         },
         "payment": {
-            "bankName": "HDFC BANK",
-            "accountNo": "ID030305089",
-            "ifsc": "100000",
+            "bankName": app_cfg.get("payment", {}).get("bankName", "HDFC BANK"),
+            "accountNo": app_cfg.get("payment", {}).get("accountNo", "ID030305089"),
+            "ifsc": app_cfg.get("payment", {}).get("ifsc", "100000"),
         },
         "contact": {
-            "email": "vastuvaibhav.byravi@gmail.com",
-            "phone": "+91 94201 97749",
-            "secondaryPhone": "+91 86689 52446",
-            "gpayPhone": "+91 94201 97749",
+            "email": app_cfg.get("contact", {}).get("email", ""),
+            "phone": app_cfg.get("contact", {}).get("phone", ""),
+            "secondaryPhone": app_cfg.get("contact", {}).get("secondaryPhone", ""),
+            "gpayPhone": app_cfg.get("contact", {}).get("gpayPhone", ""),
         },
     }
 

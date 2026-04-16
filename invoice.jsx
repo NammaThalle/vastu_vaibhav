@@ -1,16 +1,61 @@
 import { useState } from "react";
-import {
-  COMPANY,
-  INVOICE_META,
-  CUSTOMER,
-  ITEMS,
-  PAYMENT,
-  TAX_RATE,
-} from "./data/invoice-data";
+import appSettings from "./config/app-settings.json";
+
+const COMPANY = {
+  name: appSettings.project.name,
+  tagline: appSettings.project.tagline,
+  email: appSettings.contact.email,
+  phone: appSettings.contact.phone,
+  website: appSettings.contact.website,
+};
+
+const PAYMENT = appSettings.payment;
+const TAX_RATE = appSettings.payment.taxRate;
+
+const INVOICE_META = {
+  invoiceNo: "VV-2024-102",
+  date: "28 May 2024",
+  dueDate: "12 June 2024",
+};
+
+const CUSTOMER = {
+  name: "Mr. Akash Sharma",
+  address: "451, Oakwood Drive",
+  city: "Pune, MH — 411001",
+  phone: "+91 98765 43210",
+};
+
+const ITEMS = [
+  {
+    id: 1,
+    title: "Vastu Consultation & Analysis",
+    description: "Comprehensive site evaluation, detailed report",
+    amount: 25000,
+  },
+  {
+    id: 2,
+    title: "Conceptual Floor Plan Design",
+    description: "Modern layout based on Vastu principles",
+    amount: 15000,
+  },
+  {
+    id: 3,
+    title: "Site Visits & Advisory",
+    description: "4 visits during construction phase",
+    amount: 10000,
+  },
+  {
+    id: 4,
+    title: "Material Selection Guide",
+    description: "Textures, lighting, color palette",
+    amount: 8000,
+  },
+];
 
 function formatCurrency(amount) {
   return "₹" + amount.toLocaleString("en-IN");
 }
+
 
 const StatusBadge = ({ label }) => (
   <span

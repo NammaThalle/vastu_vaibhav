@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { AppSettings } from "@/lib/shared-config"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -118,7 +119,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                             <Home className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
                         </div>
                         <span className="font-bold text-base md:text-xl tracking-tight">
-                            Vastu Vaibhav
+                            {AppSettings.project.name}
                         </span>
                     </Link>
 
@@ -206,7 +207,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             {/* ── Footer (desktop only) ───────────────────────────────────────── */}
             <footer className="hidden md:block border-t py-4 bg-muted/30">
                 <div className="container mx-auto px-4 text-center text-xs text-muted-foreground italic">
-                    Vastu Vaibhav CRM &middot; © 2026 Professional Consulting Solutions
+                    {AppSettings.project.name} CRM &middot; © {new Date().getFullYear()} {AppSettings.project.organization}
                 </div>
             </footer>
 

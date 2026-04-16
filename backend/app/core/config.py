@@ -1,11 +1,23 @@
 
+import json
 from pathlib import Path
 from pydantic_settings import BaseSettings
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parents[3] / "data" / "vastu.db"
+CONFIG_FILE_PATH = Path(__file__).resolve().parents[4] / "config" / "app-settings.json"
+
+def load_app_settings():
+    try:
+        with open(CONFIG_FILE_PATH, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+app_settings_data = load_app_settings()
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Vastu Vaibhav"
+    PROJECT_NAME: str = app_settings_data.get("project", {}).get("name", "Vastu Vaibhav")
+    APP_CONFIG: dict = app_settings_data
     DATABASE_URL: str = f"sqlite+aiosqlite:///{DEFAULT_DB_PATH}"
     SECRET_KEY: str = "change_me_in_production"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
