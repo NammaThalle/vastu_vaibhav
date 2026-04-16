@@ -7,8 +7,10 @@ Vastu Vaibhav is a specialized CRM and Financial Ledger application designed for
 - **Client CRM**: Manage detailed client profiles, contact information, and project locations.
 - **Visit Tracking**: Log site visits with specific observations and energy audit data.
 - **Financial Ledger**: Professional double-entry style ledger for tracking service charges and payments.
-- **Automated Invoicing**: Generate professional PDF bills for clients with a single click.
+- **Automated Invoicing**: Professional React-based invoice template with customizable central configuration (`data/invoice-data.js`).
 - **Dashboard Analytics**: Real-time overview of total clients, visits, and outstanding balances.
+- **Automated Backups**: Scheduled SQLite database backups powered by APScheduler to ensure data safety.
+- **Comprehensive Logging**: Detailed, human-readable logging system across both frontend and backend for easy auditing and debugging.
 - **Modern UI/UX**: Port-folio style interface with support for both Dark and Light modes.
 - **Secure Authentication**: JWT-based authentication for data protection.
 
