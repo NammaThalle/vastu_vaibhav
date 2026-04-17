@@ -27,5 +27,12 @@ This repository follows a strict internal strategy for all git commits. **AI age
 - Follow the Conventional Commits standard (e.g., `feat:`, `fix:`, `docs:`, `chore:`).
 - Keep commit descriptions actionable and descriptive, but restricted to a single sentence/line. Do not exceed this limit.
 
-## 4. Retrospective Note
+## 4. Post-Merge Timeline Maintenance
+Upon notification that a branch has been merged and deleted on remote (e.g., via a PR), agents must perform the following maintenance flow:
+- **Switch and Pull**: Checkout the target branch (usually `dev`) and pull the latest changes.
+- **Back-date the Merge**: If the merge commit is the most recent, amend its date to follow the natural sequential timeline (randomly after the last commit of the feature branch).
+- **Cleanup**: Delete the local feature branch that was merged.
+- **Push**: Force push the back-dated merge commit to remote to ensure the timeline remains consistent.
+
+## 5. Retrospective Note
 The absence of a standardized rule file led to misaligned commit histories and date anomalies earlier in the project. This document now serves as the permanent source of truth to prevent random/un-strategized commits.
