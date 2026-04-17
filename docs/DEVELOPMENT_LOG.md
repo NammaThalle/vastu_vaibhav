@@ -49,5 +49,20 @@ This document tracks the systematic engineering phases of the Vastu Vaibhav appl
 *   Implemented full cascade-delete mechanisms and `PUT`/`DELETE` capabilities across Client profiles, Visits, and running Ledger Transactions.
 *   Standardized AI agent git compliance with structured repository commit strategy configuration.
 
+## 🟢 Phase 9: Invoice Engine & Puppeteer Integration (March)
+*   Established a React-based invoice layout optimized for print with precise media queries.
+*   Integrated Puppeteer (`render_invoice_pdf.mjs`) into the backend for headless PDF generation.
+*   Developed dynamic data injection for customer billing, project details, and ledger histories.
+*   Styled the invoice with modern grid layouts, alternating table rows, and emphasized balance-due blocks.
+*   Injected banking instructions, dynamic timestamps, and payment partner logos (e.g., GPay).
+*   Configured the backend Docker container with Node.js dependencies to execute the rendering scripts seamlessly.
+
+## 🟢 Phase 10: Platform Stability & Refinements (April)
+*   Implemented automated local SQLite database backups powered by APScheduler.
+*   Overhauled the logging system: suppressed noisy database queries and implemented clean, colored terminal outputs across both frontend and backend.
+*   Extracted all hardcoded branding, contact, and business configurations into a centralized `config/app-settings.json` file.
+*   Scrubbed all legacy "CRM" terminology to present the system as a focused professional consulting platform.
+*   Updated architectural documentation (`ARCHITECTURE.md` and `README.md`) to reflect the finalized production stack.
+
 ---
-**Current Status**: Production-Ready v1.1
+**Current Status**: Production-Ready v2.0
