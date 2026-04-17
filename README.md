@@ -7,7 +7,7 @@ Vastu Vaibhav is a specialized Financial Ledger and Platform designed for Vastu 
 - **Client Management**: Manage detailed client profiles, contact information, and project locations.
 - **Visit Tracking**: Log site visits with specific observations and energy audit data.
 - **Financial Ledger**: Professional double-entry style ledger for tracking service charges and payments.
-- **Automated Invoicing**: Professional React-based invoice template with customizable central configuration (`data/invoice-data.js`).
+- **Automated Invoicing**: Professional React-based invoice template with customizable central configuration (`config/app-settings.json`).
 - **Dashboard Analytics**: Real-time overview of total clients, visits, and outstanding balances.
 - **Automated Backups**: Scheduled SQLite database backups powered by APScheduler to ensure data safety.
 - **Comprehensive Logging**: Detailed, human-readable logging system across both frontend and backend for easy auditing and debugging.
@@ -16,10 +16,10 @@ Vastu Vaibhav is a specialized Financial Ledger and Platform designed for Vastu 
 
 ## 🛠️ Tech Stack
 
-- **Backend**: FastAPI (Python 3.10), SQLAlchemy (Async), SQLite/PostgreSQL, Alembic (Migrations).
+- **Backend**: FastAPI (Python 3.10), SQLAlchemy (Async), SQLite, Alembic (Migrations).
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS, Lucide Icons.
 - **Infrastructure**: Docker & Docker Compose.
-- **PDF Generation**: xhtml2pdf.
+- **PDF Generation**: Puppeteer (Node.js) & React.
 
 ## 📦 Getting Started
 
@@ -66,16 +66,20 @@ Watchtower will automatically check for new images built by GitHub Actions every
 For deep technical details and project evolution, please refer to our internal documentation:
 
 *   [**Technical Architecture**](./docs/ARCHITECTURE.md): Full engineering blueprint, database schema, and security specifications.
-*   [**Development Progression Log**](./docs/DEVELOPMENT_LOG.md): Detailed breakdown of the 7 logical phases of construction.
+*   [**Development Progression Log**](./docs/DEVELOPMENT_LOG.md): Detailed breakdown of the 11 logical phases of construction.
 
 ### Summary of Development Phases:
-1. **Infra**: Docker orchestration and environmental configuration.
-2. **Backend Core**: Secure API scaffolding and DB architecture.
-3. **Frontend Core**: Modern UI design system and theme implementation.
+1. **Foundation**: Docker orchestration and initial infrastructure.
+2. **Backend Core**: Secure API scaffolding, SQLite, and Auth.
+3. **Frontend Core**: Next.js architecture and UI scaffolding.
 4. **Client System**: Comprehensive client and visit life-cycle management.
 5. **Ledger**: Advanced financial tracking and running balance logic.
-6. **Invoicing**: Automated PDF billing and consultant reporting.
-7. **Refinement**: UI/UX modernization and operational dashboard.
+6. **Legacy Invoicing**: Initial HTML-to-PDF utility.
+7. **Design System**: Shadcn, Dark mode, and UI overhaul.
+8. **Catalog**: Service pricing models and architecture specifications.
+9. **Service Engine**: Dynamic calculation logic and addons.
+10. **Modern Invoicing**: React + Puppeteer headless PDF rendering.
+11. **Platform Stability**: APScheduler backups, clean logging, and centralized configuration.
 
 ## ⚖️ License
 MIT License.
