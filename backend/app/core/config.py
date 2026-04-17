@@ -1,16 +1,34 @@
 
 import json
+import os
 from pathlib import Path
 from pydantic_settings import BaseSettings
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parents[3] / "data" / "vastu.db"
-CONFIG_FILE_PATH = Path(__file__).resolve().parents[4] / "config" / "app-settings.json"
+
+def get_config_path():
+    # 1. Check environment variable
+    env_path = os.getenv("APP_CONFIG_PATH")
+    if env_path:
+        return Path(env_path)
+    
+    # 2. Check Docker volume mount path
+    docker_path = Path("/app/config/app-settings.json")
+    if docker_path.exists():
+        return docker_path
+        
+    # 3. Local development path (relative to this file)
+    return Path(__file__).resolve().parents[3] / "config" / "app-settings.json"
+
+CONFIG_FILE_PATH = get_config_path()
 
 def load_app_settings():
     try:
+        if not CONFIG_FILE_PATH.exists():
+            return {}
         with open(CONFIG_FILE_PATH, "r") as f:
             return json.load(f)
-    except FileNotFoundError:
+    except Exception:
         return {}
 
 app_settings_data = load_app_settings()

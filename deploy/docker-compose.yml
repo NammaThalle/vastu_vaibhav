@@ -1,0 +1,18 @@
+# Vastu Vaibhav - Production Deployment Template
+# Instructions:
+# 1. Copy this file to your server.
+# 2. Create a 'data' and 'config' directory in the same folder.
+# 3. Create a '.env' file based on the example provided in the README.
+# 4. Run: docker-compose up -d
+
+services:
+  vastu_app:
+    image: ghcr.io/nammathalle/vastu_vaibhav:latest
+    restart: always
+    volumes:
+      - ./data:/data
+      - ./config:/app/config
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env

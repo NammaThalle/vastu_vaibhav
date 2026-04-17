@@ -36,20 +36,22 @@ Vastu Vaibhav is a specialized Financial Ledger and Platform designed for Vastu 
    ```
 3. Access the application at `http://localhost:8000`.
 
-### Private Server Deployment (Using GHCR & Watchtower)
-For deploying to a private home server, this repository uses GitHub Actions to publish a Docker image to the GitHub Container Registry (GHCR), which is then automatically pulled and updated by Watchtower.
+### Production Deployment (Client Server)
 
-1. **Generate a GitHub PAT (Personal Access Token)** with `read:packages` permission.
-2. **Authenticate Docker on your Server**:
+For deploying to a production server, use the template provided in the `deploy/` directory.
+
+1. **Setup Directory Structure**: Create a dedicated folder on your server and copy `deploy/docker-compose.yml` into it.
+2. **Environment Configuration**: Create a `.env` file in the same directory. This is **CRITICAL** for security. Use the following template:
    ```bash
-   echo "YOUR_PAT_TOKEN" | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+   SECRET_KEY=your_very_secure_random_string
+   DATABASE_URL=sqlite+aiosqlite:///../data/vastu.db
    ```
-3. **Configure Environment variables**: Create `backend/.env` with your secure `SECRET_KEY` and `DATABASE_URL`.
+3. **Configuration & Data**: Create `data/` and `config/` directories next to your `docker-compose.yml`. Place your `app-settings.json` in the `config/` folder.
 4. **Deploy**:
    ```bash
    docker-compose up -d
    ```
-Watchtower will automatically check for new images built by GitHub Actions every 5 minutes and update the container seamlessly.
+The application will pull the latest pre-built image from GHCR. Monitoring for updates can be handled via Watchtower if configured.
 
 ### Local Development (Backend)
 1. Navigate to `/backend`.
