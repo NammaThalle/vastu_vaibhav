@@ -1,12 +1,16 @@
 import { useState } from "react";
+import appSettings from "./config/app-settings.json";
 
 const COMPANY = {
-  name: "VASTU VAIBHAV",
-  tagline: "Architecture  |  Interiors  |  Vastu",
-  email: "hello@vastuvaibhav.co",
-  phone: "+91 900 123 4567",
-  website: "www.vastuvaibhav.co",
+  name: appSettings.project.name,
+  tagline: appSettings.project.tagline,
+  email: appSettings.contact.email,
+  phone: appSettings.contact.phone,
+  website: appSettings.contact.website,
 };
+
+const PAYMENT = appSettings.payment;
+const TAX_RATE = appSettings.payment.taxRate;
 
 const INVOICE_META = {
   invoiceNo: "VV-2024-102",
@@ -48,17 +52,10 @@ const ITEMS = [
   },
 ];
 
-const PAYMENT = {
-  bank: "VASTU VAIBHAV Banca Bank",
-  accountNo: "ID030305089",
-  ifsc: "IFSC 100000",
-};
-
-const TAX_RATE = 0.18;
-
 function formatCurrency(amount) {
   return "₹" + amount.toLocaleString("en-IN");
 }
+
 
 const StatusBadge = ({ label }) => (
   <span
