@@ -241,6 +241,7 @@ Docker Compose services:
 The application relies on a single source of truth for branding, contact, and business logic:
 * `config/app-settings.json` is used by both the FastAPI backend and the Next.js frontend.
 * Contains project name, organization details, tax rates, and invoice strings.
+* **Note**: This file must be present during the Docker build process for the frontend static export.
 
 Environment variables:
 
