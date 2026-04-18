@@ -17,7 +17,7 @@ Vastu Vaibhav is a specialized Financial Ledger and Platform designed for Vastu 
 ## 🛠️ Tech Stack
 
 - **Backend**: FastAPI (Python 3.10), SQLAlchemy (Async), SQLite, Alembic (Migrations).
-- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS, Lucide Icons.
+- **Frontend**: Next.js 15 (App Router), TypeScript, Tailwind CSS, Lucide Icons.
 - **Infrastructure**: Docker & Docker Compose.
 - **PDF Generation**: Puppeteer (Node.js) & React.
 
@@ -46,7 +46,7 @@ For deploying to a production server, use the template provided in the `deploy/`
    SECRET_KEY=your_very_secure_random_string
    DATABASE_URL=sqlite+aiosqlite:///../data/vastu.db
    ```
-3. **Configuration & Data**: Create `data/` and `config/` directories next to your `docker-compose.yml`. Place your `app-settings.json` in the `config/` folder.
+3. **Configuration & Data**: Create `data/` and `config/` directories next to your `docker-compose.yml`. Place your `app-settings.json` in the `config/` folder. This is required for both the build process and runtime.
 4. **Deploy**:
    ```bash
    docker-compose up -d
