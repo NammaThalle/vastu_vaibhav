@@ -45,7 +45,7 @@ Editable ledger.
 
 ---
 
-# 3. Database Design (PostgreSQL)
+# 3. Database Design (SQLite)
 
 ## 3.1 Design Principles
 
@@ -140,21 +140,16 @@ Editable ledger.
 
 backend/
 app/
-main.py
-config.py
-db.py
-models/
-schemas/
-services/
-routers/
-security/
-pdf/
-utils/
+├── api/          # API endpoints and routers
+├── core/         # Settings, security, centralized config
+├── db/           # SQLite async session management
+├── models/       # SQLAlchemy ORM models
+├── schemas/      # Pydantic validation schemas
+└── utils/        # Logger and helpers
 
 Layer separation:
-
-* Routers → API layer
-* Services → business logic
+* API → route definitions
+* Core → security and configuration (loads `config/app-settings.json`)
 * Models → ORM
 
 ---
@@ -194,18 +189,19 @@ store/
 
 ---
 
-# 6. PDF Generation
+# 6. PDF Generation (React + Puppeteer)
 
 ## Flow
 
-1. Aggregate ledger
-2. Render HTML (Jinja2)
-3. Convert to PDF (WeasyPrint/wkhtmltopdf)
-4. Save to /data/generated_bills/
-5. Store record in DB
+1. Aggregate ledger data in FastAPI backend
+2. Build dynamic JSON payload based on `app-settings.json` and client data
+3. Pass encoded JSON payload to the Next.js frontend route (`/invoice/?data=...`)
+4. Backend spawns a Node.js process running Puppeteer (`scripts/render_invoice_pdf.mjs`)
+5. Puppeteer renders the React page and exports it to PDF
+6. PDF is served to the user for download
 
 File naming:
-VASTU_<ClientNameNoSpaces>*<YYYYMMDD>*<HHMM>.pdf
+Bill_<ClientName>_<UUID>.pdf
 
 ---
 
@@ -220,37 +216,37 @@ VASTU_<ClientNameNoSpaces>*<YYYYMMDD>*<HHMM>.pdf
 
 ---
 
-# 8. Backup Strategy
+# 8. Backup Strategy (APScheduler)
 
-Daily:
-pg_dump → gzip → local storage
+Automated Local Backups:
+* Built-in APScheduler runs within the FastAPI backend process
+* Automatically duplicates the `vastu.db` SQLite file to `data/backups/`
+* Retention: Keeps the last 7 daily backups, purging older ones to save space
 
-Offsite:
-Upload to Oracle Object Storage
+Offsite (Future):
+Upload to cloud storage
 
-Retention:
-
-* 30 daily
-* 6 monthly
-
-Quarterly restore test required.
+Quarterly restore test recommended.
 
 ---
 
-# 9. Deployment Plan
+# 9. Deployment & Configuration
 
 Docker Compose services:
 
-* backend
-* postgres
-* reverse proxy
+* vastu_app (combined or separate backend/frontend)
+* vastu_watchtower (for automated GHCR image updates)
+
+## Centralized Configuration
+The application relies on a single source of truth for branding, contact, and business logic:
+* `config/app-settings.json` is used by both the FastAPI backend and the Next.js frontend.
+* Contains project name, organization details, tax rates, and invoice strings.
+* **Note**: This file must be present during the Docker build process for the frontend static export.
 
 Environment variables:
 
-* DATABASE_URL
-* JWT_SECRET
-* SMTP_CONFIG
-* BACKUP_BUCKET
+* DATABASE_URL (defaults to local sqlite)
+* SECRET_KEY
 
 ---
 

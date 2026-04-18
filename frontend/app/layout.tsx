@@ -20,8 +20,8 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-    title: "Vastu Vaibhav | Professional Consulting CRM",
-    description: "Advanced CRM for Vastu Consultants — manage clients, visits, and financials.",
+    title: "Vastu Vaibhav | Professional Consulting",
+    description: "Advanced Platform for Vastu Consultants — manage clients, visits, and financials.",
     manifest: "/manifest.json",
     appleWebApp: {
         capable: true,

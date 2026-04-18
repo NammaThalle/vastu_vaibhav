@@ -6,6 +6,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PUPPETEER_CACHE_DIR=/app/.cache/puppeteer
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm install
+# Copy shared config needed for build
+COPY config/ /app/config/
 COPY frontend/ .
 # Build static assets to /app/frontend/dist
 RUN npm run build
@@ -65,6 +67,9 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 # Install Backend Dependencies
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy Shared Config
+COPY config/ /app/config/
 
 # Copy Backend Code
 COPY backend/ .
