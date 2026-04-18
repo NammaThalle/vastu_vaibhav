@@ -60,5 +60,10 @@ This document tracks the systematic engineering phases of the Vastu Vaibhav appl
 *   Extracted all hardcoded branding, contact, and business configurations into a centralized `config/app-settings.json` file.
 *   Scrubbed all legacy "CRM" terminology to present the system as a focused professional consulting platform.
 
+## 🟢 Phase 12: Docker Build Optimization & Next.js 15 Upgrade (Apr 18)
+*   Upgraded frontend to Next.js 15 for improved performance and modern build features.
+*   Resolved Docker build bottlenecks by correctly mapping the shared configuration directory into build stages.
+*   Documented deployment requirements for centralized configuration files in production environments.
+
 ---
-**Current Status**: Production-Ready v2.0
+**Current Status**: Production-Ready v2.1
