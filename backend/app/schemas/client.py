@@ -1,5 +1,5 @@
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 import uuid
@@ -10,10 +10,10 @@ class ClientBase(BaseModel):
     email: Optional[str] = None
     personal_address: Optional[str] = None
     project_address: Optional[str] = None
-    built_up_area: Optional[float] = None
+    built_up_area: Optional[float] = Field(default=None, ge=0)
     location_type: Optional[str] = "Goa"
     lead_status: str = "Inquiry"
-    total_fees_fixed: float = 0.0
+    total_fees_fixed: float = Field(default=0.0, ge=0)
     service_id: Optional[str] = None
 
 class ClientCreate(ClientBase):
