@@ -1,5 +1,5 @@
 
-from typing import Any, List
+from typing import Any
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -8,6 +8,7 @@ import asyncio
 import tempfile
 import subprocess
 import json
+import re
 from urllib.parse import quote
 from app.api import deps
 from app.models.service import ServiceEntry as ServiceModel
@@ -17,65 +18,17 @@ from app.core.config import settings
 from app.schemas.ledger import (
     ServiceEntry, ServiceEntryCreate, ServiceEntryUpdate,
     Payment, PaymentCreate, PaymentUpdate,
-    ClientLedger, LedgerEntry
+    ClientLedger
 )
+from app.services.ledger_service import build_invoice_payload, calculate_client_ledger
 from app.utils.logger import logger
 
 router = APIRouter()
 
 
-def build_invoice_payload(client: ClientModel, ledger_data: ClientLedger) -> dict[str, Any]:
-    from datetime import datetime, timedelta
-
-    now = datetime.now()
-    charge_items = [
-        {
-            "title": entry.description,
-            "description": entry.date.strftime("%d %b %Y") if entry.date else "",
-            "amount": entry.amount,
-        }
-        for entry in ledger_data.history
-        if entry.type == "charge" and entry.amount
-    ]
-    payment_entries = [entry for entry in ledger_data.history if entry.type == "payment"]
-
-    app_cfg = settings.APP_CONFIG
-    return {
-        "company": {
-            "name": app_cfg.get("project", {}).get("name", "VASTU VAIBHAV"),
-            "memberLabel": app_cfg.get("invoice", {}).get("memberLabel", "BNI MEMBER"),
-        },
-        "meta": {
-            "invoiceNo": f"VV-{client.id[:6].upper()}-{now.strftime('%Y%m%d')}",
-            "date": now.strftime("%d %b %Y"),
-            "dueDate": (now + timedelta(days=15)).strftime("%d %b %Y"),
-        },
-        "customer": {
-            "name": client.full_name,
-            "address": client.personal_address or "",
-            "phone": client.phone or "",
-            "projectAddress": client.project_address or "",
-        },
-        "items": charge_items,
-        "summary": {
-            "subtotal": ledger_data.total_billed,
-            "taxRate": app_cfg.get("payment", {}).get("taxRate", 0),
-            "taxAmount": 0, # Depending on logic, this could be calculated if taxRate > 0
-            "amountPaid": ledger_data.total_paid,
-            "balanceAmount": ledger_data.current_balance,
-        },
-        "payment": {
-            "bankName": app_cfg.get("payment", {}).get("bankName", "HDFC BANK"),
-            "accountNo": app_cfg.get("payment", {}).get("accountNo", "ID030305089"),
-            "ifsc": app_cfg.get("payment", {}).get("ifsc", "100000"),
-        },
-        "contact": {
-            "email": app_cfg.get("contact", {}).get("email", ""),
-            "phone": app_cfg.get("contact", {}).get("phone", ""),
-            "secondaryPhone": app_cfg.get("contact", {}).get("secondaryPhone", ""),
-            "gpayPhone": app_cfg.get("contact", {}).get("gpayPhone", ""),
-        },
-    }
+def sanitize_bill_filename(value: str) -> str:
+    safe_name = re.sub(r"[^A-Za-z0-9_.-]+", "_", value).strip("_")
+    return safe_name or "Client"
 
 @router.post("/services", response_model=ServiceEntry)
 async def create_service_entry(
@@ -202,82 +155,14 @@ async def get_client_ledger(
     Get the full ledger history and current balance for a client.
     """
     logger.debug("Fetching ledger: %s", client_id[:6])
-    # 1. Verify Client and get fixed fee
-    result = await db.execute(select(ClientModel).where(ClientModel.id == client_id))
-    client = result.scalars().first()
-    if not client:
-        logger.warning("Failed to fetch ledger: %s not found", client_id[:6])
-        raise HTTPException(status_code=404, detail="Client not found")
-
-    # 2. Get all services
-    s_result = await db.execute(select(ServiceModel).where(ServiceModel.client_id == client_id))
-    services = s_result.scalars().all()
-
-    # 3. Get all payments
-    p_result = await db.execute(select(PaymentModel).where(PaymentModel.client_id == client_id))
-    payments = p_result.scalars().all()
-
-    # 4. Compile History
-    history: List[LedgerEntry] = []
-    
-    # Add initial fixed fee as a charge
-    total_billed = client.total_fees_fixed
-    total_paid = 0.0
-    
-    # Start balance with fixed fee
-    current_running_balance = total_billed
-    
-    history.append(LedgerEntry(
-        id="initial-fee",
-        type="charge",
-        description="Initial Consultant Fee (Fixed)",
-        amount=client.total_fees_fixed,
-        date=client.created_at,
-        balance_after=current_running_balance
-    ))
-
-    # Combine services and payments, sort by date
-    all_events = []
-    for s in services:
-        all_events.append({"type": "charge", "id": s.id, "amount": s.amount, "desc": s.description, "date": s.date, "visit_id": s.visit_id})
-        total_billed += s.amount
-    
-    for p in payments:
-        all_events.append({"type": "payment", "id": p.id, "amount": p.amount, "desc": f"Payment via {p.method}", "date": p.date, "visit_id": None})
-        total_paid += p.amount
-
-    all_events.sort(key=lambda x: x["date"])
-
-    for event in all_events:
-        if event["type"] == "charge":
-            current_running_balance += event["amount"]
-        else:
-            current_running_balance -= event["amount"]
-            
-        history.append(LedgerEntry(
-            id=event["id"],
-            type=event["type"],
-            description=event["desc"],
-            amount=event["amount"],
-            date=event["date"],
-            balance_after=current_running_balance,
-            visit_id=event.get("visit_id")
-        ))
-
-    return ClientLedger(
-        client_id=client_id,
-        history=history,
-        total_billed=total_billed,
-        total_paid=total_paid,
-        current_balance=current_running_balance
-    )
+    return await calculate_client_ledger(db, client_id)
 
 @router.get("/client/{client_id}/invoice-data")
 async def get_client_invoice_data(
     client_id: str,
     db: AsyncSession = Depends(deps.get_db),
 ) -> Any:
-    ledger_data = await get_client_ledger(client_id, db)
+    ledger_data = await calculate_client_ledger(db, client_id)
     result = await db.execute(select(ClientModel).where(ClientModel.id == client_id))
     client = result.scalars().first()
     if not client:
@@ -301,11 +186,11 @@ async def download_client_bill(
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
 
-    filename = f"Bill_{client.full_name.replace(' ', '_')}_{client_id[:6]}.pdf"
+    filename = f"Bill_{sanitize_bill_filename(client.full_name)}_{client_id[:6]}.pdf"
     logger.info("Generating invoice: %s", client.full_name)
     
     # Generate the payload
-    ledger_data = await get_client_ledger(client_id, db)
+    ledger_data = await calculate_client_ledger(db, client_id)
     invoice_payload = build_invoice_payload(client, ledger_data)
     
     frontend_base_url = settings.FRONTEND_URL.rstrip("/")
@@ -339,7 +224,6 @@ async def download_client_bill(
             detail=f"Invoice PDF generation failed: {(exc.stderr or exc.output or '').strip()}",
         ) from exc
 
-    filename = f"Bill_{client.full_name.replace(' ', '_')}_{client_id[:6]}.pdf"
     background_tasks.add_task(pdf_path.unlink, missing_ok=True)
     return FileResponse(
         path=pdf_path,
