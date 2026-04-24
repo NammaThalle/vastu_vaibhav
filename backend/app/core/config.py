@@ -34,6 +34,7 @@ def load_app_settings():
 app_settings_data = load_app_settings()
 
 class Settings(BaseSettings):
+    ENVIRONMENT: str = "development"
     PROJECT_NAME: str = app_settings_data.get("project", {}).get("name", "Vastu Vaibhav")
     APP_CONFIG: dict = app_settings_data
     DATABASE_URL: str = f"sqlite+aiosqlite:///{DEFAULT_DB_PATH}"
