@@ -13,6 +13,10 @@ from sqlalchemy import select
 from app.utils.logger import logger
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"/api/v1/login/access-token")
+optional_oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl=f"/api/v1/login/access-token",
+    auto_error=False,
+)
 
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
@@ -39,3 +43,23 @@ async def get_current_user(
     if user is None:
         raise credentials_exception
     return user
+
+
+async def get_optional_current_user(
+    token: Annotated[str | None, Depends(optional_oauth2_scheme)],
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> User | None:
+    if not token:
+        return None
+
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id: str | None = payload.get("sub")
+        if user_id is None:
+            return None
+    except JWTError:
+        logger.warning("Optional token validation failed: Invalid JWT")
+        return None
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    return result.scalars().first()
