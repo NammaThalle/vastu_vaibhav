@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 from app.api import deps
 from app.models.client import Client as ClientModel
 from app.schemas.client import Client, ClientCreate, ClientUpdate
+from app.services.ledger_service import apply_loaded_client_balances
 from app.utils.logger import logger
 
 router = APIRouter()
@@ -27,21 +28,7 @@ async def read_clients(
     result = await db.execute(stmt)
     clients_db = result.scalars().all()
     
-    response_list = []
-    for c in clients_db:
-        total_billed = c.total_fees_fixed or 0.0
-        for s in c.service_entries:
-            total_billed += getattr(s, "amount", 0.0)
-            
-        total_paid = 0.0
-        for p in c.payments:
-            total_paid += getattr(p, "amount", 0.0)
-            
-        c.total_billed = total_billed
-        c.current_balance = total_billed - total_paid
-        response_list.append(c)
-        
-    return response_list
+    return [apply_loaded_client_balances(client) for client in clients_db]
 
 @router.post("/", response_model=Client)
 async def create_client(
