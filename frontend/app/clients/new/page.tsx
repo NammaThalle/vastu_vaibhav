@@ -89,7 +89,7 @@ export default function NewClientPage() {
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">New Client</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">New Client</h1>
                     <p className="text-muted-foreground">Initialize a new consulting profile.</p>
                 </div>
             </div>
@@ -123,6 +123,7 @@ export default function NewClientPage() {
                                             className="pl-9 bg-muted/20"
                                             value={formData.full_name}
                                             onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                            autoComplete="name"
                                             required
                                         />
                                     </div>
@@ -138,6 +139,7 @@ export default function NewClientPage() {
                                             placeholder="Enter full property address for Vastu analysis..."
                                             value={formData.project_address}
                                             onChange={(e) => setFormData({ ...formData, project_address: e.target.value })}
+                                            autoComplete="street-address"
                                         />
                                     </div>
                                 </div>
@@ -164,6 +166,8 @@ export default function NewClientPage() {
                                             <Input
                                                 id="phone"
                                                 type="tel"
+                                                inputMode="numeric"
+                                                autoComplete="tel"
                                                 placeholder="+91 00000 00000"
                                                 className="pl-9 bg-muted/20"
                                                 value={formData.phone}
@@ -178,6 +182,7 @@ export default function NewClientPage() {
                                             <Input
                                                 id="email"
                                                 type="email"
+                                                autoComplete="email"
                                                 placeholder="client@example.com"
                                                 className="pl-9 bg-muted/20"
                                                 value={formData.email}
@@ -201,7 +206,7 @@ export default function NewClientPage() {
                                     </div>
                                 </div>
 
-                                <div className="grid gap-2 max-w-[200px]">
+                                <div className="grid gap-2 w-full sm:max-w-xs">
                                     <Label htmlFor="fees" className="text-sm font-semibold">Base Fixed Fee (₹)</Label>
                                     <div className="relative">
                                         <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -235,7 +240,7 @@ export default function NewClientPage() {
                                                     type="button"
                                                     onClick={() => setFormData({ ...formData, total_fees_fixed: opt.price })}
                                                     className={cn(
-                                                        "flex flex-col items-center justify-center p-3 rounded-lg border transition-all",
+                                                        "flex flex-col items-center justify-center p-4 min-h-[56px] rounded-lg border transition-all",
                                                         formData.total_fees_fixed === opt.price
                                                             ? "bg-primary/10 border-primary text-primary"
                                                             : "bg-background border-border hover:border-primary/50 text-muted-foreground hover:text-foreground"
@@ -265,7 +270,7 @@ export default function NewClientPage() {
                 <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <p className="text-xs text-muted-foreground leading-relaxed">
                     * Required fields must be completed. Finalizing this form will create a unique consulting ID for the client.
-                    You can track visits and maintain the ledger after the profile is active.
+                    You can track visits and manage billing after the profile is active.
                 </p>
             </div>
         </div>
