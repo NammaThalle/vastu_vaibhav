@@ -49,7 +49,7 @@ async def create_client(
     db: AsyncSession = Depends(deps.get_db),
     client_in: ClientCreate,
 ) -> Any:
-    logger.info("Creating new client: %s", client_in.name)
+    logger.info("Creating new client: %s", client_in.full_name)
     client = ClientModel(**client_in.dict())
     db.add(client)
     await db.commit()
