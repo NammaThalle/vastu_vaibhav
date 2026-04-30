@@ -65,5 +65,13 @@ This document tracks the systematic engineering phases of the Vastu Vaibhav appl
 *   Resolved Docker build bottlenecks by correctly mapping the shared configuration directory into build stages.
 *   Documented deployment requirements for centralized configuration files in production environments.
 
+## 🟢 Phase 13: Financial Ledger Refactoring & Database Constraints (May 14 - May 20)
+* Migrated all floating point monetary columns to `Numeric(12, 2)` (fixed-point math) to prevent calculation inaccuracies.
+* Implemented check constraints for positive payment amounts, non-negative client fees, catalog prices, visit fees, and service addon prices.
+* Introduced `service_addons` table to support sub-charges and configurable addons.
+* Redesigned service entries to support an explicit `entry_type` of either `charge` or `discount`, and updated the calculation formulas.
+* Refactored ledger computation and invoice payload builder to a centralized `ledger_service`.
+* Updated the system architecture assets (`ledger_logic.png`) and documentation to align with the new fixed-point money and discount flow.
+
 ---
-**Current Status**: Production-Ready v2.1
+**Current Status**: Production-Ready v2.2
