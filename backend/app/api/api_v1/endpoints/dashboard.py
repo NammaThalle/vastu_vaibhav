@@ -1,6 +1,6 @@
 from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
-from typing import Any, List, Tuple
+from typing import Any, Iterable, List, Tuple
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
@@ -28,37 +28,60 @@ def _normalize_dt(value: datetime | None) -> datetime | None:
     return value
 
 
-def _build_lots(client: ClientModel, services: List[ServiceModel]) -> List[Tuple[datetime, float]]:
+def _entry_type(service: ServiceModel) -> str:
+    return getattr(service, "entry_type", None) or "charge"
+
+
+def _apply_credit(remaining: deque[Tuple[datetime, float]], credit_amount: float) -> None:
+    while credit_amount > 0 and remaining:
+        lot_date, lot_amount = remaining[0]
+        applied = min(lot_amount, credit_amount)
+        lot_amount -= applied
+        credit_amount -= applied
+        if lot_amount <= 0:
+            remaining.popleft()
+        else:
+            remaining[0] = (lot_date, lot_amount)
+
+
+def _build_lots(client: ClientModel, services: Iterable[ServiceModel]) -> List[Tuple[datetime, float]]:
     lots: List[Tuple[datetime, float]] = []
     client_created_at = _normalize_dt(client.created_at)
     if client.total_fees_fixed and client.total_fees_fixed > 0 and client_created_at:
         lots.append((client_created_at, float(client.total_fees_fixed)))
 
     for service in sorted(services, key=lambda item: _normalize_dt(item.date) or datetime.min.replace(tzinfo=timezone.utc)):
+        if _entry_type(service) != "charge":
+            continue
         service_date = _normalize_dt(service.date) or client_created_at or datetime.now(timezone.utc)
         lots.append((service_date, float(service.amount)))
 
     return lots
 
 
-def _apply_payments(lots: List[Tuple[datetime, float]], payments: List[PaymentModel]) -> deque[Tuple[datetime, float]]:
+def _apply_credits(
+    lots: List[Tuple[datetime, float]],
+    services: Iterable[ServiceModel],
+    payments: Iterable[PaymentModel],
+) -> deque[Tuple[datetime, float]]:
     remaining: deque[Tuple[datetime, float]] = deque(lots)
-    ordered_payments = sorted(
-        payments,
-        key=lambda item: _normalize_dt(item.date) or datetime.min.replace(tzinfo=timezone.utc),
-    )
+    credit_events: list[Tuple[datetime, float]] = []
 
-    for payment in ordered_payments:
-        payment_amount = float(payment.amount)
-        while payment_amount > 0 and remaining:
-            lot_date, lot_amount = remaining[0]
-            applied = min(lot_amount, payment_amount)
-            lot_amount -= applied
-            payment_amount -= applied
-            if lot_amount <= 0:
-                remaining.popleft()
-            else:
-                remaining[0] = (lot_date, lot_amount)
+    for service in services:
+        if _entry_type(service) == "discount":
+            credit_events.append((
+                _normalize_dt(service.date) or datetime.min.replace(tzinfo=timezone.utc),
+                float(service.amount),
+            ))
+
+    for payment in payments:
+        credit_events.append((
+            _normalize_dt(payment.date) or datetime.min.replace(tzinfo=timezone.utc),
+            float(payment.amount),
+        ))
+
+    for _, credit_amount in sorted(credit_events, key=lambda item: item[0]):
+        _apply_credit(remaining, credit_amount)
 
     return remaining
 
@@ -129,7 +152,7 @@ async def get_dashboard_summary(
         )
 
         lots = _build_lots(client, services)
-        remaining_lots = _apply_payments(lots, payments)
+        remaining_lots = _apply_credits(lots, services, payments)
 
         pending_for_client = sum(amount for _, amount in remaining_lots)
         overdue_for_client = sum(amount for lot_date, amount in remaining_lots if lot_date <= overdue_cutoff)
@@ -143,6 +166,15 @@ async def get_dashboard_summary(
             total_revenue += amount
             if lot_date >= period_start:
                 goal_for_period += amount
+
+        for service in services:
+            if _entry_type(service) != "discount":
+                continue
+            discount_date = _normalize_dt(service.date) or datetime.min.replace(tzinfo=timezone.utc)
+            discount_amount = float(service.amount)
+            total_revenue -= discount_amount
+            if discount_date >= period_start:
+                goal_for_period -= discount_amount
 
     logger.debug("Dashboard summary calculated: revenue=%s, pending=%s, overdue=%s", total_revenue, pending_balance, overdue_balance)
 

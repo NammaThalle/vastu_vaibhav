@@ -67,15 +67,6 @@ import {
     DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow
-} from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -93,6 +84,7 @@ import { formatCurrency, cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { ServiceCalculator } from "@/components/ServiceCalculator"
 import { logger } from "@/lib/logger"
+import { LedgerHistory } from "./LedgerHistory"
 
 const STATUS_OPTIONS = [
     { label: "Inquiry", value: "Inquiry", color: "text-blue-600 bg-blue-500/10 border-blue-500/20", icon: AlertCircle },
@@ -357,7 +349,11 @@ function ClientDetailContent() {
     const handleAddCharge = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const payload: any = { description: chargeForm.description, amount: chargeForm.amount };
+            const payload: any = {
+                description: chargeForm.description,
+                amount: Math.abs(chargeForm.amount || 0),
+                entry_type: editingCharge?.type === 'discount' ? 'discount' : 'charge',
+            };
             if (chargeForm.date) {
                 payload.date = new Date(chargeForm.date).toISOString();
             }
@@ -392,9 +388,12 @@ function ClientDetailContent() {
     const handleAddDiscount = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            // Apply minus to the positive absolute amount entered by user
-            const amount = -Math.abs(discountForm.amount);
-            const payload: any = { description: discountForm.description, amount };
+            const amount = Math.abs(discountForm.amount || 0);
+            const payload: any = {
+                description: discountForm.description,
+                amount,
+                entry_type: 'discount',
+            };
             if (discountForm.date) {
                 payload.date = new Date(discountForm.date).toISOString();
             }
@@ -431,7 +430,7 @@ function ClientDetailContent() {
         setEditingCharge(entry);
         setChargeForm({
             description: entry.description,
-            amount: entry.amount,
+            amount: Math.abs(entry.amount),
             addon_type: 'custom',
             date: formatVisitDateForInput(entry.date)
         });
@@ -957,131 +956,13 @@ function ClientDetailContent() {
                             </div>
                         </div>
 
-                        {/* ── Mobile card list (lg:hidden) ─────────────────── */}
-                        <div className="lg:hidden space-y-2 w-full">
-                            {(!ledger?.history || ledger.history.length === 0) ? (
-                                <div className="text-center py-12 text-muted-foreground italic text-sm">
-                                    No financial activity recorded.
-                                </div>
-                            ) : ledger.history.map((entry: any, i: number) => {
-                                const isPayment = entry.type === 'payment';
-                                const isDiscount = entry.type === 'charge' && entry.amount < 0;
-                                const dotColor = isDiscount ? 'bg-purple-500' : isPayment ? 'bg-emerald-500' : 'bg-orange-500';
-                                const amtColor = isPayment ? 'text-emerald-600' : isDiscount ? 'text-purple-600' : 'text-foreground';
-                                return (
-                                    <div key={entry.id + i} className="bg-card border border-border/50 rounded-2xl px-4 py-3 flex items-start justify-between gap-3">
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-bold text-sm text-foreground leading-snug truncate">{entry.description}</p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", dotColor)} />
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                                                    {isDiscount ? 'discount' : entry.type}
-                                                </span>
-                                                <span className="text-[10px] text-muted-foreground">·</span>
-                                                <span className="text-[10px] text-muted-foreground">
-                                                    {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                </span>
-                                            </div>
-                                            {!entry.visit_id && (
-                                                <div className="flex items-center gap-3 mt-2">
-                                                    <button
-                                                        onClick={() => entry.type === 'charge' ? startEditCharge(entry) : startEditPayment(entry)}
-                                                        className="text-[10px] font-bold text-primary uppercase"
-                                                    >Edit</button>
-                                                    {entry.id !== 'initial-fee' && (
-                                                        <button
-                                                            onClick={() => entry.type === 'charge' ? handleDeleteCharge(entry.id) : handleDeletePayment(entry.id)}
-                                                            className="text-[10px] font-bold text-destructive uppercase"
-                                                        >Delete</button>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="text-right shrink-0">
-                                            <p className={cn("font-black text-sm", amtColor)}>
-                                                {isPayment ? '-' : ''}{formatCurrency(entry.amount)}
-                                            </p>
-                                            <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                                                bal {formatCurrency(entry.balance_after)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* ── Desktop table (hidden on mobile) ─────────────── */}
-                        <div className="hidden lg:block bg-white rounded-3xl shadow-sm border border-border/50 overflow-hidden">
-                            <div className="overflow-x-auto scrollbar-hide">
-                                <Table className="min-w-full">
-                                    <TableHeader>
-                                        <TableRow className="hover:bg-transparent border-b bg-secondary/30">
-                                            <TableHead className="font-bold text-foreground h-14 pl-6">Date</TableHead>
-                                            <TableHead className="font-bold text-foreground h-14">Transaction Details</TableHead>
-                                            <TableHead className="font-bold text-foreground h-14">Type</TableHead>
-                                            <TableHead className="font-bold text-foreground h-14 text-right">Amount</TableHead>
-                                            <TableHead className="font-bold text-foreground h-14 text-right pr-6">Balance</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {ledger?.history.map((entry: any, i: number) => (
-                                            <TableRow key={entry.id + i} className="group hover:bg-secondary/20 transition-colors border-b last:border-0 h-16">
-                                                <TableCell className="pl-6">
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium text-sm">
-                                                            {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                        </span>
-                                                        {!entry.visit_id && (
-                                                            <div className="flex items-center gap-3 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <button
-                                                                    onClick={() => entry.type === 'charge' ? startEditCharge(entry) : startEditPayment(entry)}
-                                                                    className="text-[10px] font-bold text-primary hover:underline uppercase"
-                                                                >Edit</button>
-                                                                {entry.id !== 'initial-fee' && (
-                                                                    <button
-                                                                        onClick={() => entry.type === 'charge' ? handleDeleteCharge(entry.id) : handleDeletePayment(entry.id)}
-                                                                        className="text-[10px] font-bold text-destructive hover:underline uppercase"
-                                                                    >Delete</button>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="font-bold text-foreground">{entry.description}</TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className={cn(
-                                                            "h-2 w-2 rounded-full",
-                                                            entry.type === 'charge' && entry.amount < 0 ? "bg-purple-500" :
-                                                                entry.type === 'charge' ? "bg-orange-500" : "bg-emerald-500"
-                                                        )} />
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">
-                                                            {entry.type === 'charge' && entry.amount < 0 ? 'discount' : entry.type}
-                                                        </span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className={cn(
-                                                    "text-right font-black",
-                                                    entry.type === 'payment' ? "text-emerald-600" : entry.amount < 0 ? "text-purple-600" : "text-foreground"
-                                                )}>
-                                                    {entry.type === 'payment' ? '-' : ''}{formatCurrency(entry.amount)}
-                                                </TableCell>
-                                                <TableCell className="text-right pr-6 font-mono font-bold text-sm text-muted-foreground">
-                                                    {formatCurrency(entry.balance_after)}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                        {(!ledger?.history || ledger.history.length === 0) && (
-                                            <TableRow>
-                                                <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">
-                                                    No financial activity recorded for this profile.
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </div>
+                        <LedgerHistory
+                            ledger={ledger}
+                            onEditService={startEditCharge}
+                            onEditPayment={startEditPayment}
+                            onDeleteService={handleDeleteCharge}
+                            onDeletePayment={handleDeletePayment}
+                        />
                     </section>
 
                     {/* Consultation Visits Section — on mobile shown only on visits tab */}
@@ -1405,7 +1286,7 @@ function ClientDetailContent() {
                                 <CardHeader className="bg-purple-500/5 pb-6">
                                     <CardTitle>Apply Account Discount</CardTitle>
                                     <CardDescription>
-                                        Discounts reflect as negative adjustments to the client's overall bill.
+                                        Discounts are tracked as separate deductions from the client's overall bill.
                                     </CardDescription>
                                 </CardHeader>
                                 <form onSubmit={handleAddDiscount}>

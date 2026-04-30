@@ -1,13 +1,13 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
 class ServiceCatalogBase(BaseModel):
     name: str
     description: Optional[str] = None
-    base_price: float = 0.0
+    base_price: float = Field(default=0.0, ge=0)
     pricing_type: str = "Fixed"
-    max_free_visits: int = 1
+    max_free_visits: int = Field(default=1, ge=0)
     is_active: bool = True
 
 class ServiceCatalogCreate(ServiceCatalogBase):

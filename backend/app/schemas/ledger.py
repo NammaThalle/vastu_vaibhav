@@ -1,13 +1,14 @@
 
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, Field
+from typing import Literal, Optional, List
 from datetime import datetime
 import uuid
 
 # Service Entry Schemas
 class ServiceEntryBase(BaseModel):
     description: str
-    amount: float
+    amount: float = Field(ge=0)
+    entry_type: Literal["charge", "discount"] = "charge"
     date: Optional[datetime] = None
 
 class ServiceEntryCreate(ServiceEntryBase):
@@ -25,12 +26,13 @@ class ServiceEntry(ServiceEntryBase):
 
 class ServiceEntryUpdate(BaseModel):
     description: Optional[str] = None
-    amount: Optional[float] = None
+    amount: Optional[float] = Field(default=None, ge=0)
+    entry_type: Optional[Literal["charge", "discount"]] = None
     date: Optional[datetime] = None
 
 # Payment Schemas
 class PaymentBase(BaseModel):
-    amount: float
+    amount: float = Field(gt=0)
     method: Optional[str] = "Cash"
     date: Optional[datetime] = None
     notes: Optional[str] = None
@@ -47,7 +49,7 @@ class Payment(PaymentBase):
         from_attributes = True
 
 class PaymentUpdate(BaseModel):
-    amount: Optional[float] = None
+    amount: Optional[float] = Field(default=None, gt=0)
     method: Optional[str] = None
     date: Optional[datetime] = None
     notes: Optional[str] = None
@@ -55,7 +57,7 @@ class PaymentUpdate(BaseModel):
 # Aggregated Ledger Schemas
 class LedgerEntry(BaseModel):
     id: str
-    type: str # "charge" or "payment"
+    type: str # "charge", "discount", or "payment"
     description: str
     amount: float
     date: datetime

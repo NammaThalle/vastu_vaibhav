@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Moon, Sun, LogOut, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { authToken } from '@/services/api';
 
 export default function Navbar() {
     const [theme, setTheme] = React.useState('dark');
@@ -15,7 +16,7 @@ export default function Navbar() {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
+        authToken.clear();
         window.location.href = '/login';
     };
 
