@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy import Column, String, Numeric, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
@@ -13,7 +13,7 @@ class ClientService(Base):
     service_catalog_id = Column(String, ForeignKey("service_catalog.id", ondelete="RESTRICT"), nullable=False)
     
     status = Column(String, default="Pending") # Pending, In_Progress, Completed, Cancelled
-    calculated_fee = Column(Float, nullable=False, default=0.0)
+    calculated_fee = Column(Numeric(12, 2), nullable=False, default=0.0)
     
     # Store variable data like selected rooms, quantities, or specific inclusions (JSON string)
     service_details = Column(Text, nullable=True) 

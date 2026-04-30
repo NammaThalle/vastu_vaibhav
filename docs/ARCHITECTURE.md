@@ -29,9 +29,11 @@ A secure, mobile-first Progressive Web App (PWA) for a Vastu consultant to manag
 
 ## 2.1 Ledger Computation
 
-TotalServices(client) = SUM(service_entries.amount)
+TotalCharges(client) = clients.total_fees_fixed + SUM(service_entries.amount WHERE entry_type = 'charge')
+TotalDiscounts(client) = SUM(service_entries.amount WHERE entry_type = 'discount')
 TotalPaid(client) = SUM(payments.amount)
-Balance = TotalServices - TotalPaid
+NetBilled = TotalCharges - TotalDiscounts
+Balance = NetBilled - TotalPaid
 
 Balance meaning:
 
@@ -107,6 +109,7 @@ Editable ledger.
 * visit_id UUID FK REFERENCES visits(id) ON DELETE CASCADE
 * description TEXT
 * amount NUMERIC(12,2) CHECK (amount >= 0)
+* entry_type VARCHAR CHECK (entry_type IN ('charge','discount'))
 * created_at TIMESTAMP
 * updated_at TIMESTAMP
 
@@ -157,10 +160,10 @@ Layer separation:
 ## 4.2 Authentication
 
 * bcrypt password hashing
-* JWT access token (15 min expiry)
-* Refresh token (7 days)
-* TOTP 2FA (pyotp compatible)
-* Future: WebAuthn optional
+* JWT access token
+* Business routers require authenticated bearer tokens
+* Registration is limited to first-user bootstrap unless an authenticated user creates the account
+* Future: refresh tokens, TOTP 2FA, and WebAuthn
 
 ---
 
@@ -177,7 +180,7 @@ store/
 
 ## 5.2 State
 
-* React Query for server state
+* React Query provider is installed for server state; existing pages are being migrated incrementally
 * Context for auth
 * LocalStorage for token persistence
 
@@ -239,14 +242,15 @@ Docker Compose services:
 
 ## Centralized Configuration
 The application relies on a single source of truth for branding, contact, and business logic:
-* `config/app-settings.json` is used by both the FastAPI backend and the Next.js frontend.
+* `config/app-settings.json` is loaded by the FastAPI backend at runtime.
 * Contains project name, organization details, tax rates, and invoice strings.
-* **Note**: This file must be present during the Docker build process for the frontend static export.
+* The static frontend reads safe settings through the authenticated `/api/v1/config` endpoint, so Docker builds do not require the private config file.
 
 Environment variables:
 
 * DATABASE_URL (defaults to local sqlite)
 * SECRET_KEY
+* ENVIRONMENT (set to `production` to enforce production startup validation)
 
 ---
 

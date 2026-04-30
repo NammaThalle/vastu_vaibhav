@@ -1,5 +1,5 @@
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 import uuid
@@ -8,7 +8,7 @@ class VisitBase(BaseModel):
     date: Optional[datetime] = None
     purpose: Optional[str] = None
     observations: Optional[str] = None
-    amount: Optional[float] = None
+    amount: Optional[float] = Field(default=None, ge=0)
 
 class VisitCreate(VisitBase):
     client_id: str

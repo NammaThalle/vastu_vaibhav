@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, String, Float, DateTime, ForeignKey
+from sqlalchemy import CheckConstraint, Column, String, Float, Numeric, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
@@ -7,6 +7,9 @@ from app.db.base import Base
 
 class Client(Base):
     __tablename__ = "clients"
+    __table_args__ = (
+        CheckConstraint("total_fees_fixed >= 0", name="ck_clients_total_fees_fixed_non_negative"),
+    )
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     full_name = Column(String, index=True, nullable=False)
@@ -22,7 +25,7 @@ class Client(Base):
     service_id = Column(String, ForeignKey("service_catalog.id"), nullable=True)
     
     # Totals (can be calculated dynamically, but good for caching)
-    total_fees_fixed = Column(Float, default=0.0)
+    total_fees_fixed = Column(Numeric(12, 2), default=0.0)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

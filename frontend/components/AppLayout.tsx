@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { AppSettings } from "@/lib/shared-config"
+import { DefaultAppSettings } from "@/lib/shared-config"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -25,6 +25,7 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { WifiOff } from "lucide-react"
+import { authToken, configApi } from "@/services/api"
 
 const navItems = [
     { path: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -40,15 +41,26 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const { theme, setTheme, resolvedTheme } = useTheme()
     const [isCheckingAuth, setIsCheckingAuth] = React.useState(true)
     const [mounted, setMounted] = React.useState(false)
+    const [appSettings, setAppSettings] = React.useState(DefaultAppSettings)
 
     // After mount, we know the real theme (including system preference)
-    React.useEffect(() => { setMounted(true) }, [])
+    React.useEffect(() => { 
+        setMounted(true)
+        // Fetch dynamic app settings
+        configApi.getSettings()
+            .then(data => {
+                if (data && data.project) {
+                    setAppSettings(data)
+                }
+            })
+            .catch(err => console.error("Failed to load app settings:", err))
+    }, [])
 
     const normalizedPathname = pathname !== "/" && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname
     const isAuthPage = authPages.includes(normalizedPathname)
 
     React.useEffect(() => {
-        const token = localStorage.getItem("token")
+        const token = authToken.get()
         if (!token && !isAuthPage) {
             router.push("/login")
         } else if (token && isAuthPage) {
@@ -72,7 +84,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }, [])
 
     const handleLogout = () => {
-        localStorage.removeItem("token")
+        authToken.clear()
         router.push("/login")
     }
 
@@ -119,7 +131,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                             <Home className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
                         </div>
                         <span className="font-bold text-base md:text-xl tracking-tight">
-                            {AppSettings.project.name}
+                            {appSettings.project.name}
                         </span>
                     </Link>
 
@@ -207,7 +219,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             {/* ── Footer (desktop only) ───────────────────────────────────────── */}
             <footer className="hidden md:block border-t py-4 bg-muted/30">
                 <div className="container mx-auto px-4 text-center text-xs text-muted-foreground italic">
-                    {AppSettings.project.name} &middot; © {new Date().getFullYear()} {AppSettings.project.organization}
+                    {appSettings.project.name} &middot; © {new Date().getFullYear()} {appSettings.project.organization}
                 </div>
             </footer>
 

@@ -3,8 +3,8 @@ from datetime import timedelta
 from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
 from app.core import security
@@ -19,7 +19,7 @@ router = APIRouter()
 @router.post("/login/access-token", response_model=Token)
 async def login_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: Session = Depends(deps.get_db)
+    db: AsyncSession = Depends(deps.get_db)
 ) -> Token:
     """
     OAuth2 compatible token login, get an access token for future requests
@@ -58,11 +58,19 @@ def test_token(current_user: User = Depends(deps.get_current_user)) -> Any:
 @router.post("/register", response_model=UserSchema)
 async def register(
     user_in: UserCreate,
-    db: Session = Depends(deps.get_db)
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: User | None = Depends(deps.get_optional_current_user),
 ) -> Any:
     """
-    Create new user without the need to be logged in (for initial setup)
+    Create the first user during bootstrap. Later user creation requires authentication.
     """
+    user_count = await db.scalar(select(func.count(User.id)))
+    if user_count and current_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Registration is closed after initial setup.",
+        )
+
     # 1. Check if user exists
     logger.info("Registering new user: %s", user_in.email)
     result = await db.execute(select(User).where(User.email == user_in.email))

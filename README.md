@@ -6,13 +6,13 @@ Vastu Vaibhav is a specialized Financial Ledger and Platform designed for Vastu 
 
 - **Client Management**: Manage detailed client profiles, contact information, and project locations.
 - **Visit Tracking**: Log site visits with specific observations and energy audit data.
-- **Financial Ledger**: Professional double-entry style ledger for tracking service charges and payments.
+- **Financial Ledger**: Professional ledger for tracking charges, first-class discounts, payments, and running balances with fixed-point money storage.
 - **Automated Invoicing**: Professional React-based invoice template with customizable central configuration (`config/app-settings.json`).
 - **Dashboard Analytics**: Real-time overview of total clients, visits, and outstanding balances.
 - **Automated Backups**: Scheduled SQLite database backups powered by APScheduler to ensure data safety.
 - **Comprehensive Logging**: Detailed, human-readable logging system across both frontend and backend for easy auditing and debugging.
 - **Modern UI/UX**: Port-folio style interface with support for both Dark and Light modes.
-- **Secure Authentication**: JWT-based authentication for data protection.
+- **Secure Authentication**: JWT-based authentication with protected business APIs and first-user-only registration bootstrap.
 
 ## 🛠️ Tech Stack
 
@@ -46,7 +46,7 @@ For deploying to a production server, use the template provided in the `deploy/`
    SECRET_KEY=your_very_secure_random_string
    DATABASE_URL=sqlite+aiosqlite:///../data/vastu.db
    ```
-3. **Configuration & Data**: Create `data/` and `config/` directories next to your `docker-compose.yml`. Place your `app-settings.json` in the `config/` folder. This is required for both the build process and runtime.
+3. **Configuration & Data**: Create `data/` and `config/` directories next to your `docker-compose.yml`. Place your `app-settings.json` in the `config/` folder. The backend loads this at runtime and exposes safe app settings through the authenticated config API.
 4. **Deploy**:
    ```bash
    docker-compose up -d
