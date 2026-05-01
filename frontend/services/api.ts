@@ -1,5 +1,22 @@
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const configuredApiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+const API_BASE_URL = (() => {
+    if (typeof window === 'undefined') {
+        return configuredApiBaseUrl;
+    }
+
+    try {
+        const apiUrl = new URL(configuredApiBaseUrl);
+        if (apiUrl.hostname === 'backend') {
+            return '';
+        }
+    } catch {
+        // Empty or relative API URLs are valid and should stay same-origin.
+    }
+
+    return configuredApiBaseUrl;
+})();
 
 export type TokenResponse = {
     access_token: string;
