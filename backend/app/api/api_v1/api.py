@@ -12,4 +12,4 @@ api_router.include_router(visits.router, prefix="/visits", tags=["visits"], depe
 api_router.include_router(ledger.router, prefix="/ledger", tags=["ledger"], dependencies=protected_dependencies)
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"], dependencies=protected_dependencies)
 api_router.include_router(utils.router, prefix="/utils", tags=["utils"], dependencies=protected_dependencies)
-api_router.include_router(config.router, prefix="/config", tags=["config"], dependencies=protected_dependencies)
+api_router.include_router(config.router, prefix="/config", tags=["config"])

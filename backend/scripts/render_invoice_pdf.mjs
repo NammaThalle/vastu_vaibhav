@@ -1,7 +1,10 @@
 import { createRequire } from "node:module";
+import { existsSync } from "node:fs";
 
-// Resolve puppeteer from the frontend's node_modules (copied into the Docker image).
-const require = createRequire("/app/frontend/package.json");
+const frontendPackageJson = existsSync("/app/frontend/package.json")
+  ? "/app/frontend/package.json"
+  : "/frontend/package.json";
+const require = createRequire(frontendPackageJson);
 const puppeteer = require("puppeteer");
 
 const [, , url, outputPath] = process.argv;
