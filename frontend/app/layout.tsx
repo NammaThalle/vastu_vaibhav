@@ -3,6 +3,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { LayoutShell } from "@/components/LayoutShell"
 import { QueryProvider } from "@/components/QueryProvider"
+import { DevServiceWorkerCleanup } from "@/components/DevServiceWorkerCleanup"
 import { Toaster } from "@/components/ui/sonner"
 
 export const viewport: Viewport = {
@@ -52,6 +53,7 @@ export default function RootLayout({
                     disableTransitionOnChange
                 >
                     <QueryProvider>
+                        <DevServiceWorkerCleanup />
                         <LayoutShell>{children}</LayoutShell>
                         <Toaster position="top-center" />
                     </QueryProvider>
