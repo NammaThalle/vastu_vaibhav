@@ -43,9 +43,11 @@ export default function RegisterPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
-            {/* Background blobs */}
-            <div className="absolute -bottom-8 -right-4 w-96 h-96 bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob" />
-            <div className="absolute top-0 left-20 w-72 h-72 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
+            <div className="pointer-events-none absolute inset-0 overflow-hidden dark:block hidden">
+                <div className="absolute top-[-20%] left-[10%] h-[600px] w-[600px] rounded-full bg-violet-600/[0.08] blur-[120px]" />
+                <div className="absolute bottom-[-12%] right-[8%] h-[500px] w-[500px] rounded-full bg-indigo-600/[0.07] blur-[100px]" />
+                <div className="ambient-grid absolute inset-0 opacity-[0.025]" />
+            </div>
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -54,7 +56,7 @@ export default function RegisterPage() {
                 className="w-full max-w-md z-10"
             >
                 <div className="flex flex-col items-center mb-8 gap-2">
-                    <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-sm border border-primary/20">
+                    <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-sm border border-primary/20 dark:bg-gradient-to-br dark:from-violet-500 dark:to-indigo-600 dark:text-white dark:shadow-lg dark:shadow-violet-500/30">
                         <Home className="h-6 w-6" />
                     </div>
                     <h1 className="text-3xl font-extrabold tracking-tight">Vastu Vaibhav</h1>

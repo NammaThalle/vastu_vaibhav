@@ -60,9 +60,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 
 const STATUS_OPTIONS = [
-    { label: "Inquiry", value: "Inquiry", color: "text-blue-600 bg-blue-500/10 border-blue-500/20", icon: AlertCircle },
-    { label: "Active", value: "Active", color: "text-orange-600 bg-orange-500/10 border-orange-500/20", icon: Clock },
-    { label: "Completed", value: "Completed", color: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20", icon: CheckCircle2 },
+    { label: "Inquiry", value: "Inquiry", color: "text-blue-600 bg-blue-500/10 border-blue-500/20 dark:text-cyan-300 dark:bg-cyan-400/10 dark:border-cyan-400/20", icon: AlertCircle },
+    { label: "Active", value: "Active", color: "text-orange-600 bg-orange-500/10 border-orange-500/20 dark:text-amber-300 dark:bg-amber-400/10 dark:border-amber-400/20", icon: Clock },
+    { label: "Completed", value: "Completed", color: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20 dark:text-emerald-300 dark:bg-emerald-400/10 dark:border-emerald-400/20", icon: CheckCircle2 },
     { label: "Inactive", value: "Inactive", color: "text-muted-foreground bg-muted/50 border-border", icon: Circle },
 ]
 
@@ -294,7 +294,7 @@ export default function ClientsPage() {
                                                     <StatusBadge client={client} onUpdate={loadClients} />
                                                     <Badge variant="outline" className={cn(
                                                         "text-[9px] font-mono border-none",
-                                                        client.current_balance <= 0 ? "text-emerald-600 bg-emerald-500/10" : "text-destructive bg-destructive/10"
+                                                        client.current_balance <= 0 ? "text-emerald-600 bg-emerald-500/10 dark:text-emerald-300 dark:bg-emerald-400/10" : "text-destructive bg-destructive/10"
                                                     )}>
                                                         Bal: {formatCurrency(client.current_balance)}
                                                     </Badge>
@@ -318,7 +318,7 @@ export default function ClientsPage() {
                                                     <span className="text-[10px] uppercase tracking-tighter text-muted-foreground font-bold">Total Fee</span>
                                                     <span className="font-black text-sm">{formatCurrency(client.total_billed)}</span>
                                                 </div>
-                                                <div className="h-8 w-8 rounded-full bg-background flex items-center justify-center shadow-sm">
+                                                <div className="h-8 w-8 rounded-full bg-background flex items-center justify-center shadow-sm dark:bg-white/[0.05] dark:border dark:border-white/[0.07]">
                                                     <ArrowUpRight className="h-4 w-4 text-primary" />
                                                 </div>
                                             </div>
@@ -383,7 +383,7 @@ export default function ClientsPage() {
                                                     </span>
                                                     <span className={cn(
                                                         "text-[10px] font-mono font-bold",
-                                                        client.current_balance <= 0 ? "text-emerald-600" : "text-destructive"
+                                                        client.current_balance <= 0 ? "text-emerald-600 dark:text-emerald-300" : "text-destructive"
                                                     )}>
                                                         {client.current_balance <= 0 ? "Settled" : formatCurrency(client.current_balance)}
                                                     </span>
@@ -455,7 +455,7 @@ export default function ClientsPage() {
                                                 <TableCell className="text-right hidden sm:table-cell">
                                                     <Badge variant="outline" className={cn(
                                                         "font-mono text-[10px] px-2 py-0.5 border-none",
-                                                        client.current_balance <= 0 ? "text-emerald-600 bg-emerald-500/10" : "text-destructive bg-destructive/10"
+                                                        client.current_balance <= 0 ? "text-emerald-600 bg-emerald-500/10 dark:text-emerald-300 dark:bg-emerald-400/10" : "text-destructive bg-destructive/10"
                                                     )}>
                                                         {client.current_balance <= 0 ? "Settled" : formatCurrency(client.current_balance)}
                                                     </Badge>

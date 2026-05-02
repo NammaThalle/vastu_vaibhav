@@ -87,9 +87,9 @@ import { logger } from "@/lib/logger"
 import { LedgerHistory } from "./LedgerHistory"
 
 const STATUS_OPTIONS = [
-    { label: "Inquiry", value: "Inquiry", color: "text-blue-600 bg-blue-500/10 border-blue-500/20", icon: AlertCircle },
-    { label: "Active", value: "Active", color: "text-orange-600 bg-orange-500/10 border-orange-500/20", icon: Clock },
-    { label: "Completed", value: "Completed", color: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20", icon: CheckCircle2 },
+    { label: "Inquiry", value: "Inquiry", color: "text-blue-600 bg-blue-500/10 border-blue-500/20 dark:text-cyan-300 dark:bg-cyan-400/10 dark:border-cyan-400/20", icon: AlertCircle },
+    { label: "Active", value: "Active", color: "text-orange-600 bg-orange-500/10 border-orange-500/20 dark:text-amber-300 dark:bg-amber-400/10 dark:border-amber-400/20", icon: Clock },
+    { label: "Completed", value: "Completed", color: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20 dark:text-emerald-300 dark:bg-emerald-400/10 dark:border-emerald-400/20", icon: CheckCircle2 },
     { label: "Inactive", value: "Inactive", color: "text-muted-foreground bg-muted/50 border-border", icon: Circle },
 ]
 
@@ -505,6 +505,22 @@ function ClientDetailContent() {
     const handleDownloadBill = async () => {
         setBillStatus('loading');
         setBillError('');
+
+        const downloadBlob = (blob: Blob, fileName: string) => {
+            const url = window.URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = fileName;
+            anchor.style.display = 'none';
+            document.body.appendChild(anchor);
+            anchor.click();
+
+            setTimeout(() => {
+                document.body.removeChild(anchor);
+                window.URL.revokeObjectURL(url);
+            }, 3000);
+        };
+
         try {
             const blob = await ledgerApi.downloadBill(id as string);
 
@@ -513,51 +529,33 @@ function ClientDetailContent() {
             const dateStr = new Date().toISOString().split('T')[0];
             const fileName = `Invoice-${safeName}-${dateStr}.pdf`;
 
-            // ── Mobile (iOS/Android): Web Share API → native share sheet ─────
-            // navigator.share({ files }) triggers AirDrop, Save to Files, etc.
+            logger.info(`Downloading invoice: ${client.full_name}`);
+            downloadBlob(blob, fileName);
+
+            setBillStatus('success');
+            setTimeout(() => setBillStatus('idle'), 1500);
+
+            // Web Share is best-effort only. Browsers require a direct user gesture,
+            // which may be lost after awaiting server-side PDF generation.
             const file = new File([blob], fileName, { type: 'application/pdf' });
             if (
                 typeof navigator !== 'undefined' &&
+                navigator.share &&
                 navigator.canShare &&
                 navigator.canShare({ files: [file] })
             ) {
                 logger.info(`Sharing invoice: ${client.full_name}`);
-                await navigator.share({
+                navigator.share({
                     files: [file],
                     title: `Invoice — ${client.full_name}`,
                     text: '',   // empty string suppresses blob URL auto-caption in WhatsApp etc.
+                }).catch((err) => {
+                    if (err?.name !== 'AbortError') {
+                        logger.warn(`Invoice share skipped: ${err?.message || 'not allowed'}`);
+                    }
                 });
-                setBillStatus('success');
-                setTimeout(() => setBillStatus('idle'), 1500);
-                return;
             }
-
-            // ── Fallback: anchor <a download> — works on HTTP, no blob URL shown ─
-            // Using download attribute avoids opening a new tab with the blob URL
-            // visible in the address bar. On iOS this triggers "Open In / Save to Files".
-            logger.info(`Downloading invoice fallback: ${client.full_name}`);
-
-            const url = window.URL.createObjectURL(blob);
-            const anchor = document.createElement('a');
-            anchor.href = url;
-            anchor.download = fileName;
-            anchor.style.display = 'none';
-            document.body.appendChild(anchor);
-            anchor.click();
-            // Small delay before cleanup so iOS has time to initiate the download
-            setTimeout(() => {
-                document.body.removeChild(anchor);
-                window.URL.revokeObjectURL(url);
-            }, 3000);
-
-            setBillStatus('success');
-            setTimeout(() => setBillStatus('idle'), 1500);
         } catch (err: any) {
-            // User dismissed the iOS share sheet — not an error
-            if (err?.name === 'AbortError') {
-                setBillStatus('idle');
-                return;
-            }
             setBillError(err.message || 'Failed to generate bill');
             setBillStatus('error');
         }
@@ -644,7 +642,7 @@ function ClientDetailContent() {
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.88, opacity: 0 }}
                             transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-                            className="bg-white rounded-3xl shadow-2xl px-16 py-12 flex flex-col items-center gap-6 min-w-[280px] overflow-hidden"
+                            className="bg-white rounded-3xl shadow-2xl px-16 py-12 flex flex-col items-center gap-6 min-w-[280px] overflow-hidden dark:bg-white/[0.04] dark:border dark:border-white/[0.08] dark:backdrop-blur-xl dark:shadow-[0_24px_64px_rgba(0,0,0,0.55)]"
                         >
                             <AnimatePresence mode="wait">
                                 {billStatus === 'loading' && (
@@ -657,8 +655,8 @@ function ClientDetailContent() {
                                         className="flex flex-col items-center gap-6"
                                     >
                                         <div className="h-16 w-16 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-                                        <p className="text-[15px] font-semibold text-slate-700">Generating bill…</p>
-                                        <p className="text-[12px] text-slate-400">This may take a few seconds</p>
+                                        <p className="text-[15px] font-semibold text-slate-700 dark:text-white/80">Generating bill…</p>
+                                        <p className="text-[12px] text-slate-400 dark:text-white/35">This may take a few seconds</p>
                                     </motion.div>
                                 )}
                                 {billStatus === 'success' && (
@@ -674,13 +672,13 @@ function ClientDetailContent() {
                                             initial={{ scale: 0 }}
                                             animate={{ scale: 1 }}
                                             transition={{ type: 'spring', stiffness: 400, damping: 20, delay: 0.05 }}
-                                            className="h-16 w-16 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center"
+                                            className="h-16 w-16 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center dark:bg-emerald-400/10 dark:border-emerald-400/25"
                                         >
                                             <svg className="h-9 w-9 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                             </svg>
                                         </motion.div>
-                                        <p className="text-[15px] font-semibold text-slate-700 pb-2">Bill generated successfully</p>
+                                        <p className="text-[15px] font-semibold text-slate-700 pb-2 dark:text-white/80">Bill generated successfully</p>
                                     </motion.div>
                                 )}
                                 {billStatus === 'error' && (
@@ -696,13 +694,13 @@ function ClientDetailContent() {
                                             initial={{ scale: 0 }}
                                             animate={{ scale: 1 }}
                                             transition={{ type: 'spring', stiffness: 400, damping: 20, delay: 0.05 }}
-                                            className="h-16 w-16 rounded-full bg-red-50 border-2 border-red-200 flex items-center justify-center"
+                                            className="h-16 w-16 rounded-full bg-red-50 border-2 border-red-200 flex items-center justify-center dark:bg-red-400/10 dark:border-red-400/25"
                                         >
                                             <svg className="h-9 w-9 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                             </svg>
                                         </motion.div>
-                                        <p className="text-[15px] font-semibold text-slate-700">Bill not generated</p>
+                                        <p className="text-[15px] font-semibold text-slate-700 dark:text-white/80">Bill not generated</p>
                                         <p className="text-[12px] text-red-500 text-center max-w-[220px]">{billError}</p>
                                         <button
                                             onClick={() => setBillStatus('idle')}
@@ -728,7 +726,7 @@ function ClientDetailContent() {
                     Back to Directory
                 </Button>
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                    <div className="px-3 py-1 bg-secondary text-[10px] font-mono tracking-wider rounded-full text-muted-foreground border border-border">
+                    <div className="px-3 py-1 bg-secondary text-[10px] font-mono tracking-wider rounded-full text-muted-foreground border border-border dark:bg-white/[0.04] dark:border-white/[0.08]">
                         ID: {id?.slice(0, 8)}
                     </div>
                     <Button
@@ -745,7 +743,7 @@ function ClientDetailContent() {
 
             {/* ── Mobile Tab Bar ──────────────────────────────────────────────── */}
             <div className="lg:hidden mb-6">
-                <div className="flex rounded-2xl bg-secondary/50 p-1 gap-1">
+                <div className="flex rounded-2xl bg-secondary/50 p-1 gap-1 dark:bg-white/[0.04] dark:border dark:border-white/[0.08]">
                     {(["ledger", "visits", "profile"] as const).map((tab) => {
                         const badge = tab === 'ledger'
                             ? (ledger?.history?.length ?? 0)
@@ -759,7 +757,7 @@ function ClientDetailContent() {
                                 className={cn(
                                     "flex-1 py-2.5 text-xs font-bold capitalize rounded-xl transition-all flex items-center justify-center gap-1",
                                     mobileTab === tab
-                                        ? "bg-background text-foreground shadow-sm"
+                                        ? "bg-background text-foreground shadow-sm dark:bg-violet-500/15 dark:text-violet-300 dark:border dark:border-violet-500/20"
                                         : "text-muted-foreground hover:text-foreground"
                                 )}
                             >
@@ -813,9 +811,9 @@ function ClientDetailContent() {
 
                         {/* Contact Info */}
                         <div className="w-full space-y-4">
-                            <div className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/50 group hover:border-primary/30 transition-colors">
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/50 group hover:border-primary/30 transition-colors dark:bg-white/[0.03] dark:border-white/[0.08]">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                    <div className="h-10 w-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center dark:bg-emerald-400/10 dark:text-emerald-300 dark:border dark:border-emerald-400/20">
                                         <Phone className="h-5 w-5" />
                                     </div>
                                     <div className="text-left">
@@ -828,9 +826,9 @@ function ClientDetailContent() {
                                 </Button>
                             </div>
 
-                            <div className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/50 group hover:border-primary/30 transition-colors">
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/50 group hover:border-primary/30 transition-colors dark:bg-white/[0.03] dark:border-white/[0.08]">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                    <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center dark:bg-cyan-400/10 dark:text-cyan-300 dark:border dark:border-cyan-400/20">
                                         <Mail className="h-5 w-5" />
                                     </div>
                                     <div className="text-left">
@@ -856,22 +854,22 @@ function ClientDetailContent() {
                     {/* KPIs Section */}
                     <div className="space-y-6 pt-6">
                         <div className="grid gap-4">
-                            <div className="p-5 rounded-2xl bg-white shadow-sm border border-border/50 space-y-1">
+                            <div className="p-5 rounded-2xl bg-white shadow-sm border border-border/50 space-y-1 dark:bg-white/[0.03] dark:border-white/[0.08] dark:shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
                                 <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Consulting Fee</p>
                                 <p className="text-3xl font-black">{formatCurrency(client.total_fees_fixed)}</p>
                             </div>
                             <div className={cn(
                                 "p-5 rounded-2xl shadow-sm border space-y-1 transition-all",
                                 (ledger?.current_balance > 0)
-                                    ? "bg-red-50 border-red-100 text-red-900"
-                                    : "bg-emerald-50 border-emerald-100 text-emerald-900"
+                                    ? "bg-red-50 border-red-100 text-red-900 dark:bg-red-400/10 dark:border-red-400/20 dark:text-red-200"
+                                    : "bg-emerald-50 border-emerald-100 text-emerald-900 dark:bg-emerald-400/10 dark:border-emerald-400/20 dark:text-emerald-200"
                             )}>
                                 <p className="text-[10px] uppercase font-bold tracking-widest opacity-70">Outstanding Balance</p>
                                 <p className="text-3xl font-black">
                                     {formatCurrency(ledger?.current_balance || 0)}
                                 </p>
                             </div>
-                            <div className="p-5 rounded-2xl bg-white shadow-sm border border-border/50 space-y-1">
+                            <div className="p-5 rounded-2xl bg-white shadow-sm border border-border/50 space-y-1 dark:bg-white/[0.03] dark:border-white/[0.08] dark:shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
                                 <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Total Visits</p>
                                 <p className="text-3xl font-black">{visits.length}</p>
                             </div>
@@ -893,8 +891,8 @@ function ClientDetailContent() {
                             <div className="lg:hidden grid grid-cols-3 gap-2">
                                 {[
                                     { label: 'Total Fees', value: formatCurrency(ledger.summary?.total_charges ?? 0), color: 'text-foreground' },
-                                    { label: 'Paid', value: formatCurrency(ledger.summary?.total_payments ?? 0), color: 'text-emerald-600' },
-                                    { label: 'Balance', value: formatCurrency(ledger.summary?.outstanding_balance ?? 0), color: ledger.summary?.outstanding_balance > 0 ? 'text-destructive' : 'text-emerald-600' },
+                                    { label: 'Paid', value: formatCurrency(ledger.summary?.total_payments ?? 0), color: 'text-emerald-600 dark:text-emerald-300' },
+                                    { label: 'Balance', value: formatCurrency(ledger.summary?.outstanding_balance ?? 0), color: ledger.summary?.outstanding_balance > 0 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-300' },
                                 ].map(({ label, value, color }) => (
                                     <div key={label} className="bg-card border border-border/50 rounded-2xl px-3 py-2.5 text-center">
                                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
@@ -925,7 +923,7 @@ function ClientDetailContent() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setShowAddCharge(true)}
-                                    className="h-9 px-4 rounded-full text-xs font-bold border-orange-200 text-orange-700 hover:bg-orange-50"
+                                    className="h-9 px-4 rounded-full text-xs font-bold border-orange-200 text-orange-700 hover:bg-orange-50 dark:border-amber-400/25 dark:text-amber-300 dark:hover:bg-amber-400/10"
                                 >
                                     + Charge
                                 </Button>
@@ -933,7 +931,7 @@ function ClientDetailContent() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setShowAddDiscount(true)}
-                                    className="h-9 px-4 rounded-full text-xs font-bold border-purple-200 text-purple-700 hover:bg-purple-50"
+                                    className="h-9 px-4 rounded-full text-xs font-bold border-purple-200 text-purple-700 hover:bg-purple-50 dark:border-violet-400/25 dark:text-violet-300 dark:hover:bg-violet-400/10"
                                 >
                                     - Discount
                                 </Button>
@@ -941,7 +939,7 @@ function ClientDetailContent() {
                                     variant="secondary"
                                     size="sm"
                                     onClick={() => setShowPhase2Calculator(true)}
-                                    className="h-9 px-4 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-none"
+                                    className="h-9 px-4 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-none dark:bg-indigo-400/10 dark:text-indigo-300 dark:hover:bg-indigo-400/20"
                                 >
                                     Phase 2
                                 </Button>
@@ -994,7 +992,7 @@ function ClientDetailContent() {
                                     className="relative"
                                 >
                                     {/* Timeline Dot */}
-                                    <div className="absolute -left-[35px] top-1.5 h-6 w-6 rounded-full bg-background border-2 border-primary flex items-center justify-center z-10 shadow-sm">
+                                    <div className="absolute -left-[35px] top-1.5 h-6 w-6 rounded-full bg-background border-2 border-primary flex items-center justify-center z-10 shadow-sm dark:bg-[#080c14]">
                                         <div className="h-2 w-2 rounded-full bg-primary" />
                                     </div>
 
@@ -1004,7 +1002,7 @@ function ClientDetailContent() {
                                                 {new Date(v.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                             </span>
                                         </div>
-                                        <div className="bg-card p-4 sm:p-6 rounded-2xl shadow-sm border border-border/50 group hover:border-primary/30 hover:shadow-md transition-all relative">
+                                        <div className="bg-card p-4 sm:p-6 rounded-2xl shadow-sm border border-border/50 group hover:border-primary/30 hover:shadow-md transition-all relative dark:bg-white/[0.03] dark:border-white/[0.08]">
                                             <div className="flex justify-between items-start mb-3">
                                                 <h3 className="text-base sm:text-lg font-bold text-foreground leading-tight pr-2">
                                                     {v.purpose}
@@ -1030,7 +1028,7 @@ function ClientDetailContent() {
                             ))}
 
                             {visits.length === 0 && (
-                                <div className="text-center py-16 bg-white/50 rounded-3xl border border-dashed border-border flex flex-col items-center gap-3">
+                                <div className="text-center py-16 bg-white/50 rounded-3xl border border-dashed border-border flex flex-col items-center gap-3 dark:bg-white/[0.03] dark:border-white/[0.08]">
                                     <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center">
                                         <Calendar className="h-6 w-6 text-muted-foreground" />
                                     </div>
@@ -1047,7 +1045,7 @@ function ClientDetailContent() {
 
             {/* ── Mobile Sticky Bottom Action Bar ──────────────────────────────── */}
             <div
-                className="lg:hidden fixed inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border/60 px-4 py-3 flex items-center gap-2"
+                className="lg:hidden fixed inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border/60 px-4 py-3 flex items-center gap-2 dark:bg-white/[0.03] dark:border-white/[0.06]"
                 style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
             >
                 {mobileTab === 'visits' ? (
@@ -1166,7 +1164,7 @@ function ClientDetailContent() {
                             className="w-full sm:max-w-md max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl"
                         >
                             <Card className="shadow-2xl border-orange-500/20 overflow-hidden rounded-3xl">
-                                <CardHeader className="bg-orange-500/5 pb-6">
+                                <CardHeader className="bg-orange-500/5 pb-6 dark:bg-amber-400/[0.04]">
                                     <CardTitle>{editingCharge ? 'Edit' : 'Add'} Extra Service Charge</CardTitle>
                                     <CardDescription>
                                         {editingCharge ? 'Modify this billing entry.' : 'Include professional remedies or travel expenses.'}
@@ -1197,7 +1195,7 @@ function ClientDetailContent() {
                                                     </SelectTrigger>
                                                     <SelectContent className="rounded-xl border-orange-500/10 shadow-2xl">
                                                         <SelectGroup>
-                                                            <SelectItem value="custom" className="font-semibold text-orange-600 focus:text-orange-700 focus:bg-orange-50 cursor-pointer">
+                                                            <SelectItem value="custom" className="font-semibold text-orange-600 focus:text-orange-700 focus:bg-orange-50 cursor-pointer dark:text-amber-300 dark:focus:text-amber-200 dark:focus:bg-amber-400/10">
                                                                 ✨ Custom Manual Entry
                                                             </SelectItem>
                                                             {availableAddons.length > 0 && (
@@ -1210,7 +1208,7 @@ function ClientDetailContent() {
                                                                         <SelectItem key={addon.id} value={addon.id} className="py-2.5 cursor-pointer">
                                                                             <div className="flex items-center justify-between w-full gap-3">
                                                                                 <span className="font-medium truncate">{addon.name}</span>
-                                                                                <span className="text-xs text-orange-600 font-mono font-bold bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100 flex-shrink-0">
+                                                                                <span className="text-xs text-orange-600 font-mono font-bold bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100 flex-shrink-0 dark:text-amber-300 dark:bg-amber-400/10 dark:border-amber-400/20">
                                                                                     ₹{addon.price.toLocaleString()}
                                                                                 </span>
                                                                             </div>
@@ -1283,7 +1281,7 @@ function ClientDetailContent() {
                             className="w-full sm:max-w-md max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl"
                         >
                             <Card className="shadow-2xl border-purple-500/20 overflow-hidden rounded-3xl">
-                                <CardHeader className="bg-purple-500/5 pb-6">
+                                <CardHeader className="bg-purple-500/5 pb-6 dark:bg-violet-400/[0.04]">
                                     <CardTitle>Apply Account Discount</CardTitle>
                                     <CardDescription>
                                         Discounts are tracked as separate deductions from the client's overall bill.
@@ -1311,7 +1309,7 @@ function ClientDetailContent() {
                                                     type="number"
                                                     min="0.01"
                                                     step="0.01"
-                                                    className="pl-9 rounded-xl bg-secondary/30 border-none h-11 font-black text-purple-700"
+                                                    className="pl-9 rounded-xl bg-secondary/30 border-none h-11 font-black text-purple-700 dark:text-violet-300"
                                                     value={discountForm.amount}
                                                     onChange={e => setDiscountForm({ ...discountForm, amount: parseFloat(e.target.value) })}
                                                     required
@@ -1351,7 +1349,7 @@ function ClientDetailContent() {
                             className="w-full sm:max-w-md max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl"
                         >
                             <Card className="shadow-2xl border-emerald-500/20 overflow-hidden rounded-3xl">
-                                <CardHeader className="bg-emerald-500/5 pb-6">
+                                <CardHeader className="bg-emerald-500/5 pb-6 dark:bg-emerald-400/[0.04]">
                                     <CardTitle>{editingPayment ? 'Edit' : 'Record'} New Payment</CardTitle>
                                     <CardDescription>
                                         {editingPayment ? 'Modify payment record details.' : 'Update the outstanding balance for this consultant.'}
@@ -1366,7 +1364,7 @@ function ClientDetailContent() {
                                                     <button
                                                         type="button"
                                                         onClick={() => setPaymentForm(prev => ({ ...prev, amount: ledger.current_balance }))}
-                                                        className="text-[10px] bg-emerald-100 text-emerald-800 hover:bg-emerald-200 font-black px-2 py-1 rounded-md transition-all uppercase tracking-tighter"
+                                                        className="text-[10px] bg-emerald-100 text-emerald-800 hover:bg-emerald-200 font-black px-2 py-1 rounded-md transition-all uppercase tracking-tighter dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:bg-emerald-400/20"
                                                     >
                                                         Pay Full (₹{ledger.current_balance.toLocaleString()})
                                                     </button>
@@ -1377,7 +1375,7 @@ function ClientDetailContent() {
                                                 <Input
                                                     id="pay-amount"
                                                     type="number"
-                                                    className="pl-9 rounded-xl bg-secondary/30 border-none h-11 font-black text-emerald-700"
+                                                    className="pl-9 rounded-xl bg-secondary/30 border-none h-11 font-black text-emerald-700 dark:text-emerald-300"
                                                     value={paymentForm.amount}
                                                     onChange={e => setPaymentForm({ ...paymentForm, amount: parseFloat(e.target.value) })}
                                                     required
@@ -1535,7 +1533,7 @@ function ClientDetailContent() {
                                 >
                                     ✕
                                 </Button>
-                                <CardHeader className="bg-indigo-500/5 pb-8 relative">
+                                <CardHeader className="bg-indigo-500/5 pb-8 relative dark:bg-indigo-400/[0.04]">
                                     <CardTitle className="text-2xl">Phase 2 Execution</CardTitle>
                                     <CardDescription className="max-w-[80%]">
                                         Configure detailed structural fixes, remedies, or interior element packages.

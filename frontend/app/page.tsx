@@ -281,7 +281,7 @@ export default function Dashboard() {
                                     </p>
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-blue-600 font-bold">{loading ? "..." : `${stats.goalCompletion}%`}</span>
+                                    <span className="text-blue-600 font-bold dark:text-cyan-300">{loading ? "..." : `${stats.goalCompletion}%`}</span>
                                     <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter text-right">Of Goal</p>
                                 </div>
                             </div>
@@ -296,13 +296,13 @@ export default function Dashboard() {
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="p-2 rounded bg-background border border-border/50">
+                                <div className="p-2 rounded bg-background border border-border/50 dark:bg-white/[0.03] dark:border-white/[0.08]">
                                     <span className="text-[10px] text-muted-foreground block font-bold uppercase">Pending</span>
-                                    <span className="text-sm font-bold text-orange-600">
+                                    <span className="text-sm font-bold text-orange-600 dark:text-amber-300">
                                         {loading ? "..." : `₹${stats.pendingBalance.toLocaleString()}`}
                                     </span>
                                 </div>
-                                <div className="p-2 rounded bg-background border border-border/50">
+                                <div className="p-2 rounded bg-background border border-border/50 dark:bg-white/[0.03] dark:border-white/[0.08]">
                                     <span className="text-[10px] text-muted-foreground block font-bold uppercase">Overdue</span>
                                     <span className="text-sm font-bold text-destructive">
                                         {loading ? "..." : `₹${stats.overdueBalance.toLocaleString()}`}
@@ -323,7 +323,7 @@ export default function Dashboard() {
                     { label: "Settings", href: "/", icon: Settings, color: "bg-gray-500/10 text-gray-500" },
                 ].map((item) => (
                     <Link key={item.label} href={item.href}>
-                        <div className="flex items-center gap-3 p-4 rounded-xl border border-border/50 hover:border-primary/50 hover:bg-accent/50 transition-all group">
+                        <div className="flex items-center gap-3 p-4 rounded-xl border border-border/50 hover:border-primary/50 hover:bg-accent/50 transition-all group dark:border-white/[0.08] dark:bg-white/[0.03] dark:hover:bg-white/[0.06]">
                             <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center shrink-0", item.color)}>
                                 <item.icon className="h-5 w-5" />
                             </div>
