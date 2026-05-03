@@ -90,14 +90,41 @@ function InvoicePageContent() {
     }
   }, [dataParam])
 
-  // Signal Puppeteer ONLY after React has painted the final content.
-  // setLoading(false) schedules a re-render asynchronously; we must wait
-  // for that re-render + paint before marking ready, otherwise Puppeteer
-  // captures the blank loading <div> and generates an empty PDF.
+  // Signal Puppeteer ONLY after React has painted the final content AND
+  // page-break positions have been calculated from real DOM heights.
   useEffect(() => {
     if (loading) return
+
     const raf = requestAnimationFrame(() => {
-      document.body.setAttribute("data-invoice-ready", "true")
+      // ─── Smart page-break insertion ─────────────────────────────────────────
+      // A4 print content height at 96 dpi with 12mm top+bottom margins:
+      // 273mm × (96 / 25.4) ≈ 1032px. We use a 40px buffer to avoid
+      // sections landing right at the page edge.
+      const PAGE_H = 1032 - 40
+
+      // Reset any previous pass
+      document.querySelectorAll('[data-invoice-section]').forEach(el => {
+        el.classList.remove('invoice-page-break')
+      })
+
+      const sections = Array.from(
+        document.querySelectorAll('[data-invoice-section]')
+      ) as HTMLElement[]
+
+      let accumulated = 0
+      for (const section of sections) {
+        const h = section.getBoundingClientRect().height
+        if (accumulated + h > PAGE_H && accumulated > 0) {
+          // This section would overflow — push it to a new page
+          section.classList.add('invoice-page-break')
+          accumulated = h
+        } else {
+          accumulated += h
+        }
+      }
+      // ────────────────────────────────────────────────────────────────────────
+
+      document.body.setAttribute('data-invoice-ready', 'true')
     })
     return () => cancelAnimationFrame(raf)
   }, [loading])
@@ -115,9 +142,24 @@ function InvoicePageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-100 px-3 py-2 text-slate-900 print:bg-white print:p-0">
+    <>
+      {/* ── Print CSS ───────────────────────────────────────────────────── */}
+      <style>{`
+        @media print {
+          /* Never split a table row across pages */
+          tr { break-inside: avoid; }
+          /* Repeat table header on every page */
+          thead { display: table-header-group; }
+          /* Class injected by applyPageBreaks() to force a new page */
+          .invoice-page-break { break-before: page; }
+        }
+      `}</style>
+
+      <div className="min-h-screen bg-stone-100 px-3 py-2 text-slate-900 print:bg-white print:p-0">
       <div className="mx-auto w-full max-w-[780px] overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.06)] print:max-w-none print:rounded-none print:border-0 print:shadow-none">
-        <div className="px-7 pt-2 pb-0">
+        
+        {/* ── SECTION: Letterhead ── */}
+        <div data-invoice-section="header" className="px-7 pt-2 pb-0">
           <div className="flex items-start justify-between">
             {/* Left: circular logo — direct img, no wrapper height tricks */}
             <img
@@ -151,8 +193,10 @@ function InvoicePageContent() {
             </div>
           </div>
         </div>
+        {/* /SECTION: Letterhead */}
 
-        <div className="border-y border-indigo-100 bg-indigo-50/40 px-7 py-2">
+        {/* ── SECTION: Contact strip ── */}
+        <div data-invoice-section="contact" className="border-y border-indigo-100 bg-indigo-50/40 px-7 py-2">
           <div className="flex flex-wrap items-center justify-center gap-2.5 text-[12px] font-medium text-slate-700">
             {/* Primary Phone Bubble */}
               <div className="flex items-center gap-2 rounded-full border border-indigo-100 bg-white px-3 py-1 shadow-sm">
@@ -215,7 +259,7 @@ function InvoicePageContent() {
             </div>
           </div>
 
-          <div className="mt-2 overflow-hidden rounded-[14px] border border-slate-200">
+          <div data-invoice-section="services" className="mt-2 overflow-hidden rounded-[14px] border border-slate-200">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-[#23409f] text-white">
@@ -250,7 +294,7 @@ function InvoicePageContent() {
             </table>
           </div>
 
-          <div className="mt-4 flex items-start justify-between gap-5">
+          <div data-invoice-section="summary" className="mt-4 flex items-start justify-between gap-5">
             <div className="flex-1">
               <div className="text-[13px] font-bold text-slate-900">Payment Instructions</div>
               <div className="mt-2.5 space-y-1.5 text-[12px] leading-5 text-slate-600">
@@ -299,14 +343,14 @@ function InvoicePageContent() {
             </div>
           </div>
           
-          <div className="mt-12">
+          <div data-invoice-section="footer" className="mt-12">
             <div className="border-t border-slate-200 pt-1.5 text-center text-[10px] text-slate-500">
               This is a system-generated invoice and does not require a signature
             </div>
           </div>
 
           {invoice.payments && invoice.payments.length > 0 && (
-            <div className="mt-4 overflow-hidden rounded-[14px] border border-slate-200">
+            <div data-invoice-section="payments" className="mt-4 overflow-hidden rounded-[14px] border border-slate-200">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-emerald-700 text-white">
@@ -345,6 +389,7 @@ function InvoicePageContent() {
         </div>
       </div>
     </div>
+    </>
   )
 }
 
