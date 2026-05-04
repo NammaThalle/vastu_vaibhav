@@ -1,0 +1,30 @@
+{
+  "project": {
+    "name": "Vastu Vaibhav",
+    "tagline": "Architecture | Interiors | Vastu",
+    "organization": "Vastu Vaibhav"
+  },
+  "contact": {
+    "email": "vastuvaibhav.byravi@gmail.com",
+    "phone": "+91 94201 97749",
+    "secondaryPhone": "+91 86689 52446",
+    "gpayPhone": "+91 94201 97749",
+    "website": "www.vastuvaibhav.co"
+  },
+  "payment": {
+    "bankName": "VASTU VAIBHAV Banca Bank",
+    "accountNo": "ID030305089",
+    "ifsc": "IFSC 100000",
+    "taxRate": 0
+  },
+  "invoice": {
+    "logoInitial": "V",
+    "primaryColor": "#233f99",
+    "memberLabel": "BNI MEMBER",
+    "notes": {
+      "thankYou": "",
+      "watermark": "",
+      "lateFee": ""
+    }
+  }
+}

@@ -55,6 +55,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxtst6 \
     fonts-liberation \
     fonts-noto-color-emoji \
+    fonts-indic \
+    fonts-noto \
+    fonts-roboto \
     chromium \
     && rm -rf /var/lib/apt/lists/*
 

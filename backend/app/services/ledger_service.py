@@ -158,6 +158,16 @@ def build_invoice_payload(client: ClientModel, ledger_data: ClientLedger) -> dic
         if entry.type in {"charge", "discount"} and entry.amount
     ]
 
+    payment_items = [
+        {
+            "date": entry.date.strftime("%d %b %Y") if entry.date else "",
+            "description": entry.description,
+            "amount": entry.amount,
+        }
+        for entry in ledger_data.history
+        if entry.type == "payment" and entry.amount
+    ]
+
     app_cfg = settings.APP_CONFIG
     tax_rate = _as_float(_money(app_cfg.get("payment", {}).get("taxRate", 0)))
     tax_amount = 0.0
@@ -179,6 +189,7 @@ def build_invoice_payload(client: ClientModel, ledger_data: ClientLedger) -> dic
             "projectAddress": client.project_address or "",
         },
         "items": charge_items,
+        "payments": payment_items,
         "summary": {
             "subtotal": ledger_data.total_billed,
             "taxRate": tax_rate,

@@ -42,6 +42,11 @@ type InvoiceData = {
     secondaryPhone?: string
     gpayPhone?: string
   }
+  payments: Array<{
+    date: string
+    description: string
+    amount: number
+  }>
 }
 
 function formatCurrency(amount: number) {
@@ -65,11 +70,16 @@ function InvoicePageContent() {
   }, [])
 
   useEffect(() => {
-    try {
-      if (!dataParam) {
-        throw new Error("Missing invoice data")
-      }
+    // dataParam is null on the first render in App Router — wait for the real value.
+    if (dataParam === null) return
 
+    if (!dataParam) {
+      setError("Missing invoice data")
+      setLoading(false)
+      return
+    }
+
+    try {
       const parsed = JSON.parse(dataParam) as InvoiceData
       setInvoice(parsed)
       setError(null)
@@ -77,11 +87,47 @@ function InvoicePageContent() {
       setError(err instanceof Error ? err.message : "Failed to load invoice")
     } finally {
       setLoading(false)
-      document.body.setAttribute("data-invoice-ready", "true")
     }
   }, [dataParam])
 
+  // Signal Puppeteer ONLY after React has painted the final content AND
+  // page-break positions have been calculated from real DOM heights.
+  useEffect(() => {
+    if (loading) return
 
+    const raf = requestAnimationFrame(() => {
+      // ─── Smart page-break insertion ─────────────────────────────────────────
+      // A4 print content height at 96 dpi with 12mm top+bottom margins:
+      // 273mm × (96 / 25.4) ≈ 1032px. We use a 40px buffer to avoid
+      // sections landing right at the page edge.
+      const PAGE_H = 1032 - 40
+
+      // Reset any previous pass
+      document.querySelectorAll('[data-invoice-section]').forEach(el => {
+        el.classList.remove('invoice-page-break')
+      })
+
+      const sections = Array.from(
+        document.querySelectorAll('[data-invoice-section]')
+      ) as HTMLElement[]
+
+      let accumulated = 0
+      for (const section of sections) {
+        const h = section.getBoundingClientRect().height
+        if (accumulated + h > PAGE_H && accumulated > 0) {
+          // This section would overflow — push it to a new page
+          section.classList.add('invoice-page-break')
+          accumulated = h
+        } else {
+          accumulated += h
+        }
+      }
+      // ────────────────────────────────────────────────────────────────────────
+
+      document.body.setAttribute('data-invoice-ready', 'true')
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [loading])
 
   if (loading) {
     return <div className="min-h-screen bg-stone-100" />
@@ -96,44 +142,63 @@ function InvoicePageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-100 px-3 py-4 text-slate-900 print:bg-white print:p-0">
+    <>
+      {/* ── Print CSS ───────────────────────────────────────────────────── */}
+      <style>{`
+        @media print {
+          /* Never split a table row across pages */
+          tr { break-inside: avoid; }
+          /* Keep these sections whole — never let them split mid-table */
+          [data-invoice-section="services"],
+          [data-invoice-section="payments"],
+          [data-invoice-section="summary"] { break-inside: avoid; }
+          /* Class injected by applyPageBreaks() to force a new page */
+          .invoice-page-break { break-before: page; }
+        }
+      `}</style>
+
+      <div className="min-h-screen bg-stone-100 px-3 py-2 text-slate-900 print:bg-white print:p-0 print:min-h-0">
       <div className="mx-auto w-full max-w-[780px] overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.06)] print:max-w-none print:rounded-none print:border-0 print:shadow-none">
-        <div className="px-7 pt-2 pb-0">
-          <div className="relative flex items-center justify-center min-h-[130px]">
-            <div className="absolute -left-3 flex items-center gap-2">
-              <div className="flex h-[130px] w-[130px] shrink-0 items-center justify-center overflow-hidden bg-white">
+        
+        {/* ── SECTION: Letterhead ── */}
+        <div data-invoice-section="header" className="px-7 pt-2 pb-0">
+          <div className="flex items-start justify-between">
+            {/* Left: circular logo — direct img, no wrapper height tricks */}
+            <img
+              src="/invoice-assets/vastu_vaibhav_logo.png"
+              alt={invoice.company.name}
+              className="w-[90px] h-auto shrink-0 object-contain"
+            />
+
+            {/* Center: brand image + INVOICE label */}
+            <div className="flex flex-col items-center gap-0.5">
+              {/* overflow-hidden + -mt crops the transparent whitespace baked into the PNG top */}
+              <div className="overflow-hidden">
                 <img
-                  src="/invoice-assets/vastu_vaibhav_logo.png"
+                  src="/invoice-assets/vastu_vaibhav.png"
                   alt={invoice.company.name}
-                  className="h-full w-full scale-[0.65] object-contain"
+                  className="h-[8.5rem] w-[20rem] object-contain -mt-10"
                 />
               </div>
-            </div>
-
-            <div className="text-center flex justify-center">
-              <img
-                src="/invoice-assets/vastu_vaibhav.png"
-                alt={invoice.company.name}
-                className="h-[8.5rem] w-auto object-contain"
-              />
-            </div>
-
-            <div className="absolute right-0 text-right">
-              <div className="flex justify-end">
-                <img
-                  src="/invoice-assets/bni_logo.png"
-                  alt={invoice.company.memberLabel}
-                  className="h-6 w-auto object-contain"
-                />
-              </div>
-              <div className="mt-3 text-[1.65rem] font-semibold tracking-[0.05em] text-slate-700">
+              <div className="text-[1.65rem] font-semibold tracking-[0.05em] text-slate-700 leading-none pb-1 -mt-5">
                 INVOICE
               </div>
             </div>
+
+            {/* Right: BNI logo */}
+            <div className="flex w-[90px] justify-end shrink-0 mt-2">
+              <img
+                src="/invoice-assets/bni_logo.png"
+                alt={invoice.company.memberLabel}
+                className="h-6 w-auto object-contain"
+              />
+            </div>
           </div>
         </div>
+        {/* /SECTION: Letterhead */}
 
-        <div className="border-y border-indigo-100 bg-indigo-50/40 px-7 py-2">
+        {/* ── SECTION: Contact strip ── */}
+        <div data-invoice-section="contact" className="border-y border-indigo-100 bg-indigo-50/40 px-7 py-2">
           <div className="flex flex-wrap items-center justify-center gap-2.5 text-[12px] font-medium text-slate-700">
             {/* Primary Phone Bubble */}
               <div className="flex items-center gap-2 rounded-full border border-indigo-100 bg-white px-3 py-1 shadow-sm">
@@ -173,10 +238,6 @@ function InvoicePageContent() {
               <div className="text-[9px] text-slate-400">Invoice Date</div>
               <div className="mt-1 font-semibold text-[13px] text-slate-900">{invoice.meta.date}</div>
             </div>
-            <div>
-              <div className="text-[9px] text-slate-400">Due Date</div>
-              <div className="mt-1 font-semibold text-[13px] text-slate-900">{invoice.meta.dueDate}</div>
-            </div>
           </div>
 
           <div className="mt-2">
@@ -200,7 +261,7 @@ function InvoicePageContent() {
             </div>
           </div>
 
-          <div className="mt-2 overflow-hidden rounded-[14px] border border-slate-200">
+          <div data-invoice-section="services" className="mt-2 overflow-hidden rounded-[14px] border border-slate-200">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-[#23409f] text-white">
@@ -218,7 +279,7 @@ function InvoicePageContent() {
                     key={`${item.title}-${index}`}
                     className="border-t border-slate-200 odd:bg-white even:bg-slate-50/60"
                   >
-                    <td className="px-3.5 py-3 align-top">
+                    <td className="px-3.5 py-2 align-top">
                       <div className="text-[13px] font-semibold text-slate-900">
                         {index + 1}. {item.title}
                       </div>
@@ -226,7 +287,7 @@ function InvoicePageContent() {
                         <div className="mt-0.5 text-[11px] text-slate-500">{item.description}</div>
                       ) : null}
                     </td>
-                    <td className="px-3.5 py-3 text-right align-top text-[13px] font-semibold text-slate-900">
+                    <td className="px-3.5 py-2 text-right align-top text-[13px] font-semibold text-slate-900">
                       {formatCurrency(item.amount)}
                     </td>
                   </tr>
@@ -235,7 +296,7 @@ function InvoicePageContent() {
             </table>
           </div>
 
-          <div className="mt-7 flex items-start justify-between gap-5">
+          <div data-invoice-section="summary" className="mt-4 flex items-start justify-between gap-5">
             <div className="flex-1">
               <div className="text-[13px] font-bold text-slate-900">Payment Instructions</div>
               <div className="mt-2.5 space-y-1.5 text-[12px] leading-5 text-slate-600">
@@ -245,7 +306,6 @@ function InvoicePageContent() {
                   <img src="/invoice-assets/gpay.png" alt="GPay" className="h-[14px] w-auto object-contain" />
                   <span>- {invoice.contact.gpayPhone || invoice.contact.phone}</span>
                 </div>
-                <div className="pt-1">Pay by Date: {invoice.meta.dueDate}</div>
               </div>
             </div>
 
@@ -285,16 +345,53 @@ function InvoicePageContent() {
             </div>
           </div>
           
-          <div className="mt-12">
-            <div className="text-[10px] text-slate-500">Signature of the Receiver</div>
-            <div className="mt-0.5 text-[10px] text-slate-500">(Ravindra Manerikar)</div>
-            <div className="mt-2 border-t border-slate-200 pt-1.5 text-center text-[10px] text-slate-500">
-              Generated on {invoice.meta.date}
+          <div data-invoice-section="footer" className="mt-12">
+            <div className="border-t border-slate-200 pt-1.5 text-center text-[10px] text-slate-500">
+              This is a system-generated invoice and does not require a signature
             </div>
           </div>
+
+          {invoice.payments && invoice.payments.length > 0 && (
+            <div data-invoice-section="payments" className="mt-4 overflow-hidden rounded-[14px] border border-slate-200">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-emerald-700 text-white">
+                    <th className="px-3.5 py-2.5 text-left text-[11px] font-semibold tracking-[0.1em]">
+                      PAYMENT HISTORY
+                    </th>
+                    <th className="px-3.5 py-2.5 text-center text-[11px] font-semibold tracking-[0.1em]">
+                      DATE
+                    </th>
+                    <th className="px-3.5 py-2.5 text-right text-[11px] font-semibold tracking-[0.1em]">
+                      AMOUNT PAID
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoice.payments.map((payment, index) => (
+                    <tr
+                      key={`payment-${index}`}
+                      className="border-t border-slate-200 odd:bg-white even:bg-slate-50/60"
+                    >
+                      <td className="px-3.5 py-1.5 align-top text-[13px] text-slate-700">
+                        {payment.description}
+                      </td>
+                      <td className="px-3.5 py-1.5 text-center align-top text-[13px] text-slate-500">
+                        {payment.date}
+                      </td>
+                      <td className="px-3.5 py-1.5 text-right align-top text-[13px] font-semibold text-emerald-700">
+                        {formatCurrency(payment.amount)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>
+    </>
   )
 }
 

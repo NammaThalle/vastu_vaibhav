@@ -250,7 +250,7 @@ export default function ServicesSettingsPage() {
                                         {selectedServiceData.addons?.map((addon: any) => (
                                             <div
                                                 key={addon.id}
-                                                className="flex items-center justify-between p-3 border border-border/50 rounded-xl bg-card"
+                                                className="flex items-center justify-between p-3 border border-border/50 rounded-xl bg-card dark:bg-white/[0.03] dark:border-white/[0.08]"
                                             >
                                                 <div>
                                                     <p className="font-medium text-sm">{addon.name}</p>

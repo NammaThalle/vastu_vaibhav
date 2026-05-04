@@ -84,7 +84,7 @@ export function ServiceCalculator({ onCalculated, initialFee = 0 }: ServiceCalcu
     const serviceName = selectedService?.name?.toLowerCase() || ""
 
     return (
-        <div className="space-y-4 rounded-xl border bg-card p-4 shadow-sm">
+        <div className="space-y-4 rounded-xl border bg-card p-4 shadow-sm dark:bg-white/[0.03] dark:border-white/[0.08] dark:backdrop-blur-xl">
             <div className="flex items-center gap-2 font-semibold">
                 <Calculator className="h-4 w-4 text-primary" />
                 Dynamic Fee Quote Estimator
@@ -94,7 +94,7 @@ export function ServiceCalculator({ onCalculated, initialFee = 0 }: ServiceCalcu
                 <div className="space-y-2">
                     <Label>Select Core Service</Label>
                     <select
-                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/[0.04] dark:border-white/[0.08]"
                         value={selectedServiceId}
                         onChange={(e) => setSelectedServiceId(e.target.value)}
                     >
@@ -106,13 +106,13 @@ export function ServiceCalculator({ onCalculated, initialFee = 0 }: ServiceCalcu
                     </select>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg border border-dashed">
+                <div className="grid sm:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg border border-dashed dark:bg-white/[0.03] dark:border-white/[0.08]">
                     {/* Dynamic Fields Based on Selection */}
                     {serviceName.includes("plot") && (
                         <div className="space-y-2 sm:col-span-2">
                             <Label>Property Scale Type</Label>
                             <select
-                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm dark:bg-white/[0.04] dark:border-white/[0.08]"
                                 value={propertyType}
                                 onChange={(e) => setPropertyType(e.target.value)}
                             >
@@ -149,11 +149,11 @@ export function ServiceCalculator({ onCalculated, initialFee = 0 }: ServiceCalcu
                             </div>
                             <div className="flex items-center gap-2 sm:col-span-2 mt-2">
                                 <label className="flex items-center gap-2 text-sm">
-                                    <input type="checkbox" checked={fullInterior} onChange={e => setFullInterior(e.target.checked)} className="rounded border-gray-300" />
+                                    <input type="checkbox" checked={fullInterior} onChange={e => setFullInterior(e.target.checked)} className="rounded border-gray-300 dark:border-white/[0.14] dark:bg-white/[0.04]" />
                                     Full Comprehensive Interior
                                 </label>
                                 <label className="flex items-center gap-2 text-sm ml-4">
-                                    <input type="checkbox" checked={fullExterior} onChange={e => setFullExterior(e.target.checked)} className="rounded border-gray-300" />
+                                    <input type="checkbox" checked={fullExterior} onChange={e => setFullExterior(e.target.checked)} className="rounded border-gray-300 dark:border-white/[0.14] dark:bg-white/[0.04]" />
                                     Full Comprehensive Exterior
                                 </label>
                             </div>
@@ -165,7 +165,7 @@ export function ServiceCalculator({ onCalculated, initialFee = 0 }: ServiceCalcu
                             <div className="space-y-2 sm:col-span-2">
                                 <Label>Bundle Package Type</Label>
                                 <select
-                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm dark:bg-white/[0.04] dark:border-white/[0.08]"
                                     value={bundleType}
                                     onChange={(e) => setBundleType(e.target.value)}
                                 >
@@ -209,7 +209,7 @@ export function ServiceCalculator({ onCalculated, initialFee = 0 }: ServiceCalcu
                             <div className="p-4 space-y-3">
                                 <div className="flex justify-between items-center pb-2 border-b border-primary/10">
                                     <span className="font-semibold text-sm">Breakdown of Fees</span>
-                                    <Badge variant="outline" className="bg-background">Suggested</Badge>
+                                    <Badge variant="outline" className="bg-background dark:bg-white/[0.04] dark:border-white/[0.08]">Suggested</Badge>
                                 </div>
                                 <div className="space-y-1.5 text-sm">
                                     {Object.entries(result.breakdown).map(([key, value]) => (

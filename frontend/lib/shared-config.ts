@@ -1,26 +1,26 @@
 export const DefaultAppSettings = {
   project: {
-    name: "App Name",
-    tagline: "App Tagline",
-    organization: "App Organization"
+    name: "Vastu Vaibhav",
+    tagline: "Architecture | Interiors | Vastu",
+    organization: "Vastu Vaibhav"
   },
   contact: {
-    email: "",
-    phone: "",
-    secondaryPhone: "",
-    gpayPhone: "",
-    website: ""
+    email: "vastuvaibhav.byravi@gmail.com",
+    phone: "+91 94201 97749",
+    secondaryPhone: "+91 86689 52446",
+    gpayPhone: "+91 94201 97749",
+    website: "www.vastuvaibhav.co"
   },
   payment: {
-    bankName: "",
-    accountNo: "",
-    ifsc: "",
-    taxRate: 0.18
+    bankName: "VASTU VAIBHAV Banca Bank",
+    accountNo: "ID030305089",
+    ifsc: "IFSC 100000",
+    taxRate: 0
   },
   invoice: {
-    logoInitial: "A",
-    primaryColor: "#000000",
-    memberLabel: "",
+    logoInitial: "V",
+    primaryColor: "#233f99",
+    memberLabel: "BNI MEMBER",
     notes: {
       thankYou: "",
       watermark: "",
@@ -28,4 +28,3 @@ export const DefaultAppSettings = {
     }
   }
 };
-

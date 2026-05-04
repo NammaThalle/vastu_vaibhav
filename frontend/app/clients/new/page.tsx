@@ -72,7 +72,7 @@ export default function NewClientPage() {
                 <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="h-20 w-20 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center"
+                    className="h-20 w-20 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center dark:text-emerald-300 dark:border dark:border-emerald-400/20"
                 >
                     <CheckCircle2 size={48} />
                 </motion.div>
@@ -100,7 +100,7 @@ export default function NewClientPage() {
             >
                 <form onSubmit={handleSubmit}>
                     <Card className="border-border/50 shadow-xl overflow-hidden">
-                        <CardHeader className="bg-muted/30 border-b pb-8">
+                        <CardHeader className="bg-muted/30 border-b pb-8 dark:bg-white/[0.02] dark:border-white/[0.06]">
                             <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center border border-primary/20">
                                     <User size={20} />
@@ -197,7 +197,7 @@ export default function NewClientPage() {
 
                             <div className="space-y-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 bg-orange-500/10 text-orange-500 rounded-lg flex items-center justify-center border border-orange-500/20">
+                                    <div className="h-8 w-8 bg-orange-500/10 text-orange-500 rounded-lg flex items-center justify-center border border-orange-500/20 dark:text-amber-300 dark:bg-amber-400/10 dark:border-amber-400/20">
                                         <IndianRupee size={16} />
                                     </div>
                                     <div>
@@ -222,7 +222,7 @@ export default function NewClientPage() {
                                 </div>
 
                                 <Separator className="my-2" />
-                                <div className="space-y-3 bg-muted/40 p-4 rounded-xl border border-dashed text-sm">
+                                <div className="space-y-3 bg-muted/40 p-4 rounded-xl border border-dashed text-sm dark:bg-white/[0.03] dark:border-white/[0.08]">
                                     <div className="font-semibold text-primary mb-2 flex items-center gap-2">
                                         <CheckCircle2 className="h-4 w-4" />
                                         Phase 1: Initial Property Audit
