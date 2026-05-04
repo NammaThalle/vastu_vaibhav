@@ -1,7 +1,10 @@
 import { createRequire } from "node:module";
+import { existsSync } from "node:fs";
 
-// Resolve puppeteer from the frontend's node_modules (copied into the Docker image).
-const require = createRequire("/app/frontend/package.json");
+const frontendPackageJson = existsSync("/app/frontend/package.json")
+  ? "/app/frontend/package.json"
+  : "/frontend/package.json";
+const require = createRequire(frontendPackageJson);
 const puppeteer = require("puppeteer");
 
 const [, , url, outputPath] = process.argv;
@@ -20,6 +23,14 @@ const browser = await puppeteer.launch({
 
 try {
   const page = await browser.newPage();
+
+  // Match viewport to A4 print content dimensions so the JS page-break
+  // measurements taken inside the page correspond to the PDF layout.
+  // A4 (210mm × 297mm) minus 12mm margins each side → 186mm × 273mm
+  // At CSS resolution of 96dpi: 186mm × (96/25.4) ≈ 703px wide,
+  //                              273mm × (96/25.4) ≈ 1032px per page height
+  await page.setViewport({ width: 703, height: 1122, deviceScaleFactor: 1 });
+
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
   await page.waitForFunction(
     () => document.body?.getAttribute("data-invoice-ready") === "true",

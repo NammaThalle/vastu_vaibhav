@@ -43,21 +43,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const [mounted, setMounted] = React.useState(false)
     const [appSettings, setAppSettings] = React.useState(DefaultAppSettings)
 
+    const normalizedPathname = pathname !== "/" && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname
+    const isAuthPage = authPages.includes(normalizedPathname)
+
     // After mount, we know the real theme (including system preference)
     React.useEffect(() => { 
         setMounted(true)
-        // Fetch dynamic app settings
+        if (isAuthPage) {
+            return
+        }
         configApi.getSettings()
             .then(data => {
                 if (data && data.project) {
                     setAppSettings(data)
                 }
             })
-            .catch(err => console.error("Failed to load app settings:", err))
-    }, [])
-
-    const normalizedPathname = pathname !== "/" && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname
-    const isAuthPage = authPages.includes(normalizedPathname)
+            .catch(() => {
+                setAppSettings(DefaultAppSettings)
+            })
+    }, [isAuthPage])
 
     React.useEffect(() => {
         const token = authToken.get()
@@ -101,7 +105,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="min-h-screen bg-background flex flex-col">
+        <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+            <div className="pointer-events-none fixed inset-0 overflow-hidden dark:block hidden">
+                <div className="absolute top-[-22%] left-[8%] h-[600px] w-[600px] rounded-full bg-violet-600/[0.08] blur-[120px]" />
+                <div className="absolute top-[28%] right-[-12%] h-[500px] w-[500px] rounded-full bg-cyan-600/[0.06] blur-[100px]" />
+                <div className="absolute bottom-[-14%] left-[30%] h-[420px] w-[420px] rounded-full bg-indigo-600/[0.07] blur-[90px]" />
+                <div className="ambient-grid absolute inset-0 opacity-[0.025]" />
+            </div>
             {/* ── Offline Banner ───────────────────────────────────────────────── */}
             <AnimatePresence>
                 {!isOnline && (
@@ -121,16 +131,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* ── Header ─────────────────────────────────────────────────────── */}
             <header
-                className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+                className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:border-white/[0.06] dark:bg-white/[0.02] dark:backdrop-blur-2xl"
                 style={{ paddingTop: "env(safe-area-inset-top)" }}
             >
                 <div className="flex h-14 md:h-16 items-center justify-between px-4 mx-auto max-w-screen-2xl">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-primary animate-breathing">
+                        <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-primary animate-breathing dark:rounded-xl dark:bg-gradient-to-br dark:from-violet-500 dark:to-indigo-600 dark:shadow-lg dark:shadow-violet-500/30">
                             <Home className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
                         </div>
-                        <span className="font-bold text-base md:text-xl tracking-tight">
+                        <span className="font-bold text-base md:text-xl tracking-tight dark:text-white">
                             {appSettings.project.name}
                         </span>
                     </Link>
@@ -146,8 +156,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                     className={cn(
                                         "flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors rounded-md",
                                         isActive
-                                            ? "bg-accent text-accent-foreground"
-                                            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                                            ? "bg-accent text-accent-foreground dark:bg-violet-500/15 dark:text-violet-300 dark:border dark:border-violet-500/20"
+                                            : "text-muted-foreground hover:text-foreground hover:bg-accent/50 dark:text-white/40 dark:hover:text-white/70 dark:hover:bg-white/[0.04] dark:border dark:border-transparent"
                                     )}
                                 >
                                     <item.icon className="h-4 w-4" />
@@ -205,7 +215,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* ── Main Content ────────────────────────────────────────────────── */}
             {/* pb-20 on mobile reserves space above the bottom tab bar */}
-            <main className="flex-1 container mx-auto px-4 py-6 md:py-8 pb-24 md:pb-8">
+            <main className="relative z-10 flex-1 container mx-auto px-4 py-6 md:py-8 pb-24 md:pb-8">
                 <motion.div
                     key={pathname}
                     initial={{ opacity: 0 }}
@@ -217,7 +227,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </main>
 
             {/* ── Footer (desktop only) ───────────────────────────────────────── */}
-            <footer className="hidden md:block border-t py-4 bg-muted/30">
+            <footer className="relative z-10 hidden md:block border-t py-4 bg-muted/30 dark:border-white/[0.06] dark:bg-white/[0.01] dark:backdrop-blur-xl">
                 <div className="container mx-auto px-4 text-center text-xs text-muted-foreground italic">
                     {appSettings.project.name} &middot; © {new Date().getFullYear()} {appSettings.project.organization}
                 </div>
@@ -225,7 +235,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* ── Mobile Bottom Tab Bar ───────────────────────────────────────── */}
             <nav
-                className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/60"
+                className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/60 dark:border-white/[0.06] dark:bg-white/[0.03]"
                 style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
                 aria-label="Mobile navigation"
             >
@@ -239,8 +249,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                 className={cn(
                                     "flex flex-1 flex-col items-center justify-center gap-1 py-2 transition-all",
                                     isActive
-                                        ? "text-primary"
-                                        : "text-muted-foreground"
+                                        ? "text-primary dark:text-violet-300"
+                                        : "text-muted-foreground dark:text-white/40"
                                 )}
                                 aria-current={isActive ? "page" : undefined}
                             >
@@ -249,21 +259,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
                                     className={cn(
                                         "flex items-center justify-center h-6 w-6 rounded-lg transition-colors",
-                                        isActive && "text-primary"
+                                        isActive && "text-primary dark:text-violet-300"
                                     )}
                                 >
                                     <item.icon className="h-5 w-5" />
                                 </motion.div>
                                 <span className={cn(
                                     "text-[10px] font-semibold tracking-tight",
-                                    isActive ? "text-primary" : "text-muted-foreground"
+                                    isActive ? "text-primary dark:text-violet-300" : "text-muted-foreground dark:text-white/40"
                                 )}>
                                     {item.label}
                                 </span>
                                 {isActive && (
                                     <motion.div
                                         layoutId="bottom-tab-indicator"
-                                        className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-8 bg-primary rounded-full"
+                                        className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-8 bg-primary rounded-full dark:bg-violet-400"
                                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
                                     />
                                 )}

@@ -7,6 +7,9 @@ const API_BASE_URL = '';
 
 const remoteLog = async (level: LogLevel, message: string, context?: any) => {
   try {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/login')) {
+      return;
+    }
     const token = authToken.get();
     // Non-blocking fire and forget
     fetch(`${API_BASE_URL}/api/v1/utils/logs/frontend`, {
@@ -38,7 +41,8 @@ export const logger = {
     remoteLog('warning', message, context);
   },
   error: (message: string, context?: any) => {
-    console.error(`[ERROR] ${message}`, context || '');
+    const logFn = process.env.NODE_ENV === 'development' ? console.warn : console.error;
+    logFn(`[ERROR] ${message}`, context || '');
     remoteLog('error', message, context);
   },
 };

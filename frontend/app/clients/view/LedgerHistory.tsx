@@ -40,7 +40,7 @@ function entryStyles(entry: LedgerEntry) {
     return {
         label: entry.type,
         dotColor: isDiscount ? "bg-purple-500" : isPayment ? "bg-emerald-500" : "bg-orange-500",
-        amountColor: isPayment ? "text-emerald-600" : isDiscount ? "text-purple-600" : "text-foreground",
+        amountColor: isPayment ? "text-emerald-600 dark:text-emerald-300" : isDiscount ? "text-purple-600 dark:text-violet-300" : "text-foreground",
         isDeduction: isPayment || isDiscount,
     };
 }
@@ -125,7 +125,7 @@ export function LedgerHistory({
                 })}
             </div>
 
-            <div className="hidden lg:block bg-white rounded-3xl shadow-sm border border-border/50 overflow-hidden">
+            <div className="hidden lg:block bg-white rounded-3xl shadow-sm border border-border/50 overflow-hidden dark:bg-white/[0.03] dark:border-white/[0.08] dark:backdrop-blur-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
                 <div className="overflow-x-auto scrollbar-hide">
                     <Table className="min-w-full">
                         <TableHeader>
