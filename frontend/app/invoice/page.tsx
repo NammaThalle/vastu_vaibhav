@@ -148,14 +148,16 @@ function InvoicePageContent() {
         @media print {
           /* Never split a table row across pages */
           tr { break-inside: avoid; }
-          /* Repeat table header on every page */
-          thead { display: table-header-group; }
+          /* Keep these sections whole — never let them split mid-table */
+          [data-invoice-section="services"],
+          [data-invoice-section="payments"],
+          [data-invoice-section="summary"] { break-inside: avoid; }
           /* Class injected by applyPageBreaks() to force a new page */
           .invoice-page-break { break-before: page; }
         }
       `}</style>
 
-      <div className="min-h-screen bg-stone-100 px-3 py-2 text-slate-900 print:bg-white print:p-0">
+      <div className="min-h-screen bg-stone-100 px-3 py-2 text-slate-900 print:bg-white print:p-0 print:min-h-0">
       <div className="mx-auto w-full max-w-[780px] overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.06)] print:max-w-none print:rounded-none print:border-0 print:shadow-none">
         
         {/* ── SECTION: Letterhead ── */}
