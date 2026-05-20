@@ -1,8 +1,72 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
-export async function apiFetch(endpoint: string, options: RequestInit = {}) {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+export type TokenResponse = {
+    access_token: string;
+    token_type: string;
+};
+
+export type ClientDto = {
+    id: string;
+    full_name: string;
+    phone?: string | null;
+    email?: string | null;
+    personal_address?: string | null;
+    project_address?: string | null;
+    built_up_area?: number | null;
+    location_type?: string | null;
+    lead_status: string;
+    total_fees_fixed: number;
+    service_id?: string | null;
+    created_at: string;
+    updated_at?: string | null;
+    total_billed: number;
+    current_balance: number;
+};
+
+export type AppSettings = {
+    project: {
+        name: string;
+        tagline: string;
+        organization: string;
+    };
+    contact: {
+        email: string;
+        phone: string;
+        secondaryPhone: string;
+        gpayPhone: string;
+        website: string;
+    };
+    payment: {
+        bankName: string;
+        accountNo: string;
+        ifsc: string;
+        taxRate: number;
+    };
+    invoice: {
+        logoInitial: string;
+        primaryColor: string;
+        memberLabel: string;
+        notes: {
+            thankYou: string;
+            watermark: string;
+            lateFee: string;
+        };
+    };
+};
+
+export const authToken = {
+    get: () => (typeof window !== 'undefined' ? localStorage.getItem('token') : null),
+    set: (token: string) => {
+        if (typeof window !== 'undefined') localStorage.setItem('token', token);
+    },
+    clear: () => {
+        if (typeof window !== 'undefined') localStorage.removeItem('token');
+    },
+};
+
+export async function apiFetch<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const token = authToken.get();
 
     const headers = {
         'Content-Type': 'application/json',
@@ -24,7 +88,7 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
 }
 
 export const authApi = {
-    login: (data: any) => {
+    login: (data: { email: string; password: string }): Promise<TokenResponse> => {
         const formData = new URLSearchParams();
         formData.append('username', data.email);
         formData.append('password', data.password);
@@ -38,7 +102,7 @@ export const authApi = {
         });
     },
 
-    register: (data: any) => apiFetch('/api/v1/register', {
+    register: (data: { email: string; password: string }) => apiFetch('/api/v1/register', {
         method: 'POST',
         body: JSON.stringify(data),
     }),
@@ -47,17 +111,17 @@ export const authApi = {
 };
 
 export const clientsApi = {
-    getAll: () => apiFetch('/api/v1/clients/'),
-    get: (id: string) => apiFetch(`/api/v1/clients/${id}`),
-    create: (data: any) => apiFetch('/api/v1/clients/', {
+    getAll: () => apiFetch<ClientDto[]>('/api/v1/clients/'),
+    get: (id: string) => apiFetch<ClientDto>(`/api/v1/clients/${id}`),
+    create: (data: Partial<ClientDto>) => apiFetch<ClientDto>('/api/v1/clients/', {
         method: 'POST',
         body: JSON.stringify(data),
     }),
-    update: (id: string, data: any) => apiFetch(`/api/v1/clients/${id}`, {
+    update: (id: string, data: Partial<ClientDto>) => apiFetch<ClientDto>(`/api/v1/clients/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
     }),
-    delete: (id: string) => apiFetch(`/api/v1/clients/${id}`, {
+    delete: (id: string) => apiFetch<ClientDto>(`/api/v1/clients/${id}`, {
         method: 'DELETE',
     }),
 };
@@ -81,7 +145,7 @@ export const visitsApi = {
 export const ledgerApi = {
     getClientLedger: (clientId: string) => apiFetch(`/api/v1/ledger/client/${clientId}`),
     getInvoiceData: (clientId: string) => apiFetch(`/api/v1/ledger/client/${clientId}/invoice-data`),
-    addService: (data: { client_id: string; description: string; amount: number }) => apiFetch('/api/v1/ledger/services', {
+    addService: (data: { client_id: string; description: string; amount: number; entry_type?: 'charge' | 'discount'; date?: string; visit_id?: string }) => apiFetch('/api/v1/ledger/services', {
         method: 'POST',
         body: JSON.stringify(data),
     }),
@@ -104,7 +168,7 @@ export const ledgerApi = {
         method: 'DELETE',
     }),
     downloadBill: (clientId: string) => {
-        const token = localStorage.getItem('token');
+        const token = authToken.get();
         return fetch(`${API_BASE_URL}/api/v1/ledger/client/${clientId}/bill`, {
             headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         }).then(res => {
@@ -154,4 +218,8 @@ export const servicesApi = {
         method: 'POST',
         body: JSON.stringify(calculationData),
     }),
+};
+
+export const configApi = {
+    getSettings: () => apiFetch<AppSettings>('/api/v1/config'),
 };

@@ -31,6 +31,14 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api/v1")
 
 
+def validate_runtime_settings() -> None:
+    if settings.ENVIRONMENT.lower() == "production" and settings.SECRET_KEY == "change_me_in_production":
+        raise RuntimeError("SECRET_KEY must be set in production")
+
+    if settings.APP_CONFIG and not isinstance(settings.APP_CONFIG, dict):
+        raise RuntimeError("APP_CONFIG must be a JSON object")
+
+
 def run_database_migrations() -> None:
     logger.info("Running database migrations...")
     base_dir = Path(__file__).resolve().parents[1]
@@ -50,6 +58,8 @@ scheduler = AsyncIOScheduler(timezone=pytz.timezone("Asia/Kolkata"))
 
 @app.on_event("startup")
 async def apply_pending_migrations() -> None:
+    validate_runtime_settings()
+
     if settings.RUN_STARTUP_MIGRATIONS:
         await asyncio.to_thread(run_database_migrations)
         
