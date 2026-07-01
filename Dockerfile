@@ -72,9 +72,6 @@ COPY backend/ .
 
 # Copy Node.js runtime from frontend-builder (Node 22 LTS, patches CVE-2026-111497)
 COPY --from=frontend-builder /usr/local/bin/node /usr/local/bin/node
-COPY --from=frontend-builder /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=frontend-builder /usr/local/bin/npm /usr/local/bin/npm
-COPY --from=frontend-builder /usr/local/bin/npx /usr/local/bin/npx
 
 # Copy Frontend Build from Stage 1
 COPY --from=frontend-builder /app/frontend/dist /app/static
