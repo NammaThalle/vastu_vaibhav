@@ -72,29 +72,21 @@ export type AppSettings = {
     };
 };
 
-export const authToken = {
-    get: () => (typeof window !== 'undefined' ? localStorage.getItem('token') : null),
-    set: (token: string) => {
-        if (typeof window !== 'undefined') localStorage.setItem('token', token);
-    },
-    clear: () => {
-        if (typeof window !== 'undefined') localStorage.removeItem('token');
-    },
-};
-
 export async function apiFetch<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const token = authToken.get();
-
     const headers = {
         'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         ...options.headers,
     };
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers,
+        credentials: "include",
     });
+
+    if (response.status === 401 && typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+    }
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: 'An error occurred' }));
@@ -113,6 +105,7 @@ export const authApi = {
         return fetch(`${API_BASE_URL}/api/v1/login/access-token`, {
             method: 'POST',
             body: formData,
+            credentials: "include",
         }).then(res => {
             if (!res.ok) throw new Error('Invalid credentials');
             return res.json();
@@ -124,7 +117,8 @@ export const authApi = {
         body: JSON.stringify(data),
     }),
 
-    getMe: () => apiFetch('/api/v1/login/test-token', { method: 'POST' }),
+    getMe: () => apiFetch('/api/v1/login/me'),
+    logout: () => apiFetch('/api/v1/logout', { method: 'POST' }),
 };
 
 export const clientsApi = {
@@ -185,10 +179,12 @@ export const ledgerApi = {
         method: 'DELETE',
     }),
     downloadBill: (clientId: string) => {
-        const token = authToken.get();
         return fetch(`${API_BASE_URL}/api/v1/ledger/client/${clientId}/bill`, {
-            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+            credentials: "include",
         }).then(res => {
+            if (res.status === 401 && typeof window !== 'undefined') {
+                window.location.href = '/login';
+            }
             if (!res.ok) {
                 return res.text().then(text => {
                     throw new Error(text || 'Failed to download bill');
