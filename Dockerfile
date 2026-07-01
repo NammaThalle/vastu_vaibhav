@@ -1,6 +1,6 @@
 
 # Stage 1: Build Frontend
-FROM node:20-bookworm-slim AS frontend-builder
+FROM node:22-bookworm-slim AS frontend-builder
 WORKDIR /app/frontend
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PUPPETEER_CACHE_DIR=/app/.cache/puppeteer
@@ -15,13 +15,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install Node.js and runtime libraries required by headless Chrome
+# Install runtime libraries required by headless Chrome
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     gnupg \
-    nodejs \
-    npm \
     libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
@@ -71,6 +69,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy Backend Code
 COPY backend/ .
+
+# Copy Node.js runtime from frontend-builder (Node 22 LTS, patches CVE-2026-111497)
+COPY --from=frontend-builder /usr/local/bin/node /usr/local/bin/node
+COPY --from=frontend-builder /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=frontend-builder /usr/local/bin/npm /usr/local/bin/npm
+COPY --from=frontend-builder /usr/local/bin/npx /usr/local/bin/npx
 
 # Copy Frontend Build from Stage 1
 COPY --from=frontend-builder /app/frontend/dist /app/static

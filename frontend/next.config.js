@@ -1,12 +1,5 @@
 
 
-const withPWA = require("next-pwa")({
-    dest: "public",
-    cacheOnFrontEndNav: true,
-    reloadOnOnline: true,
-    disable: process.env.NODE_ENV === "development",
-});
-
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -31,4 +24,4 @@ const nextConfig = {
     },
 };
 
-module.exports = withPWA(nextConfig);
+module.exports = nextConfig;
