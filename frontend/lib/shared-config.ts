@@ -5,16 +5,16 @@ export const DefaultAppSettings = {
     organization: "Vastu Vaibhav"
   },
   contact: {
-    email: "vastuvaibhav.byravi@gmail.com",
-    phone: "+91 94201 97749",
-    secondaryPhone: "+91 86689 52446",
-    gpayPhone: "+91 94201 97749",
-    website: "www.vastuvaibhav.co"
+    email: "contact@example.com",
+    phone: "+91 00000 00000",
+    secondaryPhone: "+91 00000 00000",
+    gpayPhone: "+91 00000 00000",
+    website: "www.example.com"
   },
   payment: {
-    bankName: "VASTU VAIBHAV Banca Bank",
-    accountNo: "ID030305089",
-    ifsc: "IFSC 100000",
+    bankName: "Example Bank",
+    accountNo: "000000000",
+    ifsc: "IFSC0000000",
     taxRate: 0
   },
   invoice: {

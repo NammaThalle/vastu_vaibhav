@@ -1,6 +1,6 @@
 
 from sqlalchemy import Column, String, Boolean, DateTime
-from sqlalchemy.dialects.postgresql import UUID
+
 from sqlalchemy.sql import func
 import uuid
 from app.db.base import Base
@@ -21,6 +21,7 @@ class User(Base):
     # 2FA
     twofa_secret = Column(String, nullable=True)
     is_2fa_enabled = Column(Boolean, default=False)
-    
+    is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
