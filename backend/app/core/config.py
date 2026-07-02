@@ -1,55 +1,50 @@
-
 import json
 import os
 from pathlib import Path
-from pydantic_settings import BaseSettings
 
-DEFAULT_DB_PATH = Path(__file__).resolve().parents[3] / "data" / "vastu.db"
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-def get_config_path():
-    # 1. Check environment variable
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_DB_PATH = REPO_ROOT / "data" / "vastu.db"
+
+
+def get_config_path() -> Path:
     env_path = os.getenv("APP_CONFIG_PATH")
     if env_path:
         return Path(env_path)
-    
-    # 2. Check Docker volume mount path
     docker_path = Path("/app/config/app-settings.json")
     if docker_path.exists():
         return docker_path
-        
-    # 3. Local development path (relative to this file)
-    return Path(__file__).resolve().parents[3] / "config" / "app-settings.json"
+    return REPO_ROOT / "config" / "app-settings.json"
 
-CONFIG_FILE_PATH = get_config_path()
 
-def load_app_settings():
-    try:
-        if not CONFIG_FILE_PATH.exists():
-            return {}
-        with open(CONFIG_FILE_PATH, "r") as f:
-            return json.load(f)
-    except Exception:
+def load_app_settings() -> dict:
+    path = get_config_path()
+    if not path.exists():
         return {}
+    with open(path) as f:
+        return json.load(f)
 
-app_settings_data = load_app_settings()
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
     ENVIRONMENT: str = "development"
-    PROJECT_NAME: str = app_settings_data.get("project", {}).get("name", "Vastu Vaibhav")
-    APP_CONFIG: dict = app_settings_data
+    PROJECT_NAME: str = "Vastu Vaibhav"
+    APP_CONFIG: dict = {}
     DATABASE_URL: str = f"sqlite+aiosqlite:///{DEFAULT_DB_PATH}"
     SECRET_KEY: str = "change_me_in_production"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     ALGORITHM: str = "HS256"
-    FRONTEND_URL: str = "http://127.0.0.1:8000"
-    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000", "http://127.0.0.1:8000"]
-    RUN_STARTUP_MIGRATIONS: bool = False
+    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
-    class Config:
-        env_file = ".env"
+    @property
+    def sync_database_url(self) -> str:
+        """Same database with the synchronous driver, used by Alembic and CLI commands."""
+        return self.DATABASE_URL.replace("+aiosqlite", "")
+
 
 settings = Settings()
-
-from app.utils.logger import logger
-if settings.SECRET_KEY == "change_me_in_production":
-    logger.warning("SECURITY WARNING: Running with default SECRET_KEY. Change this in production via .env!")
+if not settings.APP_CONFIG:
+    settings.APP_CONFIG = load_app_settings()
+    settings.PROJECT_NAME = settings.APP_CONFIG.get("project", {}).get("name", settings.PROJECT_NAME)
