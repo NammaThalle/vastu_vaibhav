@@ -1,106 +1,38 @@
-
 from fastapi import FastAPI
-from slowapi.errors import RateLimitExceeded
-from slowapi import _rate_limit_exceeded_handler
-from app.core.limiter import limiter
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-import asyncio
-import os
-from pathlib import Path
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
-from alembic import command
-from alembic.config import Config
-
-from app.core.config import settings
 from app.api.api_v1.api import api_router
-from app.utils.logger import setup_logging, logger
+from app.core.config import settings
+from app.core.limiter import limiter
+from app.utils.logger import logger, setup_logging
 
-# Initialize custom logging
 setup_logging()
 
-app = FastAPI(title=settings.PROJECT_NAME, version="1.0.0")
+if settings.ENVIRONMENT.lower() == "production" and settings.SECRET_KEY == "change_me_in_production":
+    raise RuntimeError("SECRET_KEY must be set in production")
+
+app = FastAPI(title=settings.PROJECT_NAME, version="2.0.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-logger.info("Initializing %s API", settings.PROJECT_NAME)
-
+# In production the web and api containers share one origin behind Caddy, so CORS only
+# matters for the local Next.js dev server.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS if hasattr(settings, "BACKEND_CORS_ORIGINS") and settings.BACKEND_CORS_ORIGINS else [],
+    allow_origins=settings.BACKEND_CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 app.include_router(api_router, prefix="/api/v1")
 
 
-def validate_runtime_settings() -> None:
-    if settings.ENVIRONMENT.lower() == "production" and settings.SECRET_KEY == "change_me_in_production":
-        raise RuntimeError("SECRET_KEY must be set in production")
-
-    if settings.APP_CONFIG and not isinstance(settings.APP_CONFIG, dict):
-        raise RuntimeError("APP_CONFIG must be a JSON object")
-
-
-def run_database_migrations() -> None:
-    logger.info("Running database migrations...")
-    base_dir = Path(__file__).resolve().parents[1]
-    alembic_ini = base_dir / "alembic.ini"
-    alembic_cfg = Config(str(alembic_ini))
-    alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
-    command.upgrade(alembic_cfg, "head")
-    logger.info("Database migrations completed successfully")
-
-
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
-import pytz
-from app.utils.backup import perform_db_backup
-
-scheduler = AsyncIOScheduler(timezone=pytz.timezone("Asia/Kolkata"))
-
-@app.on_event("startup")
-async def apply_pending_migrations() -> None:
-    validate_runtime_settings()
-
-    if settings.RUN_STARTUP_MIGRATIONS:
-        await asyncio.to_thread(run_database_migrations)
-        
-    # Start backup scheduler
-    scheduler.add_job(
-        perform_db_backup,
-        CronTrigger(hour=2, minute=0),
-        id="daily_db_backup",
-        replace_existing=True
-    )
-    scheduler.start()
-    logger.info("Backup Job: Scheduled for 2:00 AM IST daily")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    scheduler.shutdown()
-    logger.info("Backup Job: Scheduler stopped")
-
-# Mount Static Files (Frontend)
-# We serve the 'static' directory which contains the Next.js export
-# root_path = os.path.join(os.path.dirname(__file__), "..", "static") # Docker Layout
-static_dir = "/app/static"
-
-@app.get("/health")
-def health_check():
-    logger.debug("Health check requested")
+@app.get("/api/health")
+def health_check() -> dict:
     return {"status": "ok"}
 
-# API must differ from UI routes. 
-# Since Next.js export creates .html files, we need to handle routing carefully.
-# For a PWA/SPA, we usually serve index.html for unknown routes, but with static export, we map direct paths.
 
-if os.path.exists(static_dir):
-    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
-
-@app.get("/")
-def read_root():
-    # Fallback if static mount doesn't catch root (it should with html=True)
-    return {"message": f"Welcome to {settings.PROJECT_NAME} API. Frontend should be serving here."}
+logger.info("%s API ready", settings.PROJECT_NAME)

@@ -1,4 +1,4 @@
-from typing import Generator, Annotated, Optional
+from typing import Annotated, Optional
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.security.utils import get_authorization_scheme_param
@@ -6,7 +6,7 @@ import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core import security
 from app.core.config import settings
-from app.db.base import get_db
+from app.db.session import get_db
 from app.models.user import User
 from app.schemas.token import TokenPayload
 from sqlalchemy import select
@@ -60,8 +60,8 @@ async def get_current_user(
     
     result = await db.execute(select(User).where(User.id == token_data.sub))
     user = result.scalars().first()
-    
-    if user is None:
+
+    if user is None or not user.is_active:
         raise credentials_exception
     return user
 
@@ -83,4 +83,5 @@ async def get_optional_current_user(
         return None
 
     result = await db.execute(select(User).where(User.id == user_id))
-    return result.scalars().first()
+    user = result.scalars().first()
+    return user if user and user.is_active else None
