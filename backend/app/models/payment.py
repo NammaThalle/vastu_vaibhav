@@ -1,25 +1,36 @@
+from datetime import date, datetime
+from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, Column, String, Numeric, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-import uuid
-from app.db.base import Base
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column
 
-class Payment(Base):
+from app.db.base import Base, IdMixin, TimestampMixin
+from app.db.types import Money
+from app.models.enums import PaymentMethod, db_enum
+
+
+class Payment(IdMixin, TimestampMixin, Base):
+    """Money received against a property. Each payment has its own receipt number,
+    sequential within an Indian financial year (April to March). Payments are voided,
+    never deleted, so receipt numbers never get reused."""
+
     __tablename__ = "payments"
     __table_args__ = (
-        CheckConstraint("amount > 0", name="ck_payments_amount_positive"),
+        UniqueConstraint("fiscal_year", "receipt_seq"),
+        CheckConstraint("amount > 0", name="amount_positive"),
+        CheckConstraint("receipt_seq > 0", name="receipt_seq_positive"),
     )
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    client_id = Column(String, ForeignKey("clients.id", ondelete="CASCADE"), nullable=False)
-    amount = Column(Numeric(12, 2), nullable=False)
-    method = Column(String, nullable=True) # Cash, UPI, Bank Transfer
-    date = Column(DateTime(timezone=True), server_default=func.now())
-    notes = Column(String, nullable=True)
-    
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    property_id: Mapped[str] = mapped_column(ForeignKey("properties.id", ondelete="RESTRICT"), index=True)
+    amount: Mapped[Decimal] = mapped_column(Money)
+    method: Mapped[PaymentMethod] = mapped_column(db_enum(PaymentMethod, "payment_method"))
+    paid_on: Mapped[date] = mapped_column(Date, index=True)
+    reference: Mapped[str | None] = mapped_column(String(300))
+    fiscal_year: Mapped[str] = mapped_column(String(7))
+    receipt_seq: Mapped[int] = mapped_column(Integer)
+    voided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    void_reason: Mapped[str | None] = mapped_column(String(300))
 
-    # Relationships
-    client = relationship("Client", back_populates="payments")
+    @property
+    def receipt_no(self) -> str:
+        return f"R/{self.fiscal_year}/{self.receipt_seq:04d}"
