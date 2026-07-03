@@ -1,0 +1,337 @@
+"""One-time import of the pre-redesign database into the new schema.
+
+The target database must already be migrated (alembic upgrade head), seeded, and
+contain no clients. Every row is written through the models. Before anything is
+committed, each legacy client's billed, paid and balance totals are compared with the
+new data, and the import aborts on any difference. Delete this module once the live
+data has been moved.
+
+Usage:
+    python -m app.cli.import_legacy --legacy data/legacy/old.db [--url sqlite:///new.db] [--dry-run]
+"""
+import argparse
+import re
+import sqlite3
+import sys
+from collections import Counter, defaultdict
+from dataclasses import dataclass, field
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
+from pathlib import Path
+
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from app.db.session import sync_session
+from app.models import CatalogItem, Charge, Client, Payment, Property, User, Visit
+from app.models.enums import ChargeKind, ItemKind, PaymentMethod, PropertyType, VisitStatus
+from app.services.numbering import fiscal_year
+
+IST = timezone(timedelta(hours=5, minutes=30))
+PAISE = Decimal("0.01")
+
+INITIAL_FEE_DESCRIPTION = "Initial consultation fee"
+
+PAYMENT_METHODS = {
+    "cash": PaymentMethod.CASH,
+    "upi / gpay": PaymentMethod.UPI,
+    "upi": PaymentMethod.UPI,
+    "bank transfer": PaymentMethod.BANK_TRANSFER,
+    "cheque": PaymentMethod.CHEQUE,
+}
+
+# Spelling variants seen in old free-text charges, mapped to catalog names (normalized form).
+ALIASES = {
+    "devta enhancer": "devata enhancer",
+    "positivy enhancer": "positivity enhancer",
+    "stair blocker": "staircase blocker",
+    "virtual door open": "virtual door opener",
+    "virtual opener for main gate": "virtual main gate opener",
+    "aparment vastu": "apartment vastu",
+}
+
+# Checked in order; the first keyword found decides the property type.
+PROPERTY_KEYWORDS = [
+    (PropertyType.FACTORY, ("factory",)),
+    (PropertyType.SHOP, ("shop", "showroom", "store")),
+    (PropertyType.OFFICE, ("office",)),
+    (PropertyType.PLOT, ("plot", "land")),
+    (PropertyType.APARTMENT, ("flat", "apartment")),
+    (PropertyType.HOUSE, ("house", "villa", "bungalow", "bunglow")),
+]
+
+
+@dataclass
+class Report:
+    counts: Counter = field(default_factory=Counter)
+    property_types: Counter = field(default_factory=Counter)
+    unlinked: list[str] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
+    mismatches: list[str] = field(default_factory=list)
+
+
+# Parsing helpers
+
+def to_date(value: str | None) -> date | None:
+    """Legacy dates are naive. Midnight values are calendar dates typed by the user;
+    other values are UTC server timestamps and are converted to the IST day."""
+    if not value:
+        return None
+    parsed = datetime.fromisoformat(value.replace(" ", "T")[:19])
+    if parsed.time() == datetime.min.time():
+        return parsed.date()
+    return parsed.replace(tzinfo=timezone.utc).astimezone(IST).date()
+
+
+def to_datetime(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    return datetime.fromisoformat(value.replace(" ", "T")[:19]).replace(tzinfo=timezone.utc)
+
+
+def money(value) -> Decimal:
+    return Decimal(str(value or 0)).quantize(PAISE)
+
+
+def normalize(text: str) -> str:
+    text = text.lower().replace("+ve", " positive ")
+    text = re.sub(r"\d+\s*ml\b", " ", text)
+    text = re.sub(r"\bx\s*\d+\b", " ", text)
+    text = re.sub(r"\b(remedy|remedies|service|floors?|flats?)\b", " ", text)
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    text = re.sub(r"\b\d+\b", " ", text)
+    words = [w[:-1] if len(w) > 3 and w.endswith("s") and not w.endswith("ss") else w for w in text.split()]
+    key = " ".join(words)
+    return ALIASES.get(key, key)
+
+
+@dataclass
+class ParsedLine:
+    item: CatalogItem | None
+    quantity: int
+    unit_price: Decimal
+    size_assumed: bool = False
+
+
+class CatalogIndex:
+    def __init__(self, items: list[CatalogItem]):
+        self.by_key: dict[str, list[CatalogItem]] = defaultdict(list)
+        for item in items:
+            self.by_key[normalize(item.name)].append(item)
+
+    def match(self, description: str) -> tuple[CatalogItem | None, bool]:
+        candidates = self.by_key.get(normalize(description), [])
+        if not candidates:
+            return None, False
+        size = re.search(r"(\d+)\s*ml\b", description, re.I)
+        if size:
+            sized = [c for c in candidates if c.size_ml == int(size.group(1))]
+            return (sized[0], False) if sized else (None, False)
+        if len(candidates) == 1:
+            return candidates[0], candidates[0].kind == ItemKind.REMEDY
+        return None, False
+
+
+def parse_line(description: str, amount: Decimal, catalog: CatalogIndex) -> ParsedLine:
+    quantity = 1
+    found = re.findall(r"\bx\s*(\d+)\b", description, re.I)
+    if found:
+        candidate = int(found[-1])
+        if candidate > 0 and (amount * 100) % candidate == 0:
+            quantity = candidate
+    item, size_assumed = catalog.match(description)
+    return ParsedLine(item, quantity, (amount / quantity).quantize(PAISE), size_assumed)
+
+
+def infer_property_type(*texts: str | None) -> PropertyType:
+    haystack = " ".join(t.lower() for t in texts if t)
+    for prop_type, keywords in PROPERTY_KEYWORDS:
+        if any(re.search(rf"\b{k}", haystack) for k in keywords):
+            return prop_type
+    return PropertyType.OTHER
+
+
+# Import
+
+def legacy_rows(conn: sqlite3.Connection, sql: str) -> list[sqlite3.Row]:
+    return conn.execute(sql).fetchall()
+
+
+def check_target(session: Session) -> None:
+    if session.scalar(select(func.count(Client.id))):
+        sys.exit("Target database already has clients; refusing to import twice.")
+    if not session.scalar(select(func.count(CatalogItem.id))):
+        sys.exit("Target catalog is empty; run `python -m app.cli.seed` first.")
+
+
+def import_all(conn: sqlite3.Connection, session: Session, report: Report) -> dict[str, str]:
+    """Returns legacy client id -> new property id."""
+    catalog = CatalogIndex(list(session.scalars(select(CatalogItem))))
+
+    for row in legacy_rows(conn, "SELECT * FROM users"):
+        session.add(User(id=row["id"], email=row["email"], hashed_password=row["hashed_password"],
+                         is_active=bool(row["is_active"]), created_at=to_datetime(row["created_at"])))
+        report.counts["users"] += 1
+
+    visits_by_client: dict[str, list[sqlite3.Row]] = defaultdict(list)
+    for row in legacy_rows(conn, "SELECT * FROM visits"):
+        visits_by_client[row["client_id"]].append(row)
+
+    property_of: dict[str, str] = {}
+    for row in legacy_rows(conn, "SELECT * FROM clients ORDER BY created_at"):
+        client_notes = [
+            f"{label}: {row[col]}"
+            for col, label in (("email", "Email"), ("personal_address", "Personal address"),
+                               ("built_up_area", "Built-up area"))
+            if row[col] not in (None, "")
+        ]
+        client = Client(id=row["id"], name=row["full_name"].strip(), phone=row["phone"] or None,
+                        notes="\n".join(client_notes) or None, created_at=to_datetime(row["created_at"]))
+        session.add(client)
+
+        visits = visits_by_client.get(row["id"], [])
+        prop_type = infer_property_type(row["project_address"], *(v["purpose"] for v in visits),
+                                        *(v["observations"] for v in visits))
+        address = (row["project_address"] or "").strip() or None
+        location = row["location_type"]
+        prop = Property(
+            client_id=client.id,
+            label=address.split(",")[0].strip()[:200] if address else prop_type.value.title(),
+            property_type=prop_type,
+            address=address,
+            notes=f"Location: {location}" if location and location != "Goa" else None,
+            closed_at=to_datetime(row["updated_at"]) if row["lead_status"] == "Inactive" else None,
+            created_at=to_datetime(row["created_at"]),
+        )
+        session.add(prop)
+        session.flush()
+        property_of[row["id"]] = prop.id
+        report.property_types[prop_type.value] += 1
+        report.counts["clients"] += 1
+        if row["service_id"]:
+            report.counts["dropped package links"] += 1
+
+        fee = money(row["total_fees_fixed"])
+        if fee > 0:
+            session.add(Charge(property_id=prop.id, description=INITIAL_FEE_DESCRIPTION, quantity=1,
+                               unit_price=fee, charge_date=to_date(row["created_at"]),
+                               created_at=to_datetime(row["created_at"])))
+            report.counts["initial fees"] += 1
+
+    today = datetime.now(IST).date()
+    for row in legacy_rows(conn, "SELECT * FROM visits"):
+        visit_day = to_date(row["date"]) or to_date(row["created_at"])
+        session.add(Visit(id=row["id"], property_id=property_of[row["client_id"]], visit_date=visit_day,
+                          status=VisitStatus.SCHEDULED if visit_day > today else VisitStatus.DONE,
+                          purpose=(row["purpose"] or "").strip() or None, observations=row["observations"],
+                          created_at=to_datetime(row["created_at"])))
+        report.counts["visits"] += 1
+        linked = conn.execute("SELECT COUNT(*) FROM service_entries WHERE visit_id = ? AND amount = ?",
+                              (row["id"], row["amount"])).fetchone()[0]
+        if row["amount"] and money(row["amount"]) > 0 and not linked:
+            report.mismatches.append(f"visit {row['id']} has an amount without a ledger line")
+    session.flush()
+
+    for row in legacy_rows(conn, "SELECT * FROM service_entries"):
+        amount = money(row["amount"])
+        description = (row["description"] or "").strip()
+        kind = ChargeKind.DISCOUNT if row["entry_type"] == "discount" else ChargeKind.CHARGE
+        if kind == ChargeKind.DISCOUNT or row["visit_id"]:
+            parsed = ParsedLine(None, 1, amount)
+        else:
+            parsed = parse_line(description, amount, catalog)
+            if parsed.item is None:
+                report.unlinked.append(f"{description} ({amount})")
+            if parsed.size_assumed:
+                report.counts["remedy size assumed from catalog"] += 1
+        session.add(Charge(id=row["id"], property_id=property_of[row["client_id"]], visit_id=row["visit_id"],
+                           catalog_item_id=parsed.item.id if parsed.item else None, kind=kind,
+                           description=description, quantity=parsed.quantity, unit_price=parsed.unit_price,
+                           charge_date=to_date(row["date"]) or to_date(row["created_at"]),
+                           created_at=to_datetime(row["created_at"])))
+        report.counts[f"{kind.value} lines"] += 1
+        report.counts["lines linked to catalog"] += parsed.item is not None
+
+    payments = legacy_rows(conn, "SELECT * FROM payments")
+    payments.sort(key=lambda r: (to_date(r["date"]) or to_date(r["created_at"]), r["created_at"] or "", r["id"]))
+    next_seq: Counter = Counter()
+    for row in payments:
+        method = PAYMENT_METHODS.get((row["method"] or "").strip().lower())
+        if method is None:
+            report.mismatches.append(f"payment {row['id']} has unknown method {row['method']!r}")
+            continue
+        paid_on = to_date(row["date"]) or to_date(row["created_at"])
+        fy = fiscal_year(paid_on)
+        next_seq[fy] += 1
+        session.add(Payment(id=row["id"], property_id=property_of[row["client_id"]], amount=money(row["amount"]),
+                            method=method, paid_on=paid_on, reference=(row["notes"] or "").strip() or None,
+                            fiscal_year=fy, receipt_seq=next_seq[fy], created_at=to_datetime(row["created_at"])))
+        report.counts["payments"] += 1
+    session.flush()
+    return property_of
+
+
+def verify(conn: sqlite3.Connection, session: Session, property_of: dict[str, str], report: Report) -> None:
+    for row in legacy_rows(conn, "SELECT id, full_name, total_fees_fixed FROM clients"):
+        old_billed = money(row["total_fees_fixed"])
+        for entry in conn.execute("SELECT amount, entry_type FROM service_entries WHERE client_id = ?", (row["id"],)):
+            old_billed += -money(entry["amount"]) if entry["entry_type"] == "discount" else money(entry["amount"])
+        old_paid = sum((money(p["amount"]) for p in conn.execute(
+            "SELECT amount FROM payments WHERE client_id = ?", (row["id"],))), Decimal("0.00"))
+
+        prop_id = property_of[row["id"]]
+        new_billed = sum((c.signed_amount for c in session.scalars(
+            select(Charge).where(Charge.property_id == prop_id))), Decimal("0.00"))
+        new_paid = sum((p.amount for p in session.scalars(
+            select(Payment).where(Payment.property_id == prop_id))), Decimal("0.00"))
+
+        if (old_billed, old_paid) != (new_billed, new_paid):
+            report.mismatches.append(
+                f"{row['full_name']}: billed {old_billed} -> {new_billed}, paid {old_paid} -> {new_paid}")
+        report.counts["total billed"] += new_billed
+        report.counts["total paid"] += new_paid
+
+
+def print_report(report: Report) -> None:
+    print("Import summary")
+    for key, value in report.counts.items():
+        print(f"  {key}: {value}")
+    print("  property types: " + ", ".join(f"{k} {v}" for k, v in sorted(report.property_types.items())))
+    if report.unlinked:
+        print(f"  charges kept as free text ({len(report.unlinked)}):")
+        for line in sorted(report.unlinked):
+            print(f"    {line}")
+    if report.mismatches:
+        print(f"  MISMATCHES ({len(report.mismatches)}):")
+        for line in report.mismatches:
+            print(f"    {line}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--legacy", required=True, type=Path, help="path to the old SQLite database")
+    parser.add_argument("--url", help="target database URL (defaults to DATABASE_URL)")
+    parser.add_argument("--dry-run", action="store_true", help="verify everything, then roll back")
+    args = parser.parse_args()
+
+    conn = sqlite3.connect(f"file:{args.legacy}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    report = Report()
+    with sync_session(args.url) as session:
+        check_target(session)
+        property_of = import_all(conn, session, report)
+        verify(conn, session, property_of, report)
+        print_report(report)
+        if report.mismatches:
+            session.rollback()
+            sys.exit("Import aborted: totals do not match. Nothing was written.")
+        if args.dry_run:
+            session.rollback()
+            print("Dry run: all totals match. Nothing was written.")
+        else:
+            session.commit()
+            print("Import committed: all totals match.")
+
+
+if __name__ == "__main__":
+    main()
