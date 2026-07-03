@@ -1,0 +1,252 @@
+# Starting catalog, loaded once with `python -m app.cli.seed`.
+# Names and prices come from the most recent bills in the live data (November 2026).
+# The seed only adds missing items; after that, prices are managed in the app.
+
+[[remedy]]
+name = "4 Devtas"
+size_ml = 5
+price = 6000
+
+[[remedy]]
+name = "Brahmasthan"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Brahmasthan Enhancer"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Devata Enhancer"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Door Blocker"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Door Opener"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Element Enhancer"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Enhancer"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Entrance Blocker"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Entrance Door Opener"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Golden Line"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Golden Line Enhancer"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Main Door Blocker"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Main Door Close"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Main Gate Blocker"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Major Devata Enhancer"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "OH Tank Blocker"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Positivity Enhancer"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Shutter Door Blocker"
+size_ml = 15
+price = 2500
+
+[[remedy]]
+name = "Staircase Blocker"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Surya Kiran"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Surya Pratima"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Toilet Blocker"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Virtual Door Blocker"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Virtual Door Entry"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Virtual Door Opener"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Virtual Entrance Opener"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Virtual Main Gate Opener"
+size_ml = 5
+price = 1500
+
+[[remedy]]
+name = "Washing Machine Positive Oil"
+size_ml = 5
+price = 1500
+
+[[service]]
+name = "Site Inspection"
+price = 2000
+
+[[service]]
+name = "Plot Inspection"
+price = 2500
+
+[[service]]
+name = "Apartment Vastu"
+price = 2500
+
+[[service]]
+name = "Plot Vastu"
+price = 2500
+
+[[service]]
+name = "On-Site Vastu Assessment and Consultation"
+price = 2500
+
+[[service]]
+name = "Vastu Treatment"
+price = 2500
+
+[[service]]
+name = "Consultation"
+price = 500
+
+[[service]]
+name = "Aura Scanning"
+price = 1000
+
+[[service]]
+name = "Room/Zone Analysis"
+price = 500
+
+[[service]]
+name = "Remedy Installation"
+price = 1000
+
+[[service]]
+name = "Installation Charge"
+price = 100
+
+[[service]]
+name = "Extra Distance"
+price = 500
+
+[[service]]
+name = "Item Placement"
+price = 1000
+
+[[service]]
+name = "Main Door Placement"
+price = 1500
+
+[[service]]
+name = "Main Gate Placement"
+price = 1500
+
+[[service]]
+name = "Mandir Placement"
+price = 1000
+
+[[service]]
+name = "Toilet Placement"
+price = 1500
+
+[[service]]
+name = "Kitchen Placement"
+price = 1000
+
+[[service]]
+name = "Bedroom Placement"
+price = 1000
+
+[[service]]
+name = "Tulsi Placement"
+price = 1000
+
+[[service]]
+name = "Washing Machine Placement"
+price = 1000
+
+[[service]]
+name = "Septic Tank Placement"
+price = 1500
+
+[[service]]
+name = "Fresh Water Tank Placement"
+price = 1500
+
+[[service]]
+name = "Door Placement Modification"
+price = 1500
+
+[[service]]
+name = "Kitchen Placement Modification"
+price = 6000
+
+[[service]]
+name = "Toilet Placement Modification"
+price = 1500
