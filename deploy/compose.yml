@@ -1,0 +1,49 @@
+# Production stack on portress. Copy this file, .env and config/ to ~/docker/vastu_vaibhav.
+# The central Caddy (10.0.50.12) routes vastu.home: /api/* to api, everything else to web.
+
+x-api: &api
+  image: ghcr.io/nammathalle/vastu_vaibhav-api:${VASTU_TAG:-latest}
+  env_file: .env
+  environment:
+    DATABASE_URL: sqlite+aiosqlite:////data/vastu.db
+    ENVIRONMENT: production
+  volumes:
+    - ./data:/data
+    - ./config:/app/config:ro
+
+services:
+  migrate:
+    <<: *api
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+
+  api:
+    <<: *api
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8010:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  web:
+    image: ghcr.io/nammathalle/vastu_vaibhav-web:${VASTU_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "8011:80"
+
+  # First install only: docker compose run --rm api python -m app.cli.seed
+  # Backups, on demand or from host cron: docker compose run --rm backup
+  backup:
+    <<: *api
+    profiles: ["tools"]
+    command: ["python", "-m", "app.cli.backup", "--dest", "/backups"]
+    restart: "no"
+    volumes:
+      - ./data:/data
+      - ${BACKUP_DIR:-./backups}:/backups
