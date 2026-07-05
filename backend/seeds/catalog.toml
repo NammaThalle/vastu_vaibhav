@@ -1,5 +1,5 @@
 # Starting catalog, loaded once with `python -m app.cli.seed`.
-# Names and prices come from the most recent bills in the live data (November 2026).
+# Prices are whole rupees. Names and prices come from the most recent bills in the live data (November 2026).
 # The seed only adds missing items; after that, prices are managed in the app.
 
 [[remedy]]

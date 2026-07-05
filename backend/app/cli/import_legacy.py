@@ -16,7 +16,6 @@ import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
-from decimal import Decimal
 from pathlib import Path
 
 from sqlalchemy import func, select
@@ -24,11 +23,10 @@ from sqlalchemy.orm import Session
 
 from app.db.session import sync_session
 from app.models import CatalogItem, Charge, Client, Payment, Property, User, Visit
-from app.models.enums import ChargeKind, ItemKind, PaymentMethod, PropertyType, VisitStatus
+from app.models.enums import ChargeKind, ItemKind, PaymentMethod, VisitStatus
 from app.services.numbering import fiscal_year
 
 IST = timezone(timedelta(hours=5, minutes=30))
-PAISE = Decimal("0.01")
 
 INITIAL_FEE_DESCRIPTION = "Initial consultation fee"
 
@@ -50,21 +48,9 @@ ALIASES = {
     "aparment vastu": "apartment vastu",
 }
 
-# Checked in order; the first keyword found decides the property type.
-PROPERTY_KEYWORDS = [
-    (PropertyType.FACTORY, ("factory",)),
-    (PropertyType.SHOP, ("shop", "showroom", "store")),
-    (PropertyType.OFFICE, ("office",)),
-    (PropertyType.PLOT, ("plot", "land")),
-    (PropertyType.APARTMENT, ("flat", "apartment")),
-    (PropertyType.HOUSE, ("house", "villa", "bungalow", "bunglow")),
-]
-
-
 @dataclass
 class Report:
     counts: Counter = field(default_factory=Counter)
-    property_types: Counter = field(default_factory=Counter)
     unlinked: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
     mismatches: list[str] = field(default_factory=list)
@@ -89,8 +75,12 @@ def to_datetime(value: str | None) -> datetime | None:
     return datetime.fromisoformat(value.replace(" ", "T")[:19]).replace(tzinfo=timezone.utc)
 
 
-def money(value) -> Decimal:
-    return Decimal(str(value or 0)).quantize(PAISE)
+def rupees(value) -> int:
+    """Legacy amounts are NUMERIC; the new schema keeps whole rupees only."""
+    number = float(value or 0)
+    if number != int(number):
+        raise SystemExit(f"Amount {value} has paise; the new schema stores whole rupees only.")
+    return int(number)
 
 
 def normalize(text: str) -> str:
@@ -109,7 +99,7 @@ def normalize(text: str) -> str:
 class ParsedLine:
     item: CatalogItem | None
     quantity: int
-    unit_price: Decimal
+    unit_price: int
     size_assumed: bool = False
 
 
@@ -132,23 +122,15 @@ class CatalogIndex:
         return None, False
 
 
-def parse_line(description: str, amount: Decimal, catalog: CatalogIndex) -> ParsedLine:
+def parse_line(description: str, amount: int, catalog: CatalogIndex) -> ParsedLine:
     quantity = 1
     found = re.findall(r"\bx\s*(\d+)\b", description, re.I)
     if found:
         candidate = int(found[-1])
-        if candidate > 0 and (amount * 100) % candidate == 0:
+        if candidate > 0 and amount % candidate == 0:
             quantity = candidate
     item, size_assumed = catalog.match(description)
-    return ParsedLine(item, quantity, (amount / quantity).quantize(PAISE), size_assumed)
-
-
-def infer_property_type(*texts: str | None) -> PropertyType:
-    haystack = " ".join(t.lower() for t in texts if t)
-    for prop_type, keywords in PROPERTY_KEYWORDS:
-        if any(re.search(rf"\b{k}", haystack) for k in keywords):
-            return prop_type
-    return PropertyType.OTHER
+    return ParsedLine(item, quantity, amount // quantity, size_assumed)
 
 
 # Import
@@ -170,7 +152,8 @@ def import_all(conn: sqlite3.Connection, session: Session, report: Report) -> di
 
     for row in legacy_rows(conn, "SELECT * FROM users"):
         session.add(User(id=row["id"], email=row["email"], hashed_password=row["hashed_password"],
-                         is_active=bool(row["is_active"]), created_at=to_datetime(row["created_at"])))
+                         is_active=bool(row["is_active"]), is_admin=bool(row["is_admin"]),
+                         created_at=to_datetime(row["created_at"])))
         report.counts["users"] += 1
 
     visits_by_client: dict[str, list[sqlite3.Row]] = defaultdict(list)
@@ -189,15 +172,11 @@ def import_all(conn: sqlite3.Connection, session: Session, report: Report) -> di
                         notes="\n".join(client_notes) or None, created_at=to_datetime(row["created_at"]))
         session.add(client)
 
-        visits = visits_by_client.get(row["id"], [])
-        prop_type = infer_property_type(row["project_address"], *(v["purpose"] for v in visits),
-                                        *(v["observations"] for v in visits))
         address = (row["project_address"] or "").strip() or None
         location = row["location_type"]
         prop = Property(
             client_id=client.id,
-            label=address.split(",")[0].strip()[:200] if address else prop_type.value.title(),
-            property_type=prop_type,
+            label=address.split(",")[0].strip()[:200] if address else row["full_name"].strip(),
             address=address,
             notes=f"Location: {location}" if location and location != "Goa" else None,
             closed_at=to_datetime(row["updated_at"]) if row["lead_status"] == "Inactive" else None,
@@ -206,12 +185,11 @@ def import_all(conn: sqlite3.Connection, session: Session, report: Report) -> di
         session.add(prop)
         session.flush()
         property_of[row["id"]] = prop.id
-        report.property_types[prop_type.value] += 1
         report.counts["clients"] += 1
         if row["service_id"]:
             report.counts["dropped package links"] += 1
 
-        fee = money(row["total_fees_fixed"])
+        fee = rupees(row["total_fees_fixed"])
         if fee > 0:
             session.add(Charge(property_id=prop.id, description=INITIAL_FEE_DESCRIPTION, quantity=1,
                                unit_price=fee, charge_date=to_date(row["created_at"]),
@@ -228,12 +206,12 @@ def import_all(conn: sqlite3.Connection, session: Session, report: Report) -> di
         report.counts["visits"] += 1
         linked = conn.execute("SELECT COUNT(*) FROM service_entries WHERE visit_id = ? AND amount = ?",
                               (row["id"], row["amount"])).fetchone()[0]
-        if row["amount"] and money(row["amount"]) > 0 and not linked:
+        if row["amount"] and rupees(row["amount"]) > 0 and not linked:
             report.mismatches.append(f"visit {row['id']} has an amount without a ledger line")
     session.flush()
 
     for row in legacy_rows(conn, "SELECT * FROM service_entries"):
-        amount = money(row["amount"])
+        amount = rupees(row["amount"])
         description = (row["description"] or "").strip()
         kind = ChargeKind.DISCOUNT if row["entry_type"] == "discount" else ChargeKind.CHARGE
         if kind == ChargeKind.DISCOUNT or row["visit_id"]:
@@ -263,7 +241,7 @@ def import_all(conn: sqlite3.Connection, session: Session, report: Report) -> di
         paid_on = to_date(row["date"]) or to_date(row["created_at"])
         fy = fiscal_year(paid_on)
         next_seq[fy] += 1
-        session.add(Payment(id=row["id"], property_id=property_of[row["client_id"]], amount=money(row["amount"]),
+        session.add(Payment(id=row["id"], property_id=property_of[row["client_id"]], amount=rupees(row["amount"]),
                             method=method, paid_on=paid_on, reference=(row["notes"] or "").strip() or None,
                             fiscal_year=fy, receipt_seq=next_seq[fy], created_at=to_datetime(row["created_at"])))
         report.counts["payments"] += 1
@@ -273,17 +251,15 @@ def import_all(conn: sqlite3.Connection, session: Session, report: Report) -> di
 
 def verify(conn: sqlite3.Connection, session: Session, property_of: dict[str, str], report: Report) -> None:
     for row in legacy_rows(conn, "SELECT id, full_name, total_fees_fixed FROM clients"):
-        old_billed = money(row["total_fees_fixed"])
+        old_billed = rupees(row["total_fees_fixed"])
         for entry in conn.execute("SELECT amount, entry_type FROM service_entries WHERE client_id = ?", (row["id"],)):
-            old_billed += -money(entry["amount"]) if entry["entry_type"] == "discount" else money(entry["amount"])
-        old_paid = sum((money(p["amount"]) for p in conn.execute(
-            "SELECT amount FROM payments WHERE client_id = ?", (row["id"],))), Decimal("0.00"))
+            old_billed += -rupees(entry["amount"]) if entry["entry_type"] == "discount" else rupees(entry["amount"])
+        old_paid = sum(rupees(p["amount"]) for p in conn.execute(
+            "SELECT amount FROM payments WHERE client_id = ?", (row["id"],)))
 
         prop_id = property_of[row["id"]]
-        new_billed = sum((c.signed_amount for c in session.scalars(
-            select(Charge).where(Charge.property_id == prop_id))), Decimal("0.00"))
-        new_paid = sum((p.amount for p in session.scalars(
-            select(Payment).where(Payment.property_id == prop_id))), Decimal("0.00"))
+        new_billed = sum(c.signed_amount for c in session.scalars(select(Charge).where(Charge.property_id == prop_id)))
+        new_paid = sum(p.amount for p in session.scalars(select(Payment).where(Payment.property_id == prop_id)))
 
         if (old_billed, old_paid) != (new_billed, new_paid):
             report.mismatches.append(
@@ -296,7 +272,6 @@ def print_report(report: Report) -> None:
     print("Import summary")
     for key, value in report.counts.items():
         print(f"  {key}: {value}")
-    print("  property types: " + ", ".join(f"{k} {v}" for k, v in sorted(report.property_types.items())))
     if report.unlinked:
         print(f"  charges kept as free text ({len(report.unlinked)}):")
         for line in sorted(report.unlinked):

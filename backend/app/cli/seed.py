@@ -5,7 +5,6 @@ Usage: python -m app.cli.seed [--url sqlite:///path/to.db]
 """
 import argparse
 import tomllib
-from decimal import Decimal
 from pathlib import Path
 
 from sqlalchemy import select
@@ -28,7 +27,7 @@ def load_catalog(path: Path = CATALOG_FILE) -> list[CatalogItem]:
                     kind=kind,
                     name=entry["name"],
                     size_ml=entry.get("size_ml"),
-                    unit_price=Decimal(str(entry["price"])),
+                    unit_price=int(entry["price"]),
                 )
             )
     return items
