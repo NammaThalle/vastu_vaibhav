@@ -1,11 +1,9 @@
 from datetime import date, datetime
-from decimal import Decimal
 
 from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, IdMixin, TimestampMixin
-from app.db.types import Money
 from app.models.enums import ChargeKind, db_enum
 
 
@@ -13,7 +11,7 @@ class Charge(IdMixin, TimestampMixin, Base):
     """One line on a property's bill: a charge, or a discount that reduces it.
 
     Description, quantity and unit price are copied at the time of entry and never
-    follow later catalog changes. Lines are voided, never deleted.
+    follow later catalog changes. Amounts are whole rupees. Lines are voided, never deleted.
     """
 
     __tablename__ = "charges"
@@ -28,16 +26,21 @@ class Charge(IdMixin, TimestampMixin, Base):
     kind: Mapped[ChargeKind] = mapped_column(db_enum(ChargeKind, "charge_kind"), default=ChargeKind.CHARGE)
     description: Mapped[str] = mapped_column(String(300))
     quantity: Mapped[int] = mapped_column(Integer, default=1)
-    unit_price: Mapped[Decimal] = mapped_column(Money)
+    unit_price: Mapped[int] = mapped_column(Integer)
     charge_date: Mapped[date] = mapped_column(Date, index=True)
     voided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     void_reason: Mapped[str | None] = mapped_column(String(300))
 
+    def __init__(self, **kwargs):
+        kwargs.setdefault("quantity", 1)
+        kwargs.setdefault("kind", ChargeKind.CHARGE)
+        super().__init__(**kwargs)
+
     @property
-    def amount(self) -> Decimal:
+    def amount(self) -> int:
         return self.unit_price * self.quantity
 
     @property
-    def signed_amount(self) -> Decimal:
+    def signed_amount(self) -> int:
         """Effect on the balance: positive for charges, negative for discounts."""
         return -self.amount if self.kind == ChargeKind.DISCOUNT else self.amount

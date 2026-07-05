@@ -31,7 +31,9 @@ class Property(IdMixin, TimestampMixin, Base):
 
     client_id: Mapped[str] = mapped_column(ForeignKey("clients.id", ondelete="RESTRICT"), index=True)
     label: Mapped[str] = mapped_column(String(200))
-    property_type: Mapped[PropertyType] = mapped_column(db_enum(PropertyType, "property_type"))
+    property_type: Mapped[PropertyType] = mapped_column(
+        db_enum(PropertyType, "property_type"), default=PropertyType.OTHER
+    )
     address: Mapped[str | None] = mapped_column(Text)
     drive_folder_url: Mapped[str | None] = mapped_column(String(500))
     notes: Mapped[str | None] = mapped_column(Text)

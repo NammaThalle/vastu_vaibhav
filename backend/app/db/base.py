@@ -1,7 +1,8 @@
 """Declarative base shared by every model.
 
 The naming convention gives every index and constraint a stable name, which is what
-lets Alembic autogenerate migrations on SQLite without hand edits.
+lets Alembic autogenerate migrations on SQLite without hand edits. Money columns are
+plain integers holding whole rupees.
 """
 import uuid
 from datetime import datetime

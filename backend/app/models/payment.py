@@ -1,16 +1,14 @@
 from datetime import date, datetime
-from decimal import Decimal
 
 from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, IdMixin, TimestampMixin
-from app.db.types import Money
 from app.models.enums import PaymentMethod, db_enum
 
 
 class Payment(IdMixin, TimestampMixin, Base):
-    """Money received against a property. Each payment has its own receipt number,
+    """Money received against a property, in whole rupees. Each payment has its own receipt number,
     sequential within an Indian financial year (April to March). Payments are voided,
     never deleted, so receipt numbers never get reused."""
 
@@ -22,7 +20,7 @@ class Payment(IdMixin, TimestampMixin, Base):
     )
 
     property_id: Mapped[str] = mapped_column(ForeignKey("properties.id", ondelete="RESTRICT"), index=True)
-    amount: Mapped[Decimal] = mapped_column(Money)
+    amount: Mapped[int] = mapped_column(Integer)
     method: Mapped[PaymentMethod] = mapped_column(db_enum(PaymentMethod, "payment_method"))
     paid_on: Mapped[date] = mapped_column(Date, index=True)
     reference: Mapped[str | None] = mapped_column(String(300))
