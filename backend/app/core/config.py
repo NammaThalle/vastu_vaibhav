@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     APP_CONFIG: dict = {}
     DATABASE_URL: str = f"sqlite+aiosqlite:///{DEFAULT_DB_PATH}"
     SECRET_KEY: str = "change_me_in_production"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 30  # 30 days
     ALGORITHM: str = "HS256"
     BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 

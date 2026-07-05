@@ -90,13 +90,15 @@ async def register(
     db: AsyncSession = Depends(deps.get_db),
     current_user: User | None = Depends(deps.get_optional_current_user),
 ) -> Any:
-    """Create the first user during bootstrap. After that, only a signed-in user can add users."""
+    """The first user becomes the admin. After that, only the admin can add users."""
     user_count = await db.scalar(select(func.count(User.id)))
     if user_count and current_user is None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Registration is closed after initial setup.",
         )
+    if user_count and not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the admin can add users.")
 
     anon_email = anonymize_email(user_in.email)
     existing = await db.execute(select(User).where(User.email == user_in.email))
@@ -104,7 +106,11 @@ async def register(
         logger.warning("Registration failed - user already exists: %s", anon_email)
         raise HTTPException(status_code=400, detail="A user with this email already exists.")
 
-    user = User(email=user_in.email, hashed_password=security.get_password_hash(user_in.password))
+    user = User(
+        email=user_in.email,
+        hashed_password=security.get_password_hash(user_in.password),
+        is_admin=not user_count,
+    )
     db.add(user)
     await db.commit()
     await db.refresh(user)
