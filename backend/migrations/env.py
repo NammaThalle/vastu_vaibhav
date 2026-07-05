@@ -11,7 +11,6 @@ from sqlalchemy import create_engine, pool
 import app.models  # noqa: F401  (registers every table on Base.metadata)
 from app.core.config import settings
 from app.db.base import Base
-from app.db.types import Money
 
 config = context.config
 if config.config_file_name is not None:
@@ -25,21 +24,12 @@ def database_url() -> str:
     return context.get_x_argument(as_dictionary=True).get("url") or settings.sync_database_url
 
 
-def render_item(type_, obj, autogen_context):
-    """Render app-specific column types as plain SQLAlchemy types, so migration
-    files never import application code."""
-    if type_ == "type" and isinstance(obj, Money):
-        return "sa.BigInteger()"
-    return False
-
-
 def configure(**kwargs) -> None:
     context.configure(
         target_metadata=target_metadata,
         render_as_batch=True,  # SQLite needs table rebuilds for most ALTERs
         compare_type=True,
         compare_server_default=True,
-        render_item=render_item,
         **kwargs,
     )
 

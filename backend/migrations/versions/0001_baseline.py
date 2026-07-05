@@ -2,7 +2,7 @@
 
 Revision ID: 0001
 Revises: 
-Create Date: 2026-11-27 19:10:55.416252
+Create Date: 2026-11-27 19:27:46.998478
 
 """
 from typing import Sequence, Union
@@ -25,12 +25,12 @@ def upgrade() -> None:
     sa.Column('kind', sa.Enum('remedy', 'service', name='item_kind', native_enum=False, create_constraint=True, length=32), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('size_ml', sa.Integer(), nullable=True),
-    sa.Column('unit_price', sa.BigInteger(), nullable=False),
+    sa.Column('unit_price', sa.Integer(), nullable=False),
     sa.Column('is_active', sa.Boolean(), server_default=sa.text('1'), nullable=False),
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-    sa.CheckConstraint('size_ml IS NULL OR size_ml > 0', name=op.f('ck_catalog_items_size_ml_positive')),
+    sa.CheckConstraint("(kind = 'remedy' AND COALESCE(size_ml, 0) IN (5, 15)) OR (kind = 'service' AND size_ml IS NULL)", name=op.f('ck_catalog_items_size_ml_matches_kind')),
     sa.CheckConstraint('unit_price >= 0', name=op.f('ck_catalog_items_unit_price_non_negative')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_catalog_items')),
     sa.UniqueConstraint('kind', 'name', 'size_ml', name=op.f('uq_catalog_items_kind_name_size_ml'))
@@ -52,6 +52,7 @@ def upgrade() -> None:
     sa.Column('email', sa.String(length=255), nullable=False),
     sa.Column('hashed_password', sa.String(length=255), nullable=False),
     sa.Column('is_active', sa.Boolean(), server_default=sa.text('1'), nullable=False),
+    sa.Column('is_admin', sa.Boolean(), server_default=sa.text('0'), nullable=False),
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
@@ -77,7 +78,7 @@ def upgrade() -> None:
 
     op.create_table('payments',
     sa.Column('property_id', sa.String(length=36), nullable=False),
-    sa.Column('amount', sa.BigInteger(), nullable=False),
+    sa.Column('amount', sa.Integer(), nullable=False),
     sa.Column('method', sa.Enum('cash', 'upi', 'bank_transfer', 'cheque', name='payment_method', native_enum=False, create_constraint=True, length=32), nullable=False),
     sa.Column('paid_on', sa.Date(), nullable=False),
     sa.Column('reference', sa.String(length=300), nullable=True),
@@ -121,7 +122,7 @@ def upgrade() -> None:
     sa.Column('kind', sa.Enum('charge', 'discount', name='charge_kind', native_enum=False, create_constraint=True, length=32), nullable=False),
     sa.Column('description', sa.String(length=300), nullable=False),
     sa.Column('quantity', sa.Integer(), nullable=False),
-    sa.Column('unit_price', sa.BigInteger(), nullable=False),
+    sa.Column('unit_price', sa.Integer(), nullable=False),
     sa.Column('charge_date', sa.Date(), nullable=False),
     sa.Column('voided_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('void_reason', sa.String(length=300), nullable=True),
