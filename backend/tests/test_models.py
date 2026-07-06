@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.models import CatalogItem, Charge, Client, Payment, Property
 from app.models.enums import ChargeKind, ItemKind, PaymentMethod, PropertyType
-from app.services.numbering import fiscal_year, next_receipt_seq
+from app.services.numbering import fiscal_year
 
 
 def make_property(session) -> Property:
@@ -80,12 +80,15 @@ def test_fiscal_year(day, expected):
     assert fiscal_year(day) == expected
 
 
-def test_receipt_numbers_restart_each_fiscal_year(session):
-    prop = make_property(session)
-    for fy, seq in (("2026-27", 1), ("2026-27", 2), ("2027-28", 1)):
-        assert next_receipt_seq(session, fy) == seq
-        session.add(Payment(property_id=prop.id, amount=100, method=PaymentMethod.UPI,
-                            paid_on=date(2026, 7, 1), fiscal_year=fy, receipt_seq=seq))
-        session.flush()
-    payment = session.query(Payment).filter_by(fiscal_year="2027-28").one()
+def test_receipt_number_format():
+    payment = Payment(fiscal_year="2027-28", receipt_seq=1)
     assert payment.receipt_no == "R/2027-28/0001"
+
+
+def test_duplicate_receipt_numbers_are_rejected(session):
+    prop = make_property(session)
+    for _ in range(2):
+        session.add(Payment(property_id=prop.id, amount=100, method=PaymentMethod.UPI,
+                            paid_on=date(2026, 7, 1), fiscal_year="2026-27", receipt_seq=1))
+    with pytest.raises(IntegrityError):
+        session.commit()
