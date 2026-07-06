@@ -13,3 +13,7 @@ class User(BaseModel):
     email: EmailStr
     is_active: bool
     is_admin: bool
+
+
+class UserUpdate(BaseModel):
+    is_active: bool | None = None
