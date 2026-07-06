@@ -1,12 +1,11 @@
 from datetime import date
-from decimal import Decimal
 
 import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
-from app.models import Charge, Client, Payment, Property
-from app.models.enums import ChargeKind, PaymentMethod, PropertyType
+from app.models import CatalogItem, Charge, Client, Payment, Property
+from app.models.enums import ChargeKind, ItemKind, PaymentMethod, PropertyType
 from app.services.numbering import fiscal_year, next_receipt_seq
 
 
@@ -20,25 +19,45 @@ def make_property(session) -> Property:
     return prop
 
 
-def test_money_is_stored_as_exact_paise(session):
+def test_money_is_stored_as_whole_rupees(session):
     prop = make_property(session)
     session.add(Charge(property_id=prop.id, description="Toilet Blocker", quantity=3,
-                       unit_price=Decimal("1500.10"), charge_date=date(2026, 7, 1)))
+                       unit_price=1500, charge_date=date(2026, 7, 1)))
     session.commit()
-    assert session.execute(text("SELECT unit_price FROM charges")).scalar() == 150010
-    charge = session.query(Charge).one()
-    assert charge.amount == Decimal("4500.30")
+    assert session.execute(text("SELECT unit_price FROM charges")).scalar() == 1500
+    assert session.query(Charge).one().amount == 4500
 
 
-def test_discount_reduces_balance(session):
-    prop = make_property(session)
-    discount = Charge(property_id=prop.id, kind=ChargeKind.DISCOUNT, description="BNI Member Discount", quantity=1,
-                      unit_price=Decimal("1000"), charge_date=date(2026, 7, 1))
-    assert discount.signed_amount == Decimal("-1000")
+def test_new_charge_defaults_work_before_saving():
+    charge = Charge(description="Consultation", unit_price=500, charge_date=date(2026, 7, 1))
+    assert (charge.quantity, charge.kind, charge.amount) == (1, ChargeKind.CHARGE, 500)
+
+
+def test_discount_reduces_balance():
+    discount = Charge(kind=ChargeKind.DISCOUNT, description="BNI Member Discount",
+                      unit_price=1000, charge_date=date(2026, 7, 1))
+    assert discount.signed_amount == -1000
+
+
+@pytest.mark.parametrize("kind, size, allowed", [
+    (ItemKind.REMEDY, 5, True),
+    (ItemKind.REMEDY, 15, True),
+    (ItemKind.REMEDY, 10, False),
+    (ItemKind.REMEDY, None, False),
+    (ItemKind.SERVICE, None, True),
+    (ItemKind.SERVICE, 5, False),
+])
+def test_bottle_size_rules(session, kind, size, allowed):
+    session.add(CatalogItem(kind=kind, name="Item", size_ml=size, unit_price=1500))
+    if allowed:
+        session.commit()
+    else:
+        with pytest.raises(IntegrityError):
+            session.commit()
 
 
 def test_foreign_keys_are_enforced(session):
-    session.add(Charge(property_id="missing", description="x", unit_price=Decimal("1"),
+    session.add(Charge(property_id="missing", description="x", unit_price=1,
                        charge_date=date(2026, 7, 1)))
     with pytest.raises(IntegrityError):
         session.commit()
@@ -65,7 +84,7 @@ def test_receipt_numbers_restart_each_fiscal_year(session):
     prop = make_property(session)
     for fy, seq in (("2026-27", 1), ("2026-27", 2), ("2027-28", 1)):
         assert next_receipt_seq(session, fy) == seq
-        session.add(Payment(property_id=prop.id, amount=Decimal("100"), method=PaymentMethod.UPI,
+        session.add(Payment(property_id=prop.id, amount=100, method=PaymentMethod.UPI,
                             paid_on=date(2026, 7, 1), fiscal_year=fy, receipt_seq=seq))
         session.flush()
     payment = session.query(Payment).filter_by(fiscal_year="2027-28").one()

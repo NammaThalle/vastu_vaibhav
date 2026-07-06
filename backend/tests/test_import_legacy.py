@@ -1,18 +1,18 @@
 import sqlite3
 from datetime import date
-from decimal import Decimal
 
 import pytest
 
 from app.cli.import_legacy import (
-    CatalogIndex, Report, import_all, infer_property_type, normalize, parse_line, to_date, verify,
+    CatalogIndex, Report, import_all, normalize, parse_line, to_date, verify,
 )
 from app.cli.seed import seed_catalog
-from app.models import CatalogItem, Charge, Payment, Property
+from app.models import CatalogItem, Charge, Payment, Property, User
 from app.models.enums import PropertyType
 
 LEGACY_SCHEMA = """
-CREATE TABLE users (id TEXT, email TEXT, hashed_password TEXT, is_active BOOLEAN, created_at TEXT);
+CREATE TABLE users (id TEXT, email TEXT, hashed_password TEXT, is_active BOOLEAN, is_admin BOOLEAN,
+    created_at TEXT);
 CREATE TABLE clients (id TEXT, full_name TEXT, phone TEXT, email TEXT, personal_address TEXT,
     project_address TEXT, built_up_area REAL, location_type TEXT, lead_status TEXT, service_id TEXT,
     total_fees_fixed NUMERIC, created_at TEXT, updated_at TEXT);
@@ -30,7 +30,7 @@ def legacy(tmp_path):
     path = tmp_path / "legacy.db"
     conn = sqlite3.connect(path)
     conn.executescript(LEGACY_SCHEMA)
-    conn.execute("INSERT INTO users VALUES ('u1', 'a@example.com', 'hash', 1, '2026-01-01 10:00:00')")
+    conn.execute("INSERT INTO users VALUES ('u1', 'a@example.com', 'hash', 1, 1, '2026-01-01 10:00:00')")
     conn.execute("INSERT INTO clients VALUES ('c1', ' Asha ', '', '', '', 'Flat 4, Panjim', NULL, 'Goa', "
                  "'Completed', NULL, 2000, '2026-03-01 00:00:00', NULL)")
     conn.execute("INSERT INTO clients VALUES ('c2', 'Ravi', NULL, NULL, NULL, NULL, NULL, 'Karnataka', "
@@ -68,18 +68,19 @@ def run_import(legacy, session):
 def test_import_keeps_every_balance(legacy, session):
     report, property_of = run_import(legacy, session)
     assert report.mismatches == []
-    assert report.counts["total billed"] == Decimal("20800.00")
-    assert report.counts["total paid"] == Decimal("20800.00")
+    assert report.counts["total billed"] == 20800
+    assert report.counts["total paid"] == 20800
+    assert session.get(User, "u1").is_admin
 
 
 def test_import_structures_free_text_charges(legacy, session):
     run_import(legacy, session)
     toilet = session.query(Charge).filter_by(id="s1").one()
-    assert (toilet.quantity, toilet.unit_price) == (2, Decimal("1500.00"))
+    assert (toilet.quantity, toilet.unit_price) == (2, 1500)
     assert session.get(CatalogItem, toilet.catalog_item_id).name == "Toilet Blocker"
 
     devta = session.query(Charge).filter_by(id="s2").one()
-    assert (devta.quantity, devta.unit_price) == (7, Decimal("1000.00"))
+    assert (devta.quantity, devta.unit_price) == (7, 1000)
     assert session.get(CatalogItem, devta.catalog_item_id).name == "Devata Enhancer"
 
     bundle = session.query(Charge).filter_by(id="s5").one()
@@ -98,14 +99,14 @@ def test_import_numbers_receipts_per_fiscal_year(legacy, session):
 def test_import_creates_one_property_per_client(legacy, session):
     _, property_of = run_import(legacy, session)
     asha = session.get(Property, property_of["c1"])
-    assert (asha.label, asha.property_type) == ("Flat 4", PropertyType.SHOP)
+    assert (asha.label, asha.property_type) == ("Flat 4", PropertyType.OTHER)
     ravi = session.get(Property, property_of["c2"])
-    assert ravi.notes == "Location: Karnataka"
+    assert (ravi.label, ravi.notes) == ("Ravi", "Location: Karnataka")
 
 
 def test_import_reports_balance_mismatch(legacy, session):
     report, property_of = run_import(legacy, session)
-    session.query(Payment).filter_by(id="p3").one().amount = Decimal("8000")
+    session.query(Payment).filter_by(id="p3").one().amount = 8000
     session.flush()
     report = Report()
     verify(legacy, session, property_of, report)
@@ -125,8 +126,8 @@ def test_normalize(raw, expected):
 
 def test_parse_line_keeps_quantity_one_when_amount_does_not_divide():
     catalog = CatalogIndex([])
-    parsed = parse_line("Something x3", Decimal("1000"), catalog)
-    assert (parsed.quantity, parsed.unit_price) == (1, Decimal("1000.00"))
+    parsed = parse_line("Something x3", 1000, catalog)
+    assert (parsed.quantity, parsed.unit_price) == (1, 1000)
 
 
 def test_to_date_converts_server_timestamps_to_ist():
@@ -134,6 +135,7 @@ def test_to_date_converts_server_timestamps_to_ist():
     assert to_date("2026-03-01 20:00:00") == date(2026, 3, 2)
 
 
-def test_infer_property_type_defaults_to_other():
-    assert infer_property_type(None, "Site Inspection") == PropertyType.OTHER
-    assert infer_property_type("Plot no 5") == PropertyType.PLOT
+def test_import_rejects_amounts_with_paise(legacy, session):
+    legacy.execute("UPDATE payments SET amount = 99.5 WHERE id = 'p3'")
+    with pytest.raises(SystemExit):
+        run_import(legacy, session)
