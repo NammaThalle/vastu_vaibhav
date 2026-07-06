@@ -38,7 +38,8 @@ services:
       - "8011:80"
 
   # First install only: docker compose run --rm api python -m app.cli.seed
-  # Backups, on demand or from host cron: docker compose run --rm backup
+  # Weekly backup, Sunday 00:00 IST, keeping the last 4. Host crontab on portress:
+  #   0 0 * * 0 cd ~/docker/vastu_vaibhav && docker compose run --rm backup
   backup:
     <<: *api
     profiles: ["tools"]

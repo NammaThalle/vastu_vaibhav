@@ -1,7 +1,7 @@
 """Snapshot the SQLite database safely while the app is running, gzip it, and keep
-the most recent copies.
+the most recent copies (four by default, one per weekly run).
 
-Usage: python -m app.cli.backup --dest /backups [--keep 30]
+Usage: python -m app.cli.backup --dest /backups [--keep 4]
 """
 import argparse
 import gzip
@@ -38,7 +38,7 @@ def backup(dest: Path, keep: int) -> Path:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dest", type=Path, required=True)
-    parser.add_argument("--keep", type=int, default=30)
+    parser.add_argument("--keep", type=int, default=4)
     args = parser.parse_args()
     print(f"Backup written: {backup(args.dest, args.keep)}")
 
