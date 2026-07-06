@@ -13,7 +13,13 @@ setup_logging()
 if settings.ENVIRONMENT.lower() == "production" and settings.SECRET_KEY == "change_me_in_production":
     raise RuntimeError("SECRET_KEY must be set in production")
 
-app = FastAPI(title=settings.PROJECT_NAME, version="2.0.0")
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version="2.0.0",
+    openapi_url="/api/openapi.json",
+    docs_url="/api/docs",
+    redoc_url=None,
+)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

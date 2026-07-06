@@ -85,3 +85,19 @@ async def get_optional_current_user(
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalars().first()
     return user if user and user.is_active else None
+
+
+async def get_current_admin(user: Annotated[User, Depends(get_current_user)]) -> User:
+    if not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the admin can do this.")
+    return user
+
+
+async def get_or_404(db: AsyncSession, model, id: str):
+    obj = await db.get(model, id)
+    if obj is None:
+        raise HTTPException(status_code=404, detail=f"{model.__name__} not found")
+    return obj
+
+
+DB = Annotated[AsyncSession, Depends(get_db)]

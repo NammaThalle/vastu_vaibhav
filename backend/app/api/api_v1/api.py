@@ -1,11 +1,15 @@
 from fastapi import APIRouter, Depends
 
-from app.api import deps
-from app.api.api_v1.endpoints import config, login, utils
+from app.api.deps import get_current_user
+from app.api.api_v1.endpoints import catalog, clients, config, home, login, properties, users
+
+signed_in = [Depends(get_current_user)]
 
 api_router = APIRouter()
-api_router.include_router(login.router, tags=["login"])
+api_router.include_router(login.router, tags=["auth"])
 api_router.include_router(config.router, prefix="/config", tags=["config"])
-api_router.include_router(
-    utils.router, prefix="/utils", tags=["utils"], dependencies=[Depends(deps.get_current_user)]
-)
+api_router.include_router(home.router, prefix="/home", tags=["home"], dependencies=signed_in)
+api_router.include_router(clients.router, prefix="/clients", tags=["clients"], dependencies=signed_in)
+api_router.include_router(properties.router, tags=["properties"], dependencies=signed_in)
+api_router.include_router(catalog.router, prefix="/catalog", tags=["catalog"], dependencies=signed_in)
+api_router.include_router(users.router, prefix="/users", tags=["users"], dependencies=signed_in)
