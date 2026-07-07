@@ -2,141 +2,55 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { motion } from "framer-motion"
-import {
-    Home,
-    Mail,
-    Lock,
-    Loader2,
-    ArrowRight,
-    AlertCircle
-} from "lucide-react"
+import { useQueryClient } from "@tanstack/react-query"
+
+import { Field } from "@/components/common"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { authApi } from "@/services/api"
-import { toast } from "sonner"
-import { logger } from "@/lib/logger"
 
 export default function LoginPage() {
-    const [email, setEmail] = React.useState("")
-    const [password, setPassword] = React.useState("")
-    const [loading, setLoading] = React.useState(false)
     const router = useRouter()
+    const queryClient = useQueryClient()
+    const [error, setError] = React.useState("")
+    const [busy, setBusy] = React.useState(false)
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setLoading(true)
-
-        try {
-            logger.info(`Login attempt: ${email}`)
-            await authApi.login({ email, password })
-            logger.info(`Login successful: ${email}`)
-            toast.success("Welcome back, Consultant!")
-            router.push("/")
-        } catch (err: any) {
-            logger.error(`Login failed for ${email}: ${err.message}`)
-            toast.error(err.message || "Invalid credentials. Please try again.")
-        } finally {
-            setLoading(false)
+    async function submit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault()
+        setBusy(true)
+        setError("")
+        const form = new FormData(event.currentTarget)
+        const body = new URLSearchParams({
+            username: String(form.get("email")),
+            password: String(form.get("password")),
+        })
+        const response = await fetch("/api/v1/login/access-token", { method: "POST", body, credentials: "include" })
+        setBusy(false)
+        if (!response.ok) {
+            setError(response.status === 429 ? "Too many attempts. Wait a minute and try again." : "Wrong email or password.")
+            return
         }
+        await queryClient.invalidateQueries()
+        router.replace("/")
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
-            <div className="pointer-events-none absolute inset-0 overflow-hidden dark:block hidden">
-                <div className="absolute top-[-20%] left-[10%] h-[600px] w-[600px] rounded-full bg-violet-600/[0.08] blur-[120px]" />
-                <div className="absolute top-[30%] right-[-10%] h-[500px] w-[500px] rounded-full bg-cyan-600/[0.06] blur-[100px]" />
-                <div className="ambient-grid absolute inset-0 opacity-[0.025]" />
-            </div>
-
-            <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4 }}
-                className="w-full max-w-md z-10"
-            >
-                <div className="flex flex-col items-center mb-8 gap-2">
-                    <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/40 animate-breathing dark:bg-gradient-to-br dark:from-violet-500 dark:to-indigo-600 dark:shadow-violet-500/30">
-                        <Home className="text-primary-foreground h-6 w-6" />
-                    </div>
-                    <h1 className="text-3xl font-extrabold tracking-tight">Vastu Vaibhav</h1>
-                    <p className="text-muted-foreground text-sm font-medium">Professional Consulting Suite</p>
+        <div className="flex min-h-screen items-center justify-center bg-background px-4">
+            <form onSubmit={submit} className="w-full max-w-sm space-y-5 rounded-xl border bg-card p-6 shadow-sm">
+                <div>
+                    <h1 className="text-2xl font-semibold tracking-tight">Vastu Vaibhav</h1>
+                    <p className="mt-1 text-sm text-muted-foreground">Sign in to continue.</p>
                 </div>
-
-                <Card className="glass-card">
-                    <CardHeader className="space-y-1">
-                        <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
-                        <CardDescription>
-                            Enter your consultant credentials to access your dashboard.
-                        </CardDescription>
-                    </CardHeader>
-                    <form onSubmit={handleLogin}>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email Address</Label>
-                                <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder="name@company.com"
-                                        className="pl-9 bg-muted/20"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <Label htmlFor="password">Password</Label>
-                                    <Link href="#" className="text-xs text-primary hover:underline font-medium">Forgot password?</Link>
-                                </div>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        placeholder="••••••••"
-                                        className="pl-9 bg-muted/20"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                            </div>
-                        </CardContent>
-                        <CardFooter className="flex flex-col gap-4">
-                            <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={loading}>
-                                {loading ? (
-                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                ) : (
-                                    <>
-                                        Continue to Dashboard
-                                        <ArrowRight className="ml-2 h-4 w-4" />
-                                    </>
-                                )}
-                            </Button>
-                            <div className="text-sm text-center text-muted-foreground">
-                                Don&apos;t have an account?{" "}
-                                <Link href="/register" className="text-primary font-bold hover:underline">
-                                    Join the platform
-                                </Link>
-                            </div>
-                        </CardFooter>
-                    </form>
-                </Card>
-
-                <div className="mt-8 flex items-center gap-2 p-3 rounded-lg border border-primary/10 bg-primary/5 text-primary">
-                    <AlertCircle size={16} className="shrink-0" />
-                    <p className="text-[10px] font-medium leading-tight">
-                        Protected instance. All sessions are logged for professional record keeping compliance.
-                    </p>
-                </div>
-            </motion.div>
+                <Field label="Email">
+                    <Input name="email" type="email" autoComplete="username" required autoFocus />
+                </Field>
+                <Field label="Password">
+                    <Input name="password" type="password" autoComplete="current-password" required />
+                </Field>
+                {error && <p className="text-sm text-destructive">{error}</p>}
+                <Button type="submit" className="h-11 w-full" disabled={busy}>
+                    {busy ? "Signing in..." : "Sign in"}
+                </Button>
+            </form>
         </div>
     )
 }
