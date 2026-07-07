@@ -1,0 +1,3131 @@
+{
+  "components": {
+    "schemas": {
+      "Body_login_access_token_api_v1_login_access_token_post": {
+        "properties": {
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "format": "password",
+            "title": "Client Secret"
+          },
+          "grant_type": {
+            "anyOf": [
+              {
+                "pattern": "^password$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "password": {
+            "format": "password",
+            "title": "Password",
+            "type": "string"
+          },
+          "scope": {
+            "default": "",
+            "title": "Scope",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_login_access_token_api_v1_login_access_token_post",
+        "type": "object"
+      },
+      "CatalogItemCreate": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ItemKind"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "size_ml": {
+            "anyOf": [
+              {
+                "enum": [
+                  5,
+                  15
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Ml"
+          },
+          "unit_price": {
+            "description": "Whole rupees",
+            "minimum": 0.0,
+            "title": "Unit Price",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "name",
+          "unit_price"
+        ],
+        "title": "CatalogItemCreate",
+        "type": "object"
+      },
+      "CatalogItemOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ItemKind"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "size_ml": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Ml"
+          },
+          "unit_price": {
+            "title": "Unit Price",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "size_ml",
+          "unit_price",
+          "is_active"
+        ],
+        "title": "CatalogItemOut",
+        "type": "object"
+      },
+      "CatalogItemUpdate": {
+        "properties": {
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "unit_price": {
+            "anyOf": [
+              {
+                "description": "Whole rupees",
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Price"
+          }
+        },
+        "title": "CatalogItemUpdate",
+        "type": "object"
+      },
+      "ChargeKind": {
+        "enum": [
+          "charge",
+          "discount"
+        ],
+        "title": "ChargeKind",
+        "type": "string"
+      },
+      "ChargeLine": {
+        "description": "One line to add. Pick a catalog item, or type a description and price.",
+        "properties": {
+          "catalog_item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Item Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ChargeKind",
+            "default": "charge"
+          },
+          "quantity": {
+            "default": 1,
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "unit_price": {
+            "anyOf": [
+              {
+                "description": "Whole rupees",
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Defaults to the catalog price",
+            "title": "Unit Price"
+          }
+        },
+        "title": "ChargeLine",
+        "type": "object"
+      },
+      "ChargeOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "integer"
+          },
+          "catalog_item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Item Id"
+          },
+          "charge_date": {
+            "format": "date",
+            "title": "Charge Date",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ChargeKind"
+          },
+          "property_id": {
+            "title": "Property Id",
+            "type": "string"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "unit_price": {
+            "title": "Unit Price",
+            "type": "integer"
+          },
+          "visit_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visit Id"
+          },
+          "void_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Void Reason"
+          },
+          "voided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voided At"
+          }
+        },
+        "required": [
+          "id",
+          "property_id",
+          "visit_id",
+          "catalog_item_id",
+          "kind",
+          "description",
+          "quantity",
+          "unit_price",
+          "amount",
+          "charge_date",
+          "voided_at",
+          "void_reason"
+        ],
+        "title": "ChargeOut",
+        "type": "object"
+      },
+      "ChargeUpdate": {
+        "properties": {
+          "charge_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Charge Date"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "unit_price": {
+            "anyOf": [
+              {
+                "description": "Whole rupees",
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Price"
+          }
+        },
+        "title": "ChargeUpdate",
+        "type": "object"
+      },
+      "ChargesCreate": {
+        "properties": {
+          "charge_date": {
+            "format": "date",
+            "title": "Charge Date",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/ChargeLine"
+            },
+            "minItems": 1,
+            "title": "Lines",
+            "type": "array"
+          },
+          "visit_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visit Id"
+          }
+        },
+        "required": [
+          "charge_date",
+          "lines"
+        ],
+        "title": "ChargesCreate",
+        "type": "object"
+      },
+      "ClientCreate": {
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "property": {
+            "$ref": "#/components/schemas/PropertyCreate",
+            "description": "Every client starts with one property"
+          },
+          "referral_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReferralSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "property"
+        ],
+        "title": "ClientCreate",
+        "type": "object"
+      },
+      "ClientDetail": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "properties": {
+            "items": {
+              "$ref": "#/components/schemas/PropertyWithSummary"
+            },
+            "title": "Properties",
+            "type": "array"
+          },
+          "referral_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReferralSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "created_at",
+          "properties"
+        ],
+        "title": "ClientDetail",
+        "type": "object"
+      },
+      "ClientListItem": {
+        "properties": {
+          "balance": {
+            "title": "Balance",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_activity": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "property_count": {
+            "title": "Property Count",
+            "type": "integer"
+          },
+          "referral_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReferralSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PropertyStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "created_at",
+          "property_count",
+          "balance",
+          "status",
+          "last_activity"
+        ],
+        "title": "ClientListItem",
+        "type": "object"
+      },
+      "ClientRef": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phone"
+        ],
+        "title": "ClientRef",
+        "type": "object"
+      },
+      "ClientUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "referral_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReferralSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "ClientUpdate",
+        "type": "object"
+      },
+      "DueItem": {
+        "properties": {
+          "balance": {
+            "title": "Balance",
+            "type": "integer"
+          },
+          "client_id": {
+            "title": "Client Id",
+            "type": "string"
+          },
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "last_activity": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "property_id": {
+            "title": "Property Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "property_id",
+          "client_id",
+          "client_name",
+          "phone",
+          "label",
+          "balance",
+          "last_activity"
+        ],
+        "title": "DueItem",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HomeSummary": {
+        "properties": {
+          "collected_this_month": {
+            "title": "Collected This Month",
+            "type": "integer"
+          },
+          "dues": {
+            "items": {
+              "$ref": "#/components/schemas/DueItem"
+            },
+            "title": "Dues",
+            "type": "array"
+          },
+          "outstanding_total": {
+            "title": "Outstanding Total",
+            "type": "integer"
+          },
+          "upcoming_visits": {
+            "items": {
+              "$ref": "#/components/schemas/UpcomingVisit"
+            },
+            "title": "Upcoming Visits",
+            "type": "array"
+          }
+        },
+        "required": [
+          "outstanding_total",
+          "collected_this_month",
+          "dues",
+          "upcoming_visits"
+        ],
+        "title": "HomeSummary",
+        "type": "object"
+      },
+      "ItemKind": {
+        "enum": [
+          "remedy",
+          "service"
+        ],
+        "title": "ItemKind",
+        "type": "string"
+      },
+      "PaymentCreate": {
+        "properties": {
+          "amount": {
+            "description": "Whole rupees",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "type": "integer"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "paid_on": {
+            "format": "date",
+            "title": "Paid On",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          }
+        },
+        "required": [
+          "amount",
+          "method",
+          "paid_on"
+        ],
+        "title": "PaymentCreate",
+        "type": "object"
+      },
+      "PaymentMethod": {
+        "enum": [
+          "cash",
+          "upi",
+          "bank_transfer",
+          "cheque"
+        ],
+        "title": "PaymentMethod",
+        "type": "string"
+      },
+      "PaymentOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "paid_on": {
+            "format": "date",
+            "title": "Paid On",
+            "type": "string"
+          },
+          "property_id": {
+            "title": "Property Id",
+            "type": "string"
+          },
+          "receipt_no": {
+            "title": "Receipt No",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "void_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Void Reason"
+          },
+          "voided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voided At"
+          }
+        },
+        "required": [
+          "id",
+          "property_id",
+          "amount",
+          "method",
+          "paid_on",
+          "reference",
+          "receipt_no",
+          "voided_at",
+          "void_reason"
+        ],
+        "title": "PaymentOut",
+        "type": "object"
+      },
+      "PaymentUpdate": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "description": "Whole rupees",
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paid_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid On"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          }
+        },
+        "title": "PaymentUpdate",
+        "type": "object"
+      },
+      "PropertyCreate": {
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "drive_folder_url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drive Folder Url"
+          },
+          "label": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "property_type": {
+            "$ref": "#/components/schemas/PropertyType",
+            "default": "other"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "title": "PropertyCreate",
+        "type": "object"
+      },
+      "PropertyDetail": {
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "charges": {
+            "items": {
+              "$ref": "#/components/schemas/ChargeOut"
+            },
+            "title": "Charges",
+            "type": "array"
+          },
+          "client": {
+            "$ref": "#/components/schemas/ClientRef"
+          },
+          "client_id": {
+            "title": "Client Id",
+            "type": "string"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "drive_folder_url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drive Folder Url"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "payments": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentOut"
+            },
+            "title": "Payments",
+            "type": "array"
+          },
+          "property_type": {
+            "$ref": "#/components/schemas/PropertyType",
+            "default": "other"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/Summary"
+          },
+          "visits": {
+            "items": {
+              "$ref": "#/components/schemas/VisitOut"
+            },
+            "title": "Visits",
+            "type": "array"
+          }
+        },
+        "required": [
+          "label",
+          "id",
+          "client_id",
+          "closed_at",
+          "created_at",
+          "summary",
+          "client",
+          "visits",
+          "charges",
+          "payments"
+        ],
+        "title": "PropertyDetail",
+        "type": "object"
+      },
+      "PropertyOut": {
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "client_id": {
+            "title": "Client Id",
+            "type": "string"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "drive_folder_url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drive Folder Url"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "property_type": {
+            "$ref": "#/components/schemas/PropertyType",
+            "default": "other"
+          }
+        },
+        "required": [
+          "label",
+          "id",
+          "client_id",
+          "closed_at",
+          "created_at"
+        ],
+        "title": "PropertyOut",
+        "type": "object"
+      },
+      "PropertyStatus": {
+        "enum": [
+          "enquiry",
+          "in_progress",
+          "payment_due",
+          "closed"
+        ],
+        "title": "PropertyStatus",
+        "type": "string"
+      },
+      "PropertyType": {
+        "enum": [
+          "apartment",
+          "house",
+          "shop",
+          "office",
+          "factory",
+          "plot",
+          "other"
+        ],
+        "title": "PropertyType",
+        "type": "string"
+      },
+      "PropertyUpdate": {
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "closed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Close or reopen the property by hand",
+            "title": "Closed"
+          },
+          "drive_folder_url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drive Folder Url"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "property_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PropertyType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "PropertyUpdate",
+        "type": "object"
+      },
+      "PropertyWithSummary": {
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "client_id": {
+            "title": "Client Id",
+            "type": "string"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "drive_folder_url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drive Folder Url"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "property_type": {
+            "$ref": "#/components/schemas/PropertyType",
+            "default": "other"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/Summary"
+          }
+        },
+        "required": [
+          "label",
+          "id",
+          "client_id",
+          "closed_at",
+          "created_at",
+          "summary"
+        ],
+        "title": "PropertyWithSummary",
+        "type": "object"
+      },
+      "ReferralSource": {
+        "enum": [
+          "bni",
+          "bbb",
+          "word_of_mouth",
+          "other"
+        ],
+        "title": "ReferralSource",
+        "type": "string"
+      },
+      "Summary": {
+        "properties": {
+          "balance": {
+            "title": "Balance",
+            "type": "integer"
+          },
+          "billed": {
+            "title": "Billed",
+            "type": "integer"
+          },
+          "last_activity": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity"
+          },
+          "next_visit": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Visit"
+          },
+          "paid": {
+            "title": "Paid",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PropertyStatus"
+          }
+        },
+        "required": [
+          "billed",
+          "paid",
+          "balance",
+          "status",
+          "next_visit",
+          "last_activity"
+        ],
+        "title": "Summary",
+        "type": "object"
+      },
+      "Token": {
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "token_type": {
+            "title": "Token Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token",
+          "token_type"
+        ],
+        "title": "Token",
+        "type": "object"
+      },
+      "UpcomingVisit": {
+        "properties": {
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "property_id": {
+            "title": "Property Id",
+            "type": "string"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purpose"
+          },
+          "visit_date": {
+            "format": "date",
+            "title": "Visit Date",
+            "type": "string"
+          },
+          "visit_id": {
+            "title": "Visit Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "visit_id",
+          "property_id",
+          "client_name",
+          "label",
+          "visit_date",
+          "purpose"
+        ],
+        "title": "UpcomingVisit",
+        "type": "object"
+      },
+      "User": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "is_admin": {
+            "title": "Is Admin",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "is_active",
+          "is_admin"
+        ],
+        "title": "User",
+        "type": "object"
+      },
+      "UserCreate": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserCreate",
+        "type": "object"
+      },
+      "UserUpdate": {
+        "properties": {
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "title": "UserUpdate",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VisitCreate": {
+        "properties": {
+          "observations": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observations"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purpose"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VisitStatus",
+            "default": "done"
+          },
+          "visit_date": {
+            "format": "date",
+            "title": "Visit Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "visit_date"
+        ],
+        "title": "VisitCreate",
+        "type": "object"
+      },
+      "VisitOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "observations": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observations"
+          },
+          "property_id": {
+            "title": "Property Id",
+            "type": "string"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purpose"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VisitStatus",
+            "default": "done"
+          },
+          "visit_date": {
+            "format": "date",
+            "title": "Visit Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "visit_date",
+          "id",
+          "property_id",
+          "created_at"
+        ],
+        "title": "VisitOut",
+        "type": "object"
+      },
+      "VisitStatus": {
+        "enum": [
+          "scheduled",
+          "done",
+          "cancelled"
+        ],
+        "title": "VisitStatus",
+        "type": "string"
+      },
+      "VisitUpdate": {
+        "properties": {
+          "observations": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observations"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purpose"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VisitStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "visit_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visit Date"
+          }
+        },
+        "title": "VisitUpdate",
+        "type": "object"
+      },
+      "VoidRequest": {
+        "properties": {
+          "reason": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "VoidRequest",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearerWithCookie": {
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "/api/v1/login/access-token"
+          }
+        },
+        "type": "oauth2"
+      }
+    }
+  },
+  "info": {
+    "title": "Vastu Vaibhav",
+    "version": "2.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "health_check_api_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Health Check Api Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Check"
+      }
+    },
+    "/api/v1/catalog": {
+      "get": {
+        "operationId": "list_catalog_api_v1_catalog_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "include_inactive",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Inactive",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CatalogItemOut"
+                  },
+                  "title": "Response List Catalog Api V1 Catalog Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "List Catalog",
+        "tags": [
+          "catalog"
+        ]
+      },
+      "post": {
+        "operationId": "add_catalog_item_api_v1_catalog_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogItemCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Add Catalog Item",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/{item_id}": {
+      "patch": {
+        "description": "Price changes apply to new charges only; past bills keep the price they were sold at.",
+        "operationId": "update_catalog_item_api_v1_catalog__item_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogItemUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Update Catalog Item",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/api/v1/charges/{charge_id}": {
+      "patch": {
+        "operationId": "update_charge_api_v1_charges__charge_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "charge_id",
+            "required": true,
+            "schema": {
+              "title": "Charge Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChargeUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChargeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Update Charge",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/charges/{charge_id}/void": {
+      "post": {
+        "operationId": "void_charge_api_v1_charges__charge_id__void_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "charge_id",
+            "required": true,
+            "schema": {
+              "title": "Charge Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoidRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChargeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Void Charge",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/clients": {
+      "get": {
+        "operationId": "list_clients_api_v1_clients_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ClientListItem"
+                  },
+                  "title": "Response List Clients Api V1 Clients Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "List Clients",
+        "tags": [
+          "clients"
+        ]
+      },
+      "post": {
+        "operationId": "create_client_api_v1_clients_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Create Client",
+        "tags": [
+          "clients"
+        ]
+      }
+    },
+    "/api/v1/clients/{client_id}": {
+      "get": {
+        "operationId": "get_client_api_v1_clients__client_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "title": "Client Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Get Client",
+        "tags": [
+          "clients"
+        ]
+      },
+      "patch": {
+        "operationId": "update_client_api_v1_clients__client_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "title": "Client Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Update Client",
+        "tags": [
+          "clients"
+        ]
+      }
+    },
+    "/api/v1/clients/{client_id}/properties": {
+      "post": {
+        "operationId": "add_property_api_v1_clients__client_id__properties_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "title": "Client Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PropertyCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Add Property",
+        "tags": [
+          "clients"
+        ]
+      }
+    },
+    "/api/v1/config": {
+      "get": {
+        "description": "Get the dynamic application configuration loaded from app-settings.json.",
+        "operationId": "get_app_config_api_v1_config_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Get App Config",
+        "tags": [
+          "config"
+        ]
+      }
+    },
+    "/api/v1/home": {
+      "get": {
+        "operationId": "home_api_v1_home_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Home",
+        "tags": [
+          "home"
+        ]
+      }
+    },
+    "/api/v1/login/access-token": {
+      "post": {
+        "description": "OAuth2 compatible token login, get an access token for future requests",
+        "operationId": "login_access_token_api_v1_login_access_token_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_access_token_api_v1_login_access_token_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login Access Token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/login/me": {
+      "get": {
+        "description": "Get current user.",
+        "operationId": "read_users_me_api_v1_login_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Read Users Me",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/logout": {
+      "post": {
+        "description": "Logout user by clearing the access_token cookie.",
+        "operationId": "logout_api_v1_logout_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Logout Api V1 Logout Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Logout",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/payments/{payment_id}": {
+      "patch": {
+        "description": "Edits keep the receipt number, even if the date moves into another financial year.",
+        "operationId": "update_payment_api_v1_payments__payment_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "payment_id",
+            "required": true,
+            "schema": {
+              "title": "Payment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Update Payment",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/payments/{payment_id}/void": {
+      "post": {
+        "operationId": "void_payment_api_v1_payments__payment_id__void_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "payment_id",
+            "required": true,
+            "schema": {
+              "title": "Payment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoidRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Void Payment",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{property_id}": {
+      "get": {
+        "operationId": "get_property_api_v1_properties__property_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "title": "Property Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Get Property",
+        "tags": [
+          "properties"
+        ]
+      },
+      "patch": {
+        "operationId": "update_property_api_v1_properties__property_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "title": "Property Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PropertyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Update Property",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{property_id}/charges": {
+      "post": {
+        "description": "Add one or more lines in one go, e.g. every remedy sold on a visit.",
+        "operationId": "add_charges_api_v1_properties__property_id__charges_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "title": "Property Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChargesCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChargeOut"
+                  },
+                  "title": "Response Add Charges Api V1 Properties  Property Id  Charges Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Add Charges",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{property_id}/payments": {
+      "post": {
+        "operationId": "add_payment_api_v1_properties__property_id__payments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "title": "Property Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Add Payment",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{property_id}/visits": {
+      "post": {
+        "operationId": "add_visit_api_v1_properties__property_id__visits_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "title": "Property Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VisitCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisitOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Add Visit",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/register": {
+      "post": {
+        "description": "The first user becomes the admin. After that, only the admin can add users.",
+        "operationId": "register_api_v1_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Register",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "operationId": "list_users_api_v1_users_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  },
+                  "title": "Response List Users Api V1 Users Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "List Users",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "patch": {
+        "operationId": "update_user_api_v1_users__user_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Update User",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/visits/{visit_id}": {
+      "patch": {
+        "operationId": "update_visit_api_v1_visits__visit_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "visit_id",
+            "required": true,
+            "schema": {
+              "title": "Visit Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VisitUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisitOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Update Visit",
+        "tags": [
+          "properties"
+        ]
+      }
+    }
+  }
+}

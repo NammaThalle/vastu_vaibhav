@@ -27,9 +27,33 @@ jobs:
           alembic -x url=sqlite:///ci.db upgrade head
           alembic -x url=sqlite:///ci.db check
       - run: python -m pytest -q
+      - name: Frontend types match the API
+        run: |
+          python -m app.cli.openapi /tmp/openapi.json
+          diff -u ../frontend/lib/api/openapi.json /tmp/openapi.json
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Generated types match the committed schema
+        run: |
+          npx openapi-typescript lib/api/openapi.json -o /tmp/schema.d.ts --default-non-nullable false
+          diff -u lib/api/schema.d.ts /tmp/schema.d.ts
+      - run: npm run typecheck
+      - run: npm run build
 
   publish:
-    needs: test
+    needs: [test, frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
