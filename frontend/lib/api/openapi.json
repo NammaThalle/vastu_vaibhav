@@ -550,6 +550,9 @@
         },
         "required": [
           "name",
+          "phone",
+          "referral_source",
+          "notes",
           "id",
           "created_at",
           "properties"
@@ -640,6 +643,9 @@
         },
         "required": [
           "name",
+          "phone",
+          "referral_source",
+          "notes",
           "id",
           "created_at",
           "property_count",
@@ -1174,6 +1180,10 @@
         },
         "required": [
           "label",
+          "property_type",
+          "address",
+          "drive_folder_url",
+          "notes",
           "id",
           "client_id",
           "closed_at",
@@ -1261,6 +1271,10 @@
         },
         "required": [
           "label",
+          "property_type",
+          "address",
+          "drive_folder_url",
+          "notes",
           "id",
           "client_id",
           "closed_at",
@@ -1444,6 +1458,10 @@
         },
         "required": [
           "label",
+          "property_type",
+          "address",
+          "drive_folder_url",
+          "notes",
           "id",
           "client_id",
           "closed_at",
@@ -1777,6 +1795,9 @@
         },
         "required": [
           "visit_date",
+          "status",
+          "purpose",
+          "observations",
           "id",
           "property_id",
           "created_at"

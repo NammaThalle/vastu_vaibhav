@@ -590,12 +590,12 @@ export interface components {
             /** Name */
             name: string;
             /** Notes */
-            notes?: string | null;
+            notes: string | null;
             /** Phone */
-            phone?: string | null;
+            phone: string | null;
             /** Properties */
             properties: components["schemas"]["PropertyWithSummary"][];
-            referral_source?: components["schemas"]["ReferralSource"] | null;
+            referral_source: components["schemas"]["ReferralSource"] | null;
         };
         /** ClientListItem */
         ClientListItem: {
@@ -613,12 +613,12 @@ export interface components {
             /** Name */
             name: string;
             /** Notes */
-            notes?: string | null;
+            notes: string | null;
             /** Phone */
-            phone?: string | null;
+            phone: string | null;
             /** Property Count */
             property_count: number;
-            referral_source?: components["schemas"]["ReferralSource"] | null;
+            referral_source: components["schemas"]["ReferralSource"] | null;
             status: components["schemas"]["PropertyStatus"] | null;
         };
         /** ClientRef */
@@ -748,7 +748,7 @@ export interface components {
         /** PropertyDetail */
         PropertyDetail: {
             /** Address */
-            address?: string | null;
+            address: string | null;
             /** Charges */
             charges: components["schemas"]["ChargeOut"][];
             client: components["schemas"]["ClientRef"];
@@ -762,17 +762,17 @@ export interface components {
              */
             created_at: string;
             /** Drive Folder Url */
-            drive_folder_url?: string | null;
+            drive_folder_url: string | null;
             /** Id */
             id: string;
             /** Label */
             label: string;
             /** Notes */
-            notes?: string | null;
+            notes: string | null;
             /** Payments */
             payments: components["schemas"]["PaymentOut"][];
             /** @default other */
-            property_type?: components["schemas"]["PropertyType"];
+            property_type: components["schemas"]["PropertyType"];
             summary: components["schemas"]["Summary"];
             /** Visits */
             visits: components["schemas"]["VisitOut"][];
@@ -780,7 +780,7 @@ export interface components {
         /** PropertyOut */
         PropertyOut: {
             /** Address */
-            address?: string | null;
+            address: string | null;
             /** Client Id */
             client_id: string;
             /** Closed At */
@@ -791,15 +791,15 @@ export interface components {
              */
             created_at: string;
             /** Drive Folder Url */
-            drive_folder_url?: string | null;
+            drive_folder_url: string | null;
             /** Id */
             id: string;
             /** Label */
             label: string;
             /** Notes */
-            notes?: string | null;
+            notes: string | null;
             /** @default other */
-            property_type?: components["schemas"]["PropertyType"];
+            property_type: components["schemas"]["PropertyType"];
         };
         /**
          * PropertyStatus
@@ -831,7 +831,7 @@ export interface components {
         /** PropertyWithSummary */
         PropertyWithSummary: {
             /** Address */
-            address?: string | null;
+            address: string | null;
             /** Client Id */
             client_id: string;
             /** Closed At */
@@ -842,15 +842,15 @@ export interface components {
              */
             created_at: string;
             /** Drive Folder Url */
-            drive_folder_url?: string | null;
+            drive_folder_url: string | null;
             /** Id */
             id: string;
             /** Label */
             label: string;
             /** Notes */
-            notes?: string | null;
+            notes: string | null;
             /** @default other */
-            property_type?: components["schemas"]["PropertyType"];
+            property_type: components["schemas"]["PropertyType"];
             summary: components["schemas"]["Summary"];
         };
         /**
@@ -963,13 +963,13 @@ export interface components {
             /** Id */
             id: string;
             /** Observations */
-            observations?: string | null;
+            observations: string | null;
             /** Property Id */
             property_id: string;
             /** Purpose */
-            purpose?: string | null;
+            purpose: string | null;
             /** @default done */
-            status?: components["schemas"]["VisitStatus"];
+            status: components["schemas"]["VisitStatus"];
             /**
              * Visit Date
              * Format: date

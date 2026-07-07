@@ -7,7 +7,8 @@ class UserCreate(BaseModel):
 
 
 class User(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    # Fields with defaults are always present in responses; mark them required in the schema.
+    model_config = ConfigDict(from_attributes=True, json_schema_serialization_defaults_required=True)
 
     id: str
     email: EmailStr
