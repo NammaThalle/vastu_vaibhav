@@ -11,7 +11,7 @@ class User(BaseModel):
     model_config = ConfigDict(from_attributes=True, json_schema_serialization_defaults_required=True)
 
     id: str
-    email: EmailStr
+    email: str  # echo what is stored; only new input is validated as an email address
     is_active: bool
     is_admin: bool
 

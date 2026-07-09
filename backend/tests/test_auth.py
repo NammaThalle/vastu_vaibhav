@@ -32,3 +32,16 @@ async def test_business_routes_need_login(anon_client):
     for path in ("/api/v1/home", "/api/v1/clients", "/api/v1/catalog"):
         assert (await anon_client.get(path)).status_code == 401
     assert (await anon_client.get("/api/health")).json() == {"status": "ok"}
+
+
+async def test_me_works_for_stored_emails_that_fail_strict_validation(anon_client, tmp_path):
+    """Accounts imported from the old app keep working even if their email would not pass today's checks."""
+    from app.core.security import get_password_hash
+    from app.db.session import sync_session
+    from app.models import User
+
+    with sync_session(anon_client.db_url) as session:
+        session.add(User(email="admin@home.test", hashed_password=get_password_hash("secret-pass"), is_admin=True))
+        session.commit()
+    me = await anon_client.get("/api/v1/login/me", headers=await login(anon_client, "admin@home.test"))
+    assert me.status_code == 200 and me.json()["email"] == "admin@home.test"

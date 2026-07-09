@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { BookOpen, Home, Settings, Users } from "lucide-react"
 
+import { ErrorMessage } from "@/components/common"
 import { useMe } from "@/lib/queries"
 import { cn } from "@/lib/utils"
 
@@ -34,8 +35,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
         )
     }
-    // A failed /me request redirects to /login through the API client.
-    if (me.isError) return null
+    // A 401 redirects to /login through the API client; anything else is shown.
+    if (me.isError) {
+        return (
+            <div className="mx-auto max-w-md p-6">
+                <ErrorMessage error={me.error} />
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen bg-background">
