@@ -147,3 +147,20 @@ async def test_validation_errors(api):
         "lines": [{"description": "x", "unit_price": 1}]})
     assert wrong.status_code == 400
     assert (await api.get("/api/v1/properties/missing")).status_code == 404
+
+
+async def test_merge_duplicate_clients(api):
+    keeper = await new_client(api, name="Anish Tari")
+    duplicate = (await api.post("/api/v1/clients", json={
+        "name": "Anish Tari", "notes": "Second flat", "property": {"label": "Ponda"}})).json()
+    pid = duplicate["properties"][0]["id"]
+    await api.post(f"/api/v1/properties/{pid}/payments", json={"amount": 1000, "method": "cash", "paid_on": "2026-11-20"})
+
+    merged = (await api.post(f"/api/v1/clients/{duplicate['id']}/merge", json={"into_client_id": keeper["id"]})).json()
+    assert [p["label"] for p in merged["properties"]] == ["Flat 4, Panjim", "Ponda"]
+    assert merged["notes"] == "Second flat" and merged["phone"] == "9800000000"
+    assert (await api.get(f"/api/v1/clients/{duplicate['id']}")).status_code == 404
+    assert (await api.get(f"/api/v1/properties/{pid}")).json()["summary"]["paid"] == 1000
+
+    self_merge = await api.post(f"/api/v1/clients/{keeper['id']}/merge", json={"into_client_id": keeper["id"]})
+    assert self_merge.status_code == 400

@@ -2,16 +2,16 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { MessageCircle, Pencil, Phone, Plus } from "lucide-react"
 
-import { Empty, ErrorMessage, Loading, PageHeader, Section, StatusBadge } from "@/components/common"
+import { Empty, ErrorMessage, Field, Loading, NativeSelect, PageHeader, Section, StatusBadge } from "@/components/common"
 import { FormDialog } from "@/components/FormDialog"
 import { ClientFields, emptyProperty, nullable, PropertyFields, type ClientValues } from "@/components/forms"
 import { Button } from "@/components/ui/button"
 import { api, unwrap, type ClientDetail } from "@/lib/api/client"
-import { PROPERTY_TYPES, REFERRAL_SOURCES, rupees, telLink, whatsappLink } from "@/lib/format"
-import { useAction, useClient } from "@/lib/queries"
+import { PROPERTY_TYPES, REFERRAL_SOURCES, rupees, shortDate, telLink, whatsappLink } from "@/lib/format"
+import { useAction, useClient, useClients } from "@/lib/queries"
 
 function EditClient({ client, open, onOpenChange }: { client: ClientDetail; open: boolean; onOpenChange: (o: boolean) => void }) {
     const [values, setValues] = React.useState<ClientValues>({
@@ -56,10 +56,43 @@ function AddProperty({ clientId, open, onOpenChange }: { clientId: string; open:
     )
 }
 
+/** Fold a duplicate record into the real client; all properties and history move across. */
+function MergeClient({ client, open, onOpenChange }: { client: ClientDetail; open: boolean; onOpenChange: (o: boolean) => void }) {
+    const router = useRouter()
+    const clients = useClients()
+    const name = client.name.trim().toLowerCase()
+    const others = (clients.data ?? [])
+        .filter((c) => c.id !== client.id)
+        .sort((a, b) => Number(b.name.trim().toLowerCase() === name) - Number(a.name.trim().toLowerCase() === name) || a.name.localeCompare(b.name))
+    const [into, setInto] = React.useState("")
+    const merge = useAction(
+        () => unwrap(api.POST("/api/v1/clients/{client_id}/merge", { params: { path: { client_id: client.id } }, body: { into_client_id: into } })),
+        "Clients merged",
+    )
+    return (
+        <FormDialog open={open} onOpenChange={onOpenChange} title={`Merge ${client.name} into another client`}
+            description="Use this when the same person was added twice. Properties, visits and payments all move across; this record is removed."
+            submitLabel="Merge" disabled={!into} busy={merge.isPending}
+            onSubmit={async () => { const kept = await merge.mutateAsync(undefined); router.replace(`/client?id=${kept.id}`) }}>
+            <Field label="Keep this client">
+                <NativeSelect required value={into} onChange={(e) => setInto(e.target.value)}>
+                    <option value="">Choose...</option>
+                    {others.map((c) => (
+                        <option key={c.id} value={c.id}>
+                            {c.name}{c.phone ? `, ${c.phone}` : ""}{c.last_activity ? `, last activity ${shortDate(c.last_activity)}` : ""}
+                        </option>
+                    ))}
+                </NativeSelect>
+            </Field>
+        </FormDialog>
+    )
+}
+
 function ClientView({ id }: { id: string }) {
     const client = useClient(id)
     const [editing, setEditing] = React.useState(false)
     const [adding, setAdding] = React.useState(false)
+    const [merging, setMerging] = React.useState(false)
 
     if (client.isPending) return <Loading />
     if (client.isError) return <ErrorMessage error={client.error} />
@@ -134,7 +167,12 @@ function ClientView({ id }: { id: string }) {
                 )}
             </Section>
 
+            <button className="mt-2 text-xs text-muted-foreground underline" onClick={() => setMerging(true)}>
+                Same person added twice? Merge into another client
+            </button>
+
             {editing && <EditClient client={c} open={editing} onOpenChange={setEditing} />}
+            {merging && <MergeClient client={c} open={merging} onOpenChange={setMerging} />}
             {adding && <AddProperty clientId={c.id} open={adding} onOpenChange={setAdding} />}
         </>
     )

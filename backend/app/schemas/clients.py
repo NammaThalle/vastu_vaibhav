@@ -58,6 +58,10 @@ class ClientUpdate(BaseModel):
     notes: str | None = None
 
 
+class ClientMerge(BaseModel):
+    into_client_id: str = Field(description="The client that keeps all properties")
+
+
 class ClientOut(ORMModel, ClientFields):
     id: str
     created_at: datetime

@@ -1,12 +1,12 @@
 from dataclasses import asdict
 
-from fastapi import APIRouter
-from sqlalchemy import select
+from fastapi import APIRouter, HTTPException
+from sqlalchemy import select, update
 
 from app.api.deps import DB, get_or_404
 from app.models import Client, Property
 from app.schemas.clients import (
-    ClientCreate, ClientDetail, ClientListItem, ClientOut, ClientUpdate, PropertyCreate, PropertyOut,
+    ClientCreate, ClientDetail, ClientListItem, ClientMerge, ClientOut, ClientUpdate, PropertyCreate, PropertyOut,
     PropertyWithSummary,
 )
 from app.schemas.common import Summary
@@ -82,3 +82,22 @@ async def add_property(client_id: str, body: PropertyCreate, db: DB) -> Property
     await db.commit()
     await db.refresh(prop)
     return prop
+
+
+@router.post("/{client_id}/merge", response_model=ClientDetail)
+async def merge_client(client_id: str, body: ClientMerge, db: DB) -> ClientDetail:
+    """Fold a duplicate client into another: its properties (with all their visits,
+    charges and payments) move across, and the empty duplicate is removed."""
+    if client_id == body.into_client_id:
+        raise HTTPException(status_code=400, detail="Pick a different client to merge into")
+    duplicate = await get_or_404(db, Client, client_id)
+    keeper = await get_or_404(db, Client, body.into_client_id)
+
+    await db.execute(update(Property).where(Property.client_id == duplicate.id).values(client_id=keeper.id))
+    keeper.phone = keeper.phone or duplicate.phone
+    keeper.referral_source = keeper.referral_source or duplicate.referral_source
+    keeper.notes = "\n".join(n for n in (keeper.notes, duplicate.notes) if n) or None
+    await db.flush()
+    await db.delete(duplicate)
+    await db.commit()
+    return await get_client(keeper.id, db)

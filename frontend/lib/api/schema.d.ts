@@ -129,6 +129,27 @@ export interface paths {
         patch: operations["update_client_api_v1_clients__client_id__patch"];
         trace?: never;
     };
+    "/api/v1/clients/{client_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge Client
+         * @description Fold a duplicate client into another: its properties (with all their visits,
+         *     charges and payments) move across, and the empty duplicate is removed.
+         */
+        post: operations["merge_client_api_v1_clients__client_id__merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clients/{client_id}/properties": {
         parameters: {
             query?: never;
@@ -621,6 +642,14 @@ export interface components {
             referral_source: components["schemas"]["ReferralSource"] | null;
             status: components["schemas"]["PropertyStatus"] | null;
         };
+        /** ClientMerge */
+        ClientMerge: {
+            /**
+             * Into Client Id
+             * @description The client that keeps all properties
+             */
+            into_client_id: string;
+        };
         /** ClientRef */
         ClientRef: {
             /** Id */
@@ -899,10 +928,7 @@ export interface components {
         };
         /** User */
         User: {
-            /**
-             * Email
-             * Format: email
-             */
+            /** Email */
             email: string;
             /** Id */
             id: string;
@@ -1292,6 +1318,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ClientUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merge_client_api_v1_clients__client_id__merge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                client_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClientMerge"];
             };
         };
         responses: {

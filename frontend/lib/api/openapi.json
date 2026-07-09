@@ -656,6 +656,20 @@
         "title": "ClientListItem",
         "type": "object"
       },
+      "ClientMerge": {
+        "properties": {
+          "into_client_id": {
+            "description": "The client that keeps all properties",
+            "title": "Into Client Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "into_client_id"
+        ],
+        "title": "ClientMerge",
+        "type": "object"
+      },
       "ClientRef": {
         "properties": {
           "id": {
@@ -1601,7 +1615,6 @@
       "User": {
         "properties": {
           "email": {
-            "format": "email",
             "title": "Email",
             "type": "string"
           },
@@ -2358,6 +2371,64 @@
           }
         ],
         "summary": "Update Client",
+        "tags": [
+          "clients"
+        ]
+      }
+    },
+    "/api/v1/clients/{client_id}/merge": {
+      "post": {
+        "description": "Fold a duplicate client into another: its properties (with all their visits,\ncharges and payments) move across, and the empty duplicate is removed.",
+        "operationId": "merge_client_api_v1_clients__client_id__merge_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "title": "Client Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientMerge"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Merge Client",
         "tags": [
           "clients"
         ]
