@@ -105,6 +105,8 @@ export function ItemsDialog({ propertyId, open, onOpenChange }: { propertyId: st
         0,
     )
 
+    const count = lines.reduce((sum, l) => sum + (l.quantity ?? 1), 0)
+
     const save = useAction(
         () =>
             unwrap(
@@ -113,7 +115,7 @@ export function ItemsDialog({ propertyId, open, onOpenChange }: { propertyId: st
                     body: { charge_date: date, lines },
                 }),
             ),
-        `${lines.length} item${lines.length === 1 ? "" : "s"} added`,
+        `${count} item${count === 1 ? "" : "s"} added`,
     )
 
     const groups = tab === "other" ? [] : groupItems(items, tab)
@@ -124,7 +126,7 @@ export function ItemsDialog({ propertyId, open, onOpenChange }: { propertyId: st
             open={open}
             onOpenChange={onOpenChange}
             title="Add remedies and services"
-            submitLabel={lines.length ? `Add ${lines.length} for ${rupees(total)}` : "Add"}
+            submitLabel={count ? `Add ${count} for ${rupees(total)}` : "Add"}
             busy={save.isPending}
             disabled={lines.length === 0}
             onSubmit={() => save.mutateAsync(undefined)}
@@ -166,7 +168,7 @@ export function ItemsDialog({ propertyId, open, onOpenChange }: { propertyId: st
                         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input className="pl-9" placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} />
                     </div>
-                    <ul className="max-h-[42dvh] divide-y overflow-y-auto rounded-lg border">
+                    <ul className="h-[42dvh] divide-y overflow-y-auto rounded-lg border">
                         {shown.map((group) => (
                             <GroupRow key={group.name} group={group} quantities={quantities} setQuantity={setQuantity} />
                         ))}

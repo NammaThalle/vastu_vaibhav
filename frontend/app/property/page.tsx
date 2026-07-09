@@ -246,9 +246,12 @@ function PropertyView({ id }: { id: string }) {
                     <Empty>Nothing recorded yet. Start with a visit.</Empty>
                 ) : (
                     <ol className="space-y-4">
-                        {timeline.map((entry) => (
-                            <li key={`${entry.type}-${entry.date}-${entry.type === "visit" ? entry.visit.id : entry.type === "payment" ? entry.payment.id : ""}`}>
-                                <div className="mb-1 text-xs font-medium text-muted-foreground">{shortDate(entry.date)}</div>
+                        {timeline.map((entry, index) => (
+                            <li key={`${entry.type}-${entry.date}-${entry.type === "visit" ? entry.visit.id : entry.type === "payment" ? entry.payment.id : ""}`}
+                                className={cn(index > 0 && timeline[index - 1].date === entry.date && "-mt-2")}>
+                                {(index === 0 || timeline[index - 1].date !== entry.date) && (
+                                    <div className="mb-1 text-xs font-medium text-muted-foreground">{shortDate(entry.date)}</div>
+                                )}
                                 {entry.type === "visit" && <VisitCard visit={entry.visit} onEdit={() => setOpen({ kind: "visit", visit: entry.visit })} />}
                                 {entry.type === "charges" && <ChargesCard charges={entry.charges} setOpen={setOpen} />}
                                 {entry.type === "payment" && <PaymentCard payment={entry.payment} setOpen={setOpen} />}
