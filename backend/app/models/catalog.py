@@ -6,7 +6,8 @@ from app.models.enums import ItemKind, db_enum
 
 
 class CatalogItem(IdMixin, TimestampMixin, Base):
-    """Something we sell: a remedy in a 5ml or 15ml bottle, or a service.
+    """Something we sell: a remedy in a 5ml or 15ml bottle or sold per piece (a Surya
+    Pratima, for example), or a service.
 
     Prices are whole rupees. The price here is the current list price; charges copy it
     when they are added, so changing a price never rewrites old bills.
@@ -17,7 +18,7 @@ class CatalogItem(IdMixin, TimestampMixin, Base):
         UniqueConstraint("kind", "name", "size_ml"),
         CheckConstraint("unit_price >= 0", name="unit_price_non_negative"),
         CheckConstraint(
-            "(kind = 'remedy' AND COALESCE(size_ml, 0) IN (5, 15)) OR (kind = 'service' AND size_ml IS NULL)",
+            "(kind = 'remedy' AND (size_ml IS NULL OR size_ml IN (5, 15))) OR (kind = 'service' AND size_ml IS NULL)",
             name="size_ml_matches_kind",
         ),
     )

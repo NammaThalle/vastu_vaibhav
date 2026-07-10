@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import DB, get_or_404
@@ -19,6 +19,15 @@ async def list_catalog(db: DB, include_inactive: bool = False) -> list[CatalogIt
 
 @router.post("", response_model=CatalogItemOut, status_code=201)
 async def add_catalog_item(body: CatalogItemCreate, db: DB) -> CatalogItem:
+    # The unique constraint cannot see duplicates without a size (SQLite treats NULLs as
+    # distinct), so check by name here as well.
+    same = await db.scalar(select(CatalogItem.id).where(
+        CatalogItem.kind == body.kind,
+        func.lower(CatalogItem.name) == body.name.strip().lower(),
+        CatalogItem.size_ml.is_(None) if body.size_ml is None else CatalogItem.size_ml == body.size_ml,
+    ))
+    if same:
+        raise HTTPException(status_code=409, detail="That item is already in the catalog")
     item = CatalogItem(**body.model_dump())
     db.add(item)
     try:

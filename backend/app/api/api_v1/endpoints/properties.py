@@ -99,6 +99,7 @@ async def add_charges(property_id: str, body: ChargesCreate, db: DB) -> list[Cha
             catalog_item_id=item.id if item else None,
             kind=line.kind,
             description=description,
+            note=(line.note or "").strip() or None,
             quantity=line.quantity,
             unit_price=line.unit_price if line.unit_price is not None else item.unit_price,
             charge_date=body.charge_date,

@@ -43,7 +43,7 @@ def test_discount_reduces_balance():
     (ItemKind.REMEDY, 5, True),
     (ItemKind.REMEDY, 15, True),
     (ItemKind.REMEDY, 10, False),
-    (ItemKind.REMEDY, None, False),
+    (ItemKind.REMEDY, None, True),
     (ItemKind.SERVICE, None, True),
     (ItemKind.SERVICE, 5, False),
 ])

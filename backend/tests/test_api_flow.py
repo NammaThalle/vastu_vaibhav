@@ -41,6 +41,14 @@ async def test_full_day_flow(api):
     assert [l["amount"] for l in lines] == [2000, 4500, 500, 1000]
     assert lines[1]["description"] == "Toilet Blocker (5ml)"
 
+    door = await catalog_item(api, "Door Blocker", 15)
+    shutter = (await api.post(f"/api/v1/properties/{pid}/charges", json={
+        "charge_date": "2026-11-20", "lines": [{"catalog_item_id": door["id"], "note": " Shutter "}]})).json()[0]
+    assert (shutter["description"], shutter["note"]) == ("Door Blocker (15ml)", "Shutter")
+    edited = (await api.patch(f"/api/v1/charges/{shutter['id']}", json={"note": "Back shutter"})).json()
+    assert edited["note"] == "Back shutter"
+    await api.post(f"/api/v1/charges/{shutter['id']}/void", json={"reason": "test line"})
+
     payment = (await api.post(f"/api/v1/properties/{pid}/payments", json={
         "amount": 5000, "method": "upi", "paid_on": "2026-11-21"})).json()
     assert payment["receipt_no"] == "R/2026-27/0001"
@@ -50,7 +58,7 @@ async def test_full_day_flow(api):
         "billed": 6000, "paid": 5000, "balance": 1000, "status": "payment_due",
         "next_visit": None, "last_activity": "2026-11-21"}
     assert detail["client"]["name"] == "Asha Naik"
-    assert len(detail["visits"]) == 1 and len(detail["charges"]) == 4
+    assert len(detail["visits"]) == 1 and len(detail["charges"]) == 5  # the voided line stays listed
 
     home = (await api.get("/api/v1/home")).json()
     assert home["outstanding_total"] == 1000
@@ -124,6 +132,15 @@ async def test_catalog_rules(api):
     service_size = await api.post("/api/v1/catalog",
                                   json={"kind": "service", "name": "Y", "size_ml": 5, "unit_price": 1})
     assert service_size.status_code == 422
+
+    piece = await api.post("/api/v1/catalog",
+                           json={"kind": "remedy", "name": "Surya Yantra", "size_ml": None, "unit_price": 1000})
+    assert piece.status_code == 201 and piece.json()["size_ml"] is None
+    again = await api.post("/api/v1/catalog",
+                           json={"kind": "remedy", "name": "surya yantra", "size_ml": None, "unit_price": 1000})
+    assert again.status_code == 409
+    service_again = await api.post("/api/v1/catalog", json={"kind": "service", "name": "Site Inspection", "unit_price": 1})
+    assert service_again.status_code == 409
 
     await api.patch(f"/api/v1/catalog/{remedy.json()['id']}", json={"is_active": False})
     names = [i["name"] for i in (await api.get("/api/v1/catalog")).json()]

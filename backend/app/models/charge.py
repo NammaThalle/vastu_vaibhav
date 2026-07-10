@@ -11,7 +11,8 @@ class Charge(IdMixin, TimestampMixin, Base):
     """One line on a property's bill: a charge, or a discount that reduces it.
 
     Description, quantity and unit price are copied at the time of entry and never
-    follow later catalog changes. Amounts are whole rupees. Lines are voided, never deleted.
+    follow later catalog changes. The note says where or how this line applies, such as
+    shutter or main gate for a door blocker. Amounts are whole rupees. Lines are voided, never deleted.
     """
 
     __tablename__ = "charges"
@@ -25,6 +26,7 @@ class Charge(IdMixin, TimestampMixin, Base):
     catalog_item_id: Mapped[str | None] = mapped_column(ForeignKey("catalog_items.id", ondelete="RESTRICT"))
     kind: Mapped[ChargeKind] = mapped_column(db_enum(ChargeKind, "charge_kind"), default=ChargeKind.CHARGE)
     description: Mapped[str] = mapped_column(String(300))
+    note: Mapped[str | None] = mapped_column(String(200))
     quantity: Mapped[int] = mapped_column(Integer, default=1)
     unit_price: Mapped[int] = mapped_column(Integer)
     charge_date: Mapped[date] = mapped_column(Date, index=True)

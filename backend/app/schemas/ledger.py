@@ -39,6 +39,7 @@ class ChargeLine(BaseModel):
 
     catalog_item_id: str | None = None
     description: str | None = Field(default=None, max_length=300)
+    note: str | None = Field(default=None, max_length=200, description="Where it goes, e.g. shutter or main gate")
     quantity: int = Field(default=1, gt=0)
     unit_price: Rupees | None = Field(default=None, description="Defaults to the catalog price")
     kind: ChargeKind = ChargeKind.CHARGE
@@ -58,6 +59,7 @@ class ChargesCreate(BaseModel):
 
 class ChargeUpdate(BaseModel):
     description: str | None = Field(default=None, min_length=1, max_length=300)
+    note: str | None = Field(default=None, max_length=200)
     quantity: int | None = Field(default=None, gt=0)
     unit_price: Rupees | None = None
     charge_date: date | None = None
@@ -70,6 +72,7 @@ class ChargeOut(ORMModel):
     catalog_item_id: str | None
     kind: ChargeKind
     description: str
+    note: str | None
     quantity: int
     unit_price: int
     amount: int

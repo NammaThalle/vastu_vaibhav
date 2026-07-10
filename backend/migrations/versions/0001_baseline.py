@@ -2,7 +2,7 @@
 
 Revision ID: 0001
 Revises: 
-Create Date: 2026-11-27 19:27:46.998478
+Create Date: 2026-11-27 21:59:31.354472
 
 """
 from typing import Sequence, Union
@@ -30,7 +30,7 @@ def upgrade() -> None:
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-    sa.CheckConstraint("(kind = 'remedy' AND COALESCE(size_ml, 0) IN (5, 15)) OR (kind = 'service' AND size_ml IS NULL)", name=op.f('ck_catalog_items_size_ml_matches_kind')),
+    sa.CheckConstraint("(kind = 'remedy' AND (size_ml IS NULL OR size_ml IN (5, 15))) OR (kind = 'service' AND size_ml IS NULL)", name=op.f('ck_catalog_items_size_ml_matches_kind')),
     sa.CheckConstraint('unit_price >= 0', name=op.f('ck_catalog_items_unit_price_non_negative')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_catalog_items')),
     sa.UniqueConstraint('kind', 'name', 'size_ml', name=op.f('uq_catalog_items_kind_name_size_ml'))
@@ -121,6 +121,7 @@ def upgrade() -> None:
     sa.Column('catalog_item_id', sa.String(length=36), nullable=True),
     sa.Column('kind', sa.Enum('charge', 'discount', name='charge_kind', native_enum=False, create_constraint=True, length=32), nullable=False),
     sa.Column('description', sa.String(length=300), nullable=False),
+    sa.Column('note', sa.String(length=200), nullable=True),
     sa.Column('quantity', sa.Integer(), nullable=False),
     sa.Column('unit_price', sa.Integer(), nullable=False),
     sa.Column('charge_date', sa.Date(), nullable=False),
