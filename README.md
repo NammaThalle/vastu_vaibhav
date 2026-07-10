@@ -1,87 +1,92 @@
-# Vastu Vaibhav 🏠📊
+# Vastu Vaibhav
 
-Vastu Vaibhav is a specialized Financial Ledger and Platform designed for Vastu Consultants. It streamlines client management, site visit logging, and financial tracking, providing a professional platform for managing energy audit portfolios.
+A small business app for a Vastu consultant in Goa. It records clients and their properties, site visits and observations, remedies and services sold, discounts and payments, and shows at a glance who still owes money.
 
-## 🚀 Features
+It is built for two people: the consultant, on a phone at the site or a MacBook at home, and the admin who runs the server.
 
-- **Client Management**: Manage detailed client profiles, contact information, and project locations.
-- **Visit Tracking**: Log site visits with specific observations and energy audit data.
-- **Financial Ledger**: Professional ledger for tracking charges, first-class discounts, payments, and running balances with fixed-point money storage.
-- **Automated Invoicing**: Professional React-based invoice template with customizable central configuration (`config/app-settings.json`).
-- **Dashboard Analytics**: Real-time overview of total clients, visits, and outstanding balances.
-- **Automated Backups**: Scheduled SQLite database backups powered by APScheduler to ensure data safety.
-- **Comprehensive Logging**: Detailed, human-readable logging system across both frontend and backend for easy auditing and debugging.
-- **Modern UI/UX**: Port-folio style interface with support for both Dark and Light modes.
-- **Secure Authentication**: JWT-based authentication with protected business APIs and first-user-only registration bootstrap.
+## What it does
 
-## 🛠️ Tech Stack
+- **Home**: total still to collect, money collected this month, a "who owes" list with call and WhatsApp buttons, and upcoming visits.
+- **Clients**: search, filter by "owes money" or "open", add a client together with their first property, merge a client who was added twice.
+- **Property page**: one history of visits, charges and payments, with four buttons: Visit, Remedies, Discount, Payment. Remedies are added from a grid with plus and minus buttons, 5ml or 15ml bottles.
+- **Catalog**: the remedy and service price list. Price changes only affect new charges; old bills keep the price they were sold at.
+- **Settings**: users (admin only), theme, sign out.
 
-- **Backend**: FastAPI (Python 3.10), SQLAlchemy (Async), SQLite, Alembic (Migrations).
-- **Frontend**: Next.js 15 (App Router), TypeScript, Tailwind CSS, Lucide Icons.
-- **Infrastructure**: Docker & Docker Compose.
-- **PDF Generation**: Puppeteer (Node.js) & React.
+Status (Enquiry, In progress, Payment due, Closed) is worked out from the data and never typed in. Charges and payments are cancelled, never deleted, so the history stays complete. Every payment gets a receipt number that restarts each financial year, for example `R/2026-27/0001`.
 
-## 📦 Getting Started
+## Stack
 
-### Prerequisites
-- Docker & Docker Compose
-- Python 3.10+ (for local development)
-- Node.js 18+ (for local development)
+- **Backend**: FastAPI, SQLAlchemy 2 (async), SQLite, Alembic. Python 3.13.
+- **Frontend**: Next.js 15 static export, React Query, Tailwind, types generated from the API's OpenAPI schema.
+- **Deployment**: Docker Compose on the home server, behind the central Caddy.
 
-### Running with Docker (Local Development)
-1. Clone the repository.
-2. Run the following command:
-   ```bash
-   docker-compose up --build
-   ```
-3. Access the application at `http://localhost:8000`.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design.
 
-### Production Deployment (Client Server)
+## Local development
 
-For deploying to a production server, use the template provided in the `deploy/` directory.
+Backend:
 
-1. **Setup Directory Structure**: Create a dedicated folder on your server and copy `deploy/docker-compose.yml` into it.
-2. **Environment Configuration**: Create a `.env` file in the same directory. This is **CRITICAL** for security. Use the following template:
-   ```bash
-   SECRET_KEY=your_very_secure_random_string
-   DATABASE_URL=sqlite+aiosqlite:///../data/vastu.db
-   ```
-3. **Configuration & Data**: Create `data/` and `config/` directories next to your `docker-compose.yml`. Place your `app-settings.json` in the `config/` folder. The backend loads this at runtime and exposes safe app settings through the authenticated config API.
-4. **Deploy**:
-   ```bash
-   docker-compose up -d
-   ```
-The application will pull the latest pre-built image from GHCR. Monitoring for updates can be handled via Watchtower if configured.
+```bash
+cd backend
+python3 -m venv venv && venv/bin/pip install -r requirements-dev.txt
+venv/bin/alembic upgrade head
+venv/bin/python -m app.cli.seed
+venv/bin/uvicorn app.main:app --reload --port 8000
+```
 
-### Local Development (Backend)
-1. Navigate to `/backend`.
-2. Install dependencies: `pip install -r requirements.txt`.
-3. Start the server: `uvicorn app.main:app --reload`.
+Frontend, in a second terminal. The dev server forwards `/api/*` to the backend:
 
-### Local Development (Frontend)
-1. Navigate to `/frontend`.
-2. Install dependencies: `npm install`.
-3. Start the development server: `npm run dev`.
+```bash
+cd frontend
+npm ci
+npm run dev
+```
 
-## 📚 Documentation & History
+The first account registered becomes the admin. API docs are at `http://localhost:8000/api/docs`.
 
-For deep technical details and project evolution, please refer to our internal documentation:
+Or run both in Docker with `docker compose up` and open `http://localhost:3000`.
 
-*   [**Technical Architecture**](./docs/ARCHITECTURE.md): Full engineering blueprint, database schema, and security specifications.
-*   [**Development Progression Log**](./docs/DEVELOPMENT_LOG.md): Detailed breakdown of the 11 logical phases of construction.
+## Changing the database
 
-### Summary of Development Phases:
-1. **Foundation**: Docker orchestration and initial infrastructure.
-2. **Backend Core**: Secure API scaffolding, SQLite, and Auth.
-3. **Frontend Core**: Next.js architecture and UI scaffolding.
-4. **Client System**: Comprehensive client and visit life-cycle management.
-5. **Ledger**: Advanced financial tracking and running balance logic.
-6. **Legacy Invoicing**: Initial HTML-to-PDF utility.
-7. **Design System**: Shadcn, Dark mode, and UI overhaul.
-8. **Catalog**: Service pricing models and architecture specifications.
-9. **Service Engine**: Dynamic calculation logic and addons.
-10. **Modern Invoicing**: React + Puppeteer headless PDF rendering.
-11. **Platform Stability**: APScheduler backups, clean logging, and centralized configuration.
+Models in `backend/app/models/` are the only source of truth. After changing a model:
 
-## ⚖️ License
-MIT License.
+```bash
+cd backend
+venv/bin/alembic revision --autogenerate -m "describe the change"
+```
+
+Review the generated file in `backend/migrations/versions/`. Autogenerate cannot detect renames (it sees a drop and an add) or changes to CHECK constraints; those are the only reasons to touch a generated migration. CI runs `alembic check` and fails if models and migrations disagree.
+
+## Changing the API
+
+After changing a schema or route, regenerate the frontend types and commit them:
+
+```bash
+cd frontend
+npm run api:types
+```
+
+CI fails if `frontend/lib/api/schema.d.ts` is out of date.
+
+## Tests
+
+```bash
+cd backend && venv/bin/python -m pytest -q
+cd frontend && npm run typecheck && npm run build
+```
+
+## Production
+
+Images are built by CI on every push to `main`: `ghcr.io/nammathalle/vastu_vaibhav-api` and `ghcr.io/nammathalle/vastu_vaibhav-web`.
+
+On the server, copy `deploy/compose.yml` and `deploy/.env.example` (as `.env`), plus `config/app-settings.json`, into the deploy folder, then:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+The `migrate` service applies pending migrations before the API starts. The Caddy snippet in `deploy/caddy/vastu.caddy` routes `/api/*` to the API and everything else to the web container. Backups run weekly from the host's crontab; the line is in `deploy/compose.yml`.
+
+## License
+
+MIT.
