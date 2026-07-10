@@ -1,290 +1,134 @@
-# Vastu Consultant Ledger Application
+# Architecture
 
-## Complete Technical Architecture & Engineering Blueprint (v2.0 - Deep Technical Specification)
+This document describes how Vastu Vaibhav is put together and why. It reflects the redesign that replaced the original package-based service catalog with a model built around how the business actually bills.
 
----
+## The business, in data
 
-# 1. System Vision
+From the real data (about 40 clients, January to November 2026):
 
-A secure, mobile-first Progressive Web App (PWA) for a Vastu consultant to manage:
+- A job starts with a site inspection, billed at a fixed fee (usually Rs 2,000 or Rs 2,500).
+- Most revenue comes from remedies sold in 5ml or 15ml bottles, several of each, from a fixed price list.
+- Placement advice (kitchen, toilet, main door, mandir) is billed per item.
+- A separate visit installs the remedies, charged case by case.
+- Clients pay once or twice, mostly by UPI. Discounts are occasional (BNI or BBB membership, or ad hoc).
 
-## 1.1 System Architecture
-![System Architecture](./assets/system_architecture.png)
+The design follows that: a client can have several properties, and everything billable belongs to a property.
 
-## 1.2 Authentication Flow
-![Authentication Flow](./assets/auth_flow.png)
+## Data model
 
-## 1.3 Ledger Business Logic
-![Ledger Logic](./assets/ledger_logic.png)
+```
+Client ──< Property ──< Visit
+                    ──< Charge >── CatalogItem
+                    ──< Payment
+User
+```
 
-## 1.4 PDF Billing Sequence
-![PDF Billing Sequence](./assets/billing_process.png)
+| Table | Purpose |
+| --- | --- |
+| `clients` | A person: name, phone, how they came to us, notes. |
+| `properties` | One job: a flat, house, shop, office, factory or plot. Type, address, Google Drive folder link, an optional manual close. |
+| `visits` | A site visit with date, purpose and observations. Status `done`, `scheduled` (future date) or `cancelled`. |
+| `catalog_items` | What we sell. A remedy is one row per bottle size (5ml or 15ml); a service has no size. Current list price. |
+| `charges` | A bill line: description, quantity and unit price copied at the time of sale, or a discount. Optionally linked to a catalog item and a visit. |
+| `payments` | Money received, with method, date, reference, and a receipt number unique within the financial year. |
+| `users` | Sign-in accounts. The first account is the admin; only the admin can add or block users. |
 
-## 1.5 Visit Lifecycle
-![Visit Lifecycle](./assets/visit_lifecycle.png)
+Rules the database enforces:
 
----
+- Money is stored as whole rupees in integer columns.
+- Foreign keys are on (`PRAGMA foreign_keys=ON` on every connection) and use `RESTRICT`, so nothing with history can be deleted by accident.
+- Remedies must be 5ml or 15ml; services must have no size.
+- Receipt numbers are unique per financial year (`fiscal_year`, `receipt_seq`).
+- Charges and payments are never deleted. They are voided with a reason and stay visible, crossed out.
 
-# 2. Domain & Business Logic
+### Derived, never stored
 
-## 2.1 Ledger Computation
+Balance and status are computed on every request from the rows above (`app/services/ledger.py`):
 
-TotalCharges(client) = clients.total_fees_fixed + SUM(service_entries.amount WHERE entry_type = 'charge')
-TotalDiscounts(client) = SUM(service_entries.amount WHERE entry_type = 'discount')
-TotalPaid(client) = SUM(payments.amount)
-NetBilled = TotalCharges - TotalDiscounts
-Balance = NetBilled - TotalPaid
+- **Balance** = charges minus discounts minus payments, ignoring voided rows. A negative balance is an advance.
+- **Status** of a property, in order: `closed` if closed by hand; `payment_due` if the balance is positive; `in_progress` if a visit is scheduled; `enquiry` if nothing has been billed; otherwise `closed`.
+- A client's status is the most urgent status among their properties.
 
-Balance meaning:
+At this scale (tens of clients, a few hundred rows) computing in Python on each request is instant and removes any chance of stale totals.
 
-* > 0 → Client owes consultant
-* = 0 → Settled
-* < 0 → Client has advance credit
+## Backend
 
-No tax logic.
-No locking of entries.
-Editable ledger.
-
----
-
-# 3. Database Design (SQLite)
-
-## 3.1 Design Principles
-
-* UUID primary keys
-* Strict foreign key enforcement
-* ON DELETE RESTRICT for clients
-* Indexed foreign keys
-* Numeric(12,2) for financial fields
-
----
-
-## 3.2 Tables
-
-### users
-
-* id UUID PK
-* email VARCHAR UNIQUE
-* password_hash VARCHAR
-* twofa_secret VARCHAR NULL
-* is_2fa_enabled BOOLEAN DEFAULT FALSE
-* created_at TIMESTAMP
-* updated_at TIMESTAMP
-
-### clients
-
-* id UUID PK
-* name VARCHAR NOT NULL
-* phone VARCHAR
-* email VARCHAR
-* personal_address TEXT
-* project_site_address TEXT
-* built_up_area NUMERIC
-* notes TEXT
-* status VARCHAR CHECK (status IN ('active','archived'))
-* created_at TIMESTAMP
-* updated_at TIMESTAMP
-
-### visits
-
-* id UUID PK
-* client_id UUID FK REFERENCES clients(id)
-* visit_date DATE
-* notes TEXT
-* created_at TIMESTAMP
-* updated_at TIMESTAMP
-
-### service_catalog
-
-* id UUID PK
-* name VARCHAR NOT NULL
-* base_price NUMERIC(12,2)
-* description TEXT
-* created_at TIMESTAMP
-* updated_at TIMESTAMP
-
-### service_entries
-
-* id UUID PK
-* visit_id UUID FK REFERENCES visits(id) ON DELETE CASCADE
-* description TEXT
-* amount NUMERIC(12,2) CHECK (amount >= 0)
-* entry_type VARCHAR CHECK (entry_type IN ('charge','discount'))
-* created_at TIMESTAMP
-* updated_at TIMESTAMP
-
-### payments
-
-* id UUID PK
-* client_id UUID FK REFERENCES clients(id)
-* amount NUMERIC(12,2) CHECK (amount > 0)
-* payment_date DATE
-* method VARCHAR
-* notes TEXT
-* created_at TIMESTAMP
-* updated_at TIMESTAMP
-
-### generated_bills
-
-* id UUID PK
-* client_id UUID FK REFERENCES clients(id)
-* generated_at TIMESTAMP
-* total_services NUMERIC(12,2)
-* total_paid NUMERIC(12,2)
-* balance NUMERIC(12,2)
-* pdf_filename VARCHAR
-* pdf_path TEXT
-
----
-
-# 4. Backend Architecture (FastAPI)
-
-## 4.1 Layered Structure
-
+```
 backend/
-app/
-├── api/          # API endpoints and routers
-├── core/         # Settings, security, centralized config
-├── db/           # SQLite async session management
-├── models/       # SQLAlchemy ORM models
-├── schemas/      # Pydantic validation schemas
-└── utils/        # Logger and helpers
+  app/
+    core/        settings, password hashing and tokens, rate limiter
+    db/          declarative base with naming convention, sessions
+    models/      tables: the single source of truth for the schema
+    schemas/     Pydantic request and response models: the API contract
+    services/    ledger (balances, status), numbering (financial year, receipts)
+    api/         routes only
+    cli/         seed, backup, openapi, one-time legacy import
+  migrations/    Alembic environment and versions
+  seeds/         starting catalog (catalog.toml)
+  tests/
+```
 
-Layer separation:
-* API → route definitions
-* Core → security and configuration (loads `config/app-settings.json`)
-* Models → ORM
+- **Async SQLAlchemy** for the API; synchronous sessions for CLI commands and Alembic.
+- **Naming convention** on the metadata gives every constraint and index a stable name, which lets Alembic autogenerate clean migrations on SQLite.
+- **Migrations** are generated with `alembic revision --autogenerate`, reviewed, and contain schema changes only. Seed data is loaded by `python -m app.cli.seed`, which only adds missing catalog items and never overwrites prices.
+- **Auth**: OAuth2 password flow, JWT in an HTTP-only cookie (also accepted as a bearer token), 30-day expiry, 5 login attempts per minute per address.
 
----
+### API
 
-## 4.2 Authentication
+All routes are under `/api/v1` and need a signed-in user, except login.
 
-* bcrypt password hashing
-* JWT access token
-* Business routers require authenticated bearer tokens
-* Registration is limited to first-user bootstrap unless an authenticated user creates the account
-* Future: refresh tokens, TOTP 2FA, and WebAuthn
+| Method and path | Purpose |
+| --- | --- |
+| `GET /home` | Total to collect, collected this month, who owes, upcoming visits |
+| `GET, POST /clients` | List with balance and status; create a client with their first property |
+| `GET, PATCH /clients/{id}` | Client with properties and summaries; edit |
+| `POST /clients/{id}/properties` | Add another property |
+| `POST /clients/{id}/merge` | Fold a duplicate client into another |
+| `GET, PATCH /properties/{id}` | Full property with visits, charges, payments and summary; edit or close |
+| `POST /properties/{id}/visits`, `PATCH /visits/{id}` | Record, schedule or edit a visit |
+| `POST /properties/{id}/charges` | Add several lines at once, from the catalog or free text, including discounts |
+| `PATCH /charges/{id}`, `POST /charges/{id}/void` | Edit or cancel a line |
+| `POST /properties/{id}/payments` | Record a payment and assign the next receipt number |
+| `PATCH /payments/{id}`, `POST /payments/{id}/void` | Edit or cancel a payment; the receipt number never changes or gets reused |
+| `GET, POST /catalog`, `PATCH /catalog/{id}` | Price list; add items; change price or hide |
+| `GET /users`, `PATCH /users/{id}`, `POST /register` | Admin only after the first account |
 
----
+OpenAPI docs: `/api/docs`.
 
-# 5. Frontend Architecture (Next.js PWA)
+## Frontend
 
-## 5.1 Structure
+A Next.js static export: plain HTML and JavaScript served by Caddy, with no Node server in production.
 
-frontend/
-app/
-components/
-services/
-hooks/
-store/
+- `lib/api/schema.d.ts` is generated from the backend's OpenAPI schema; `lib/api/client.ts` wraps `openapi-fetch`, so every request and response is type-checked against the real API.
+- `lib/queries.ts` holds the React Query hooks. Any change invalidates all queries, since a single payment moves numbers on several screens.
+- Pages: `/` (home), `/clients`, `/clients/new`, `/client?id=`, `/property?id=`, `/catalog`, `/settings`, `/login`. Detail pages use query parameters because a static export cannot generate a page per ID.
+- Layout: top navigation on wide screens, bottom tab bar on phones. Forms open in dialogs with large touch targets.
 
-## 5.2 State
+## Deployment
 
-* React Query provider is installed for server state; existing pages are being migrated incrementally
-* Context for auth
-* LocalStorage for token persistence
+```
+Phone / MacBook ── VPN ── central Caddy (10.0.50.12, vastu.home, tls internal)
+                               │  /api/*            │  everything else
+                               ▼                    ▼
+                     portress:8010 api      portress:8011 web
+                     (FastAPI, Python)      (Caddy serving static files)
+                               │
+                          /data/vastu.db (SQLite)
+```
 
-## 5.3 PWA Behavior
+`deploy/compose.yml` defines:
 
-* Service worker enabled
-* Offline caching for static files
-* API requires internet
+- `migrate`: runs `alembic upgrade head` and exits; `api` starts only if it succeeds.
+- `api`: FastAPI, with a health check on `/api/health`.
+- `web`: the static frontend.
+- `backup` (on demand): a safe SQLite snapshot, gzipped, keeping the last four. Run weekly from the host crontab at Sunday 00:00 IST.
 
----
+CI (`.github/workflows/docker-publish.yml`) runs backend tests, `alembic check`, the generated-types check, the frontend typecheck and build, then publishes both images on pushes to `main`, tagged `latest` and with the commit SHA.
 
-# 6. PDF Generation (React + Puppeteer)
+## Not built yet
 
-## Flow
-
-1. Aggregate ledger data in FastAPI backend
-2. Build dynamic JSON payload based on `app-settings.json` and client data
-3. Pass encoded JSON payload to the Next.js frontend route (`/invoice/?data=...`)
-4. Backend spawns a Node.js process running Puppeteer (`scripts/render_invoice_pdf.mjs`)
-5. Puppeteer renders the React page and exports it to PDF
-6. PDF is served to the user for download
-
-File naming:
-Bill_<ClientName>_<UUID>.pdf
-
----
-
-# 7. Security Hardening (Home Server)
-
-* Let’s Encrypt SSL
-* HTTPS enforced
-* Rate limiting via reverse proxy
-* Fail2Ban enabled
-* Firewall only allow 80/443
-* Secure HTTP headers
-
----
-
-# 8. Backup Strategy (APScheduler)
-
-Automated Local Backups:
-* Built-in APScheduler runs within the FastAPI backend process
-* Automatically duplicates the `vastu.db` SQLite file to `data/backups/`
-* Retention: Keeps the last 7 daily backups, purging older ones to save space
-
-Offsite (Future):
-Upload to cloud storage
-
-Quarterly restore test recommended.
-
----
-
-# 9. Deployment & Configuration
-
-Docker Compose services:
-
-* vastu_app (combined or separate backend/frontend)
-* vastu_watchtower (for automated GHCR image updates)
-
-## Centralized Configuration
-The application relies on a single source of truth for branding, contact, and business logic:
-* `config/app-settings.json` is loaded by the FastAPI backend at runtime.
-* Contains project name, organization details, tax rates, and invoice strings.
-* The static frontend reads safe settings through the authenticated `/api/v1/config` endpoint, so Docker builds do not require the private config file.
-
-Environment variables:
-
-* DATABASE_URL (defaults to local sqlite)
-* SECRET_KEY
-* ENVIRONMENT (set to `production` to enforce production startup validation)
-
----
-
-# 10. Migration Strategy
-
-To move to cloud:
-
-* Move DB
-* Move backend container
-* Move PDF storage
-* Update DNS
-
-No schema redesign required.
-
----
-
-# 11. Performance
-
-<5 users
-Low traffic
-Single 2GB RAM machine sufficient
-
----
-
-# 12. Risk Register
-
-* ISP downtime
-* Power outage beyond UPS
-* Misconfigured rate limiting
-* Backup failure
-
-Mitigations documented above.
-
----
-
-Version 2.0 - Deep Technical Specification
-Ready for build phase.
+- PDF receipts, bills and consultation reports, and sharing them on WhatsApp.
+- WhatsApp payment reminders with a UPI link.
+- Quotes that turn into charges.
+- Remedy stock, supplier purchases and margins.
+- Financial-year reports and GST fields, ahead of registering the business.
