@@ -49,7 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
                 <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
                     <Link href="/" className="text-lg font-semibold tracking-tight">
-                        Vastu Vaibhav
+                        Shree Vastu Vaibhav
                     </Link>
                     <nav className="hidden gap-1 md:flex">
                         {NAV.map(({ href, label, icon: Icon }) => (

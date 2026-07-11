@@ -17,13 +17,13 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-    title: "Vastu Vaibhav",
-    description: "Clients, visits, remedies and payments for Vastu Vaibhav.",
+    title: "Shree Vastu Vaibhav",
+    description: "Clients, visits, remedies and payments for Shree Vastu Vaibhav.",
     manifest: "/manifest.json",
     appleWebApp: {
         capable: true,
         statusBarStyle: "default",
-        title: "Vastu Vaibhav",
+        title: "Shree Vastu Vaibhav",
     },
     icons: {
         icon: [

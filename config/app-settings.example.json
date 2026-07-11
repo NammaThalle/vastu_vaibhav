@@ -1,8 +1,8 @@
 {
   "project": {
-    "name": "Vastu Vaibhav",
-    "tagline": "Architecture | Interiors | Vastu",
-    "organization": "Vastu Vaibhav"
+    "name": "Shree Vastu Vaibhav",
+    "tagline": "Health, Wealth and Prosperity Through Vastu",
+    "organization": "Shree Vastu Vaibhav"
   },
   "contact": {
     "email": "vastuvaibhav.byravi@gmail.com",
@@ -15,10 +15,12 @@
     "bankName": "VASTU VAIBHAV Banca Bank",
     "accountNo": "ID030305089",
     "ifsc": "IFSC 100000",
+    "upiId": "",
     "taxRate": 0
   },
   "invoice": {
     "logoInitial": "V",
+    "logoFile": "",
     "primaryColor": "#233f99",
     "memberLabel": "BNI MEMBER",
     "notes": {

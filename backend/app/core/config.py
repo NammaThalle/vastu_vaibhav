@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     ENVIRONMENT: str = "development"
-    PROJECT_NAME: str = "Vastu Vaibhav"
+    PROJECT_NAME: str = "Shree Vastu Vaibhav"
     APP_CONFIG: dict = {}
     DATABASE_URL: str = f"sqlite+aiosqlite:///{DEFAULT_DB_PATH}"
     SECRET_KEY: str = "change_me_in_production"
