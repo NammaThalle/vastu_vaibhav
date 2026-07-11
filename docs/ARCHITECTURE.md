@@ -130,5 +130,5 @@ CI (`.github/workflows/docker-publish.yml`) runs backend tests, `alembic check`,
 - PDF receipts, bills and consultation reports, and sharing them on WhatsApp.
 - WhatsApp payment reminders with a UPI link.
 - Quotes that turn into charges.
-- Remedy stock, supplier purchases and margins.
+- Remedy stock, supplier orders synced from the supplier site, and margins. Planned in [plans/phase-4-stock.md](plans/phase-4-stock.md).
 - Financial-year reports and GST fields, ahead of registering the business.
