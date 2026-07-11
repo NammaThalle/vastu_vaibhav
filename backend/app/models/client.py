@@ -25,6 +25,7 @@ class Property(IdMixin, TimestampMixin, Base):
 
     Visits, charges and payments all belong to a property. Its status is derived from
     them, apart from closed_at, which records a manual close (for example a lost enquiry).
+    Recommendations is the written summary printed at the top of the consultation report.
     """
 
     __tablename__ = "properties"
@@ -37,6 +38,7 @@ class Property(IdMixin, TimestampMixin, Base):
     address: Mapped[str | None] = mapped_column(Text)
     drive_folder_url: Mapped[str | None] = mapped_column(String(500))
     notes: Mapped[str | None] = mapped_column(Text)
+    recommendations: Mapped[str | None] = mapped_column(Text)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     client: Mapped[Client] = relationship(back_populates="properties")
