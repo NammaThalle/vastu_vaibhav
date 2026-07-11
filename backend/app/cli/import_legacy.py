@@ -48,6 +48,33 @@ ALIASES = {
     "aparment vastu": "apartment vastu",
 }
 
+# Old remedy names that are now one catalog item. Each maps to the catalog name, the note
+# written on the bill line (where the remedy goes), and how many units one old unit holds.
+@dataclass(frozen=True)
+class Rename:
+    target: str
+    note: str | None = None
+    units: int = 1
+
+
+RENAMES = {
+    "devta": Rename("devata enhancer", units=4),  # "4 Devtas" is four Devata Enhancers
+    "brahmasthan": Rename("brahmasthan enhancer"),
+    "enhancer": Rename("positivity enhancer"),
+    "golden line": Rename("golden line enhancer"),
+    "entrance blocker": Rename("door blocker", "Entrance"),
+    "virtual door blocker": Rename("door blocker", "Virtual door"),
+    "main door blocker": Rename("door blocker", "Main door"),
+    "main door close": Rename("door blocker", "Main door"),
+    "shutter door blocker": Rename("door blocker", "Shutter"),
+    "main gate blocker": Rename("door blocker", "Main gate"),
+    "door opener": Rename("virtual door opener"),
+    "entrance door opener": Rename("virtual door opener", "Entrance"),
+    "virtual door entry": Rename("virtual door opener"),
+    "virtual entrance opener": Rename("virtual door opener", "Entrance"),
+    "virtual main gate opener": Rename("virtual door opener", "Main gate"),
+}
+
 @dataclass
 class Report:
     counts: Counter = field(default_factory=Counter)
@@ -101,6 +128,14 @@ class ParsedLine:
     quantity: int
     unit_price: int
     size_assumed: bool = False
+    note: str | None = None
+
+    @property
+    def description(self) -> str | None:
+        """The description the app itself would write for this catalog item."""
+        if self.item is None:
+            return None
+        return f"{self.item.name} ({self.item.size_ml}ml)" if self.item.size_ml else self.item.name
 
 
 class CatalogIndex:
@@ -109,17 +144,22 @@ class CatalogIndex:
         for item in items:
             self.by_key[normalize(item.name)].append(item)
 
-    def match(self, description: str) -> tuple[CatalogItem | None, bool]:
-        candidates = self.by_key.get(normalize(description), [])
+    def match(self, description: str) -> tuple[CatalogItem | None, bool, Rename]:
+        key = normalize(description)
+        rename = RENAMES.get(key, Rename(key))
+        candidates = self.by_key.get(rename.target, [])
         if not candidates:
-            return None, False
+            return None, False, rename
         size = re.search(r"(\d+)\s*ml\b", description, re.I)
         if size:
             sized = [c for c in candidates if c.size_ml == int(size.group(1))]
-            return (sized[0], False) if sized else (None, False)
+            return (sized[0] if sized else None), False, rename
         if len(candidates) == 1:
-            return candidates[0], candidates[0].kind == ItemKind.REMEDY
-        return None, False
+            only = candidates[0]
+            return only, only.kind == ItemKind.REMEDY and only.size_ml is not None, rename
+        # No size on the old bill: every early remedy was the standard 5ml bottle.
+        standard = [c for c in candidates if c.size_ml == 5]
+        return (standard[0], True, rename) if standard else (None, False, rename)
 
 
 def parse_line(description: str, amount: int, catalog: CatalogIndex) -> ParsedLine:
@@ -129,8 +169,11 @@ def parse_line(description: str, amount: int, catalog: CatalogIndex) -> ParsedLi
         candidate = int(found[-1])
         if candidate > 0 and amount % candidate == 0:
             quantity = candidate
-    item, size_assumed = catalog.match(description)
-    return ParsedLine(item, quantity, amount // quantity, size_assumed)
+    item, size_assumed, rename = catalog.match(description)
+    unit_price = amount // quantity
+    if item is not None and rename.units > 1 and unit_price % rename.units == 0:
+        quantity, unit_price = quantity * rename.units, unit_price // rename.units
+    return ParsedLine(item, quantity, unit_price, size_assumed, rename.note if item else None)
 
 
 # Import
@@ -224,7 +267,8 @@ def import_all(conn: sqlite3.Connection, session: Session, report: Report) -> di
                 report.counts["remedy size assumed from catalog"] += 1
         session.add(Charge(id=row["id"], property_id=property_of[row["client_id"]], visit_id=row["visit_id"],
                            catalog_item_id=parsed.item.id if parsed.item else None, kind=kind,
-                           description=description, quantity=parsed.quantity, unit_price=parsed.unit_price,
+                           description=parsed.description or description, note=parsed.note,
+                           quantity=parsed.quantity, unit_price=parsed.unit_price,
                            charge_date=to_date(row["date"]) or to_date(row["created_at"]),
                            created_at=to_datetime(row["created_at"])))
         report.counts[f"{kind.value} lines"] += 1

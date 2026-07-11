@@ -43,13 +43,17 @@ def legacy(tmp_path):
         ("s3", "c1", "v1", "Visit Charge: Remedies Installation", 1000, "charge", "2026-03-02 00:00:00"),
         ("s4", "c1", None, "BNI Member Discount", 1000, "discount", "2026-03-02 00:00:00"),
         ("s5", "c2", None, "Post-Construction Bundle", 8800, "charge", "2026-04-03 00:00:00"),
+        ("s6", "c2", None, "(Shutter) Door Blocker - Remedy 15ml x2", 5000, "charge", "2026-04-03 00:00:00"),
+        ("s7", "c2", None, "Main Gate Blocker - Remedy x2", 2000, "charge", "2026-04-03 00:00:00"),
+        ("s8", "c2", None, "4 Devtas - Remedy x1", 6000, "charge", "2026-04-03 00:00:00"),
+        ("s9", "c2", None, "Surya Pratima - Remedy x1", 1000, "charge", "2026-04-03 00:00:00"),
     ]
     conn.executemany("INSERT INTO service_entries VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                      [r + (r[6],) for r in rows])
     conn.executemany("INSERT INTO payments VALUES (?, ?, ?, ?, ?, ?, ?)", [
         ("p1", "c1", 5000, "UPI / GPay", "2026-03-31 00:00:00", None, "2026-03-31 00:00:00"),
         ("p2", "c1", 7000, "Cash", "2026-04-01 00:00:00", "balance", "2026-04-01 00:00:00"),
-        ("p3", "c2", 8800, "Bank Transfer", "2026-04-05 00:00:00", None, "2026-04-05 00:00:00"),
+        ("p3", "c2", 22800, "Bank Transfer", "2026-04-05 00:00:00", None, "2026-04-05 00:00:00"),
     ])
     conn.commit()
     conn.row_factory = sqlite3.Row
@@ -68,8 +72,8 @@ def run_import(legacy, session):
 def test_import_keeps_every_balance(legacy, session):
     report, property_of = run_import(legacy, session)
     assert report.mismatches == []
-    assert report.counts["total billed"] == 20800
-    assert report.counts["total paid"] == 20800
+    assert report.counts["total billed"] == 34800
+    assert report.counts["total paid"] == 34800
     assert session.get(User, "u1").is_admin
 
 
@@ -78,6 +82,7 @@ def test_import_structures_free_text_charges(legacy, session):
     toilet = session.query(Charge).filter_by(id="s1").one()
     assert (toilet.quantity, toilet.unit_price) == (2, 1500)
     assert session.get(CatalogItem, toilet.catalog_item_id).name == "Toilet Blocker"
+    assert (toilet.description, toilet.note) == ("Toilet Blocker (5ml)", None)
 
     devta = session.query(Charge).filter_by(id="s2").one()
     assert (devta.quantity, devta.unit_price) == (7, 1000)
@@ -88,6 +93,20 @@ def test_import_structures_free_text_charges(legacy, session):
 
     fee = session.query(Charge).filter_by(description="Initial consultation fee").one()
     assert fee.charge_date == date(2026, 3, 1)
+
+
+@pytest.mark.parametrize("charge_id, description, note, quantity, unit_price", [
+    ("s6", "Door Blocker (15ml)", "Shutter", 2, 2500),
+    ("s7", "Door Blocker (5ml)", "Main gate", 2, 1000),
+    ("s8", "Devata Enhancer (5ml)", None, 4, 1500),
+    ("s9", "Surya Pratima", None, 1, 1000),
+])
+def test_import_folds_old_names_into_one_item(legacy, session, charge_id, description, note, quantity, unit_price):
+    run_import(legacy, session)
+    charge = session.query(Charge).filter_by(id=charge_id).one()
+    assert charge.catalog_item_id is not None
+    assert (charge.description, charge.note, charge.quantity, charge.unit_price) == (
+        description, note, quantity, unit_price)
 
 
 def test_import_numbers_receipts_per_fiscal_year(legacy, session):

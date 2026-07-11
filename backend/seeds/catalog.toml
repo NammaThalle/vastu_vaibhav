@@ -1,16 +1,8 @@
 # Starting catalog, loaded once with `python -m app.cli.seed`.
 # Prices are whole rupees. Names and prices come from the most recent bills in the live data (November 2026).
 # The seed only adds missing items; after that, prices are managed in the app.
-
-[[remedy]]
-name = "4 Devtas"
-size_ml = 5
-price = 6000
-
-[[remedy]]
-name = "Brahmasthan"
-size_ml = 5
-price = 1500
+# A remedy without size_ml is sold per piece. Where a remedy goes (shutter, main gate)
+# is written on each bill line, not in the name, so one Door Blocker covers every door.
 
 [[remedy]]
 name = "Brahmasthan Enhancer"
@@ -28,9 +20,9 @@ size_ml = 5
 price = 1500
 
 [[remedy]]
-name = "Door Opener"
-size_ml = 5
-price = 1500
+name = "Door Blocker"
+size_ml = 15
+price = 2500
 
 [[remedy]]
 name = "Element Enhancer"
@@ -38,42 +30,7 @@ size_ml = 5
 price = 1500
 
 [[remedy]]
-name = "Enhancer"
-size_ml = 5
-price = 1500
-
-[[remedy]]
-name = "Entrance Blocker"
-size_ml = 5
-price = 1500
-
-[[remedy]]
-name = "Entrance Door Opener"
-size_ml = 5
-price = 1500
-
-[[remedy]]
-name = "Golden Line"
-size_ml = 5
-price = 1500
-
-[[remedy]]
 name = "Golden Line Enhancer"
-size_ml = 5
-price = 1500
-
-[[remedy]]
-name = "Main Door Blocker"
-size_ml = 5
-price = 1500
-
-[[remedy]]
-name = "Main Door Close"
-size_ml = 5
-price = 1500
-
-[[remedy]]
-name = "Main Gate Blocker"
 size_ml = 5
 price = 1500
 
@@ -93,24 +50,17 @@ size_ml = 5
 price = 1500
 
 [[remedy]]
-name = "Shutter Door Blocker"
-size_ml = 15
-price = 2500
-
-[[remedy]]
 name = "Staircase Blocker"
 size_ml = 5
 price = 1500
 
 [[remedy]]
 name = "Surya Kiran"
-size_ml = 5
-price = 1500
+price = 1000
 
 [[remedy]]
 name = "Surya Pratima"
-size_ml = 5
-price = 1500
+price = 1000
 
 [[remedy]]
 name = "Toilet Blocker"
@@ -118,27 +68,7 @@ size_ml = 5
 price = 1500
 
 [[remedy]]
-name = "Virtual Door Blocker"
-size_ml = 5
-price = 1500
-
-[[remedy]]
-name = "Virtual Door Entry"
-size_ml = 5
-price = 1500
-
-[[remedy]]
 name = "Virtual Door Opener"
-size_ml = 5
-price = 1500
-
-[[remedy]]
-name = "Virtual Entrance Opener"
-size_ml = 5
-price = 1500
-
-[[remedy]]
-name = "Virtual Main Gate Opener"
 size_ml = 5
 price = 1500
 
