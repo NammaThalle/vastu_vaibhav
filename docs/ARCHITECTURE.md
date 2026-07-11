@@ -7,7 +7,7 @@ This document describes how Vastu Vaibhav is put together and why. It reflects t
 From the real data (about 40 clients, January to November 2026):
 
 - A job starts with a site inspection, billed at a fixed fee (usually Rs 2,000 or Rs 2,500).
-- Most revenue comes from remedies sold in 5ml or 15ml bottles, several of each, from a fixed price list.
+- Most revenue comes from remedies sold in 5ml or 15ml bottles, several of each, from a fixed price list. One remedy covers every place it is used: a Door Blocker on a shutter, the main door or the main gate is the same item, with the place written on the bill line.
 - Placement advice (kitchen, toilet, main door, mandir) is billed per item.
 - A separate visit installs the remedies, charged case by case.
 - Clients pay once or twice, mostly by UPI. Discounts are occasional (BNI or BBB membership, or ad hoc).
@@ -28,8 +28,8 @@ User
 | `clients` | A person: name, phone, how they came to us, notes. |
 | `properties` | One job: a flat, house, shop, office, factory or plot. Type, address, Google Drive folder link, an optional manual close. |
 | `visits` | A site visit with date, purpose and observations. Status `done`, `scheduled` (future date) or `cancelled`. |
-| `catalog_items` | What we sell. A remedy is one row per bottle size (5ml or 15ml); a service has no size. Current list price. |
-| `charges` | A bill line: description, quantity and unit price copied at the time of sale, or a discount. Optionally linked to a catalog item and a visit. |
+| `catalog_items` | What we sell. A remedy is one row per bottle size (5ml or 15ml), or has no size when sold per piece (Surya Pratima, Surya Kiran); a service has no size. Current list price. |
+| `charges` | A bill line: description, quantity and unit price copied at the time of sale, or a discount, plus a short note on where it goes (shutter, main door). Optionally linked to a catalog item and a visit. |
 | `payments` | Money received, with method, date, reference, and a receipt number unique within the financial year. |
 | `users` | Sign-in accounts. The first account is the admin; only the admin can add or block users. |
 
@@ -37,7 +37,7 @@ Rules the database enforces:
 
 - Money is stored as whole rupees in integer columns.
 - Foreign keys are on (`PRAGMA foreign_keys=ON` on every connection) and use `RESTRICT`, so nothing with history can be deleted by accident.
-- Remedies must be 5ml or 15ml; services must have no size.
+- Remedies are 5ml, 15ml or sold per piece; services have no size.
 - Receipt numbers are unique per financial year (`fiscal_year`, `receipt_seq`).
 - Charges and payments are never deleted. They are voided with a reason and stay visible, crossed out.
 

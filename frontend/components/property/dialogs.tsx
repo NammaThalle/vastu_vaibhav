@@ -161,6 +161,7 @@ export function DiscountDialog({ propertyId, ...props }: DialogProps & { propert
 export function EditChargeDialog({ charge, ...props }: DialogProps & { charge: Charge }) {
     const [values, setValues] = React.useState({
         description: charge.description,
+        note: charge.note ?? "",
         quantity: String(charge.quantity),
         unit_price: String(charge.unit_price),
         charge_date: charge.charge_date,
@@ -170,7 +171,7 @@ export function EditChargeDialog({ charge, ...props }: DialogProps & { charge: C
             unwrap(
                 api.PATCH("/api/v1/charges/{charge_id}", {
                     params: { path: { charge_id: charge.id } },
-                    body: { ...values, quantity: Number(values.quantity), unit_price: Number(values.unit_price) },
+                    body: { ...values, note: values.note.trim() || null, quantity: Number(values.quantity), unit_price: Number(values.unit_price) },
                 }),
             ),
         "Line updated",
@@ -180,6 +181,11 @@ export function EditChargeDialog({ charge, ...props }: DialogProps & { charge: C
             <Field label="Description">
                 <Input required value={values.description} onChange={(e) => setValues({ ...values, description: e.target.value })} />
             </Field>
+            {charge.kind === "charge" && (
+                <Field label="Where it goes">
+                    <Input placeholder="Shutter, main door, main gate" value={values.note} onChange={(e) => setValues({ ...values, note: e.target.value })} />
+                </Field>
+            )}
             <div className="grid grid-cols-2 gap-3">
                 <Field label="Price (Rs)">
                     <Input type="number" inputMode="numeric" min={0} step={1} required value={values.unit_price} onChange={(e) => setValues({ ...values, unit_price: e.target.value })} />

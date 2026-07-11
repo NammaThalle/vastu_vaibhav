@@ -107,7 +107,10 @@ function ChargesCard({ charges, setOpen }: { charges: Charge[]; setOpen: (o: Ope
                 {charges.map((charge) => (
                     <li key={charge.id} className={cn("flex items-center gap-2 px-3 py-2", charge.voided_at && "opacity-50")}>
                         <div className="min-w-0 flex-1">
-                            <div className={cn("text-sm", charge.voided_at && "line-through")}>{charge.description}</div>
+                            <div className={cn("text-sm", charge.voided_at && "line-through")}>
+                                {charge.description}
+                                {charge.note && <span className="text-muted-foreground"> · {charge.note}</span>}
+                            </div>
                             <div className="text-xs text-muted-foreground">
                                 {charge.quantity > 1 && `${charge.quantity} x ${rupees(charge.unit_price)}`}
                                 {charge.voided_at && ` Cancelled: ${charge.void_reason}`}

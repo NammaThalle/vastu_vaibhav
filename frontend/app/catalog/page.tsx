@@ -23,7 +23,7 @@ function AddItem({ kind, open, onOpenChange }: { kind: Kind; open: boolean; onOp
                     body: {
                         kind,
                         name: values.name.trim(),
-                        size_ml: kind === "remedy" ? (Number(values.size_ml) as 5 | 15) : null,
+                        size_ml: kind === "remedy" && values.size_ml ? (Number(values.size_ml) as 5 | 15) : null,
                         unit_price: Number(values.unit_price),
                     },
                 }),
@@ -37,10 +37,11 @@ function AddItem({ kind, open, onOpenChange }: { kind: Kind; open: boolean; onOp
                 <Input required autoFocus value={values.name} onChange={(e) => setValues({ ...values, name: e.target.value })} />
             </Field>
             {kind === "remedy" && (
-                <Field label="Bottle" hint="Add the same remedy again to offer both sizes">
+                <Field label="Sold as" hint="Add the same remedy again to offer both bottle sizes">
                     <NativeSelect value={values.size_ml} onChange={(e) => setValues({ ...values, size_ml: e.target.value })}>
                         <option value="5">5ml</option>
                         <option value="15">15ml</option>
+                        <option value="">Per piece, like a Surya Pratima</option>
                     </NativeSelect>
                 </Field>
             )}
@@ -71,7 +72,9 @@ function ItemRow({ item }: { item: CatalogItem }) {
         <li className={cn("flex items-center gap-3 px-3 py-2", !item.is_active && "opacity-50")}>
             <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{item.name}</div>
-                {item.size_ml && <div className="text-xs text-muted-foreground">{item.size_ml}ml bottle</div>}
+                {item.kind === "remedy" && (
+                    <div className="text-xs text-muted-foreground">{item.size_ml ? `${item.size_ml}ml bottle` : "Per piece"}</div>
+                )}
             </div>
             {editing ? (
                 <form onSubmit={savePrice} className="flex items-center gap-2">

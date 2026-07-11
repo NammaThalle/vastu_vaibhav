@@ -14,7 +14,8 @@ import { cn } from "@/lib/utils"
 
 type Tab = "remedy" | "service" | "other"
 
-/** Catalog items grouped by name, so a remedy shows once with its 5ml/15ml choices. */
+/** Catalog items grouped by name, so a remedy shows once with its 5ml/15ml choices.
+ *  A remedy without a size is sold per piece. */
 type Group = { name: string; bySize: Map<number | null, CatalogItem> }
 
 function groupItems(items: CatalogItem[], kind: "remedy" | "service"): Group[] {
@@ -41,14 +42,20 @@ function Stepper({ value, onChange }: { value: number; onChange: (n: number) => 
     )
 }
 
+const sizeLabel = (size: number | null) => (size ? `${size}ml` : "per piece")
+
 function GroupRow({
     group,
     quantities,
     setQuantity,
+    notes,
+    setNote,
 }: {
     group: Group
     quantities: Map<string, number>
     setQuantity: (itemId: string, qty: number) => void
+    notes: Map<string, string>
+    setNote: (itemId: string, note: string) => void
 }) {
     const sizes = [...group.bySize.keys()].sort((a, b) => (a ?? 0) - (b ?? 0))
     const [size, setSize] = React.useState<number | null>(sizes.includes(5) ? 5 : sizes[0])
@@ -56,26 +63,37 @@ function GroupRow({
     const chosen = sizes.reduce<number>((sum, s) => sum + (quantities.get(group.bySize.get(s)!.id) ?? 0), 0)
 
     return (
-        <li className={cn("flex items-center gap-3 px-1 py-2", chosen > 0 && "bg-primary/5")}>
-            <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{group.name}</div>
-                <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                    {rupees(item.unit_price)}
-                    {sizes.length > 1 &&
-                        sizes.map((s) => (
-                            <button
-                                key={s}
-                                type="button"
-                                onClick={() => setSize(s)}
-                                className={cn("rounded border px-1.5 py-0.5", s === size ? "border-primary text-primary" : "border-border")}
-                            >
-                                {s}ml{(quantities.get(group.bySize.get(s)!.id) ?? 0) > 0 ? ` (${quantities.get(group.bySize.get(s)!.id)})` : ""}
-                            </button>
-                        ))}
-                    {sizes.length === 1 && item.size_ml && <span>{item.size_ml}ml</span>}
+        <li className={cn("px-1 py-2", chosen > 0 && "bg-primary/5")}>
+            <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{group.name}</div>
+                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                        {rupees(item.unit_price)}
+                        {sizes.length > 1 &&
+                            sizes.map((s) => (
+                                <button
+                                    key={s}
+                                    type="button"
+                                    onClick={() => setSize(s)}
+                                    className={cn("rounded border px-1.5 py-0.5", s === size ? "border-primary text-primary" : "border-border")}
+                                >
+                                    {sizeLabel(s)}{(quantities.get(group.bySize.get(s)!.id) ?? 0) > 0 ? ` (${quantities.get(group.bySize.get(s)!.id)})` : ""}
+                                </button>
+                            ))}
+                        {sizes.length === 1 && <span>{sizeLabel(item.size_ml)}</span>}
+                    </div>
                 </div>
+                <Stepper value={quantities.get(item.id) ?? 0} onChange={(n) => setQuantity(item.id, n)} />
             </div>
-            <Stepper value={quantities.get(item.id) ?? 0} onChange={(n) => setQuantity(item.id, n)} />
+            {(quantities.get(item.id) ?? 0) > 0 && (
+                <Input
+                    className="mt-2 h-9 text-sm"
+                    aria-label={`Where the ${group.name} goes`}
+                    placeholder="Where? Shutter, main door, main gate"
+                    value={notes.get(item.id) ?? ""}
+                    onChange={(e) => setNote(item.id, e.target.value)}
+                />
+            )}
         </li>
     )
 }
@@ -87,16 +105,18 @@ export function ItemsDialog({ propertyId, open, onOpenChange }: { propertyId: st
     const [query, setQuery] = React.useState("")
     const [date, setDate] = React.useState(todayIso())
     const [quantities, setQuantities] = React.useState<Map<string, number>>(new Map())
+    const [notes, setNotes] = React.useState<Map<string, string>>(new Map())
     const [other, setOther] = React.useState({ description: "", unit_price: "", quantity: "1" })
 
     const items = catalog.data ?? []
     const byId = new Map(items.map((i) => [i.id, i]))
     const setQuantity = (id: string, qty: number) =>
         setQuantities((prev) => new Map(prev).set(id, Math.max(0, qty)))
+    const setNote = (id: string, note: string) => setNotes((prev) => new Map(prev).set(id, note))
 
     const lines: Schemas["ChargeLine"][] = [...quantities.entries()]
         .filter(([, qty]) => qty > 0)
-        .map(([catalog_item_id, quantity]) => ({ catalog_item_id, quantity }))
+        .map(([catalog_item_id, quantity]) => ({ catalog_item_id, quantity, note: notes.get(catalog_item_id)?.trim() || null }))
     if (other.description.trim() && Number(other.unit_price) >= 0 && other.unit_price !== "") {
         lines.push({ description: other.description.trim(), unit_price: Number(other.unit_price), quantity: Math.max(1, Number(other.quantity) || 1) })
     }
@@ -170,7 +190,7 @@ export function ItemsDialog({ propertyId, open, onOpenChange }: { propertyId: st
                     </div>
                     <ul className="h-[42dvh] divide-y overflow-y-auto rounded-lg border">
                         {shown.map((group) => (
-                            <GroupRow key={group.name} group={group} quantities={quantities} setQuantity={setQuantity} />
+                            <GroupRow key={group.name} group={group} quantities={quantities} setQuantity={setQuantity} notes={notes} setNote={setNote} />
                         ))}
                         {shown.length === 0 && <li className="p-4 text-center text-sm text-muted-foreground">Nothing found. Use Other, or add it in Catalog.</li>}
                     </ul>

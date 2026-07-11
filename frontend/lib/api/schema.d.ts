@@ -525,6 +525,11 @@ export interface components {
             /** @default charge */
             kind?: components["schemas"]["ChargeKind"];
             /**
+             * Note
+             * @description Where it goes, e.g. shutter or main gate
+             */
+            note?: string | null;
+            /**
              * Quantity
              * @default 1
              */
@@ -551,6 +556,8 @@ export interface components {
             /** Id */
             id: string;
             kind: components["schemas"]["ChargeKind"];
+            /** Note */
+            note: string | null;
             /** Property Id */
             property_id: string;
             /** Quantity */
@@ -570,6 +577,8 @@ export interface components {
             charge_date?: string | null;
             /** Description */
             description?: string | null;
+            /** Note */
+            note?: string | null;
             /** Quantity */
             quantity?: number | null;
             /** Unit Price */

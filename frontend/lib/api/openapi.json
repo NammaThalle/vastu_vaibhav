@@ -226,6 +226,19 @@
             "$ref": "#/components/schemas/ChargeKind",
             "default": "charge"
           },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where it goes, e.g. shutter or main gate",
+            "title": "Note"
+          },
           "quantity": {
             "default": 1,
             "exclusiveMinimum": 0.0,
@@ -283,6 +296,17 @@
           "kind": {
             "$ref": "#/components/schemas/ChargeKind"
           },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
           "property_id": {
             "title": "Property Id",
             "type": "string"
@@ -337,6 +361,7 @@
           "catalog_item_id",
           "kind",
           "description",
+          "note",
           "quantity",
           "unit_price",
           "amount",
@@ -373,6 +398,18 @@
               }
             ],
             "title": "Description"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
           },
           "quantity": {
             "anyOf": [

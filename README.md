@@ -8,7 +8,7 @@ It is built for two people: the consultant, on a phone at the site or a MacBook 
 
 - **Home**: total still to collect, money collected this month, a "who owes" list with call and WhatsApp buttons, and upcoming visits.
 - **Clients**: search, filter by "owes money" or "open", add a client together with their first property, merge a client who was added twice.
-- **Property page**: one history of visits, charges and payments, with four buttons: Visit, Remedies, Discount, Payment. Remedies are added from a grid with plus and minus buttons, 5ml or 15ml bottles.
+- **Property page**: one history of visits, charges and payments, with four buttons: Visit, Remedies, Discount, Payment. Remedies are added from a grid with plus and minus buttons, in 5ml or 15ml bottles or per piece, each with an optional word on where it goes (shutter, main gate) shown next to the line.
 - **Catalog**: the remedy and service price list. Price changes only affect new charges; old bills keep the price they were sold at.
 - **Settings**: users (admin only), theme, sign out.
 
