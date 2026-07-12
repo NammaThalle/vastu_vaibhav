@@ -6,7 +6,9 @@ import { Field, Textarea } from "@/components/common"
 import { FormDialog } from "@/components/FormDialog"
 import { nullable, PropertyFields, type PropertyValues } from "@/components/forms"
 import { Input } from "@/components/ui/input"
-import { api, unwrap, type Charge, type Payment, type PaymentMethod, type PropertyDetail, type Visit } from "@/lib/api/client"
+import {
+    api, unwrap, type Bill, type Charge, type Payment, type PaymentMethod, type PropertyDetail, type Quote, type Visit,
+} from "@/lib/api/client"
 import { PAYMENT_METHODS, todayIso } from "@/lib/format"
 import { useAction } from "@/lib/queries"
 import { cn } from "@/lib/utils"
@@ -202,22 +204,63 @@ export function EditChargeDialog({ charge, ...props }: DialogProps & { charge: C
 }
 
 /** Cancel a charge or payment. It stays visible, crossed out, so the history is never lost. */
-export function VoidDialog({ target, ...props }: DialogProps & { target: { kind: "charge"; item: Charge } | { kind: "payment"; item: Payment } }) {
+export type VoidTarget =
+    | { kind: "charge"; item: Charge }
+    | { kind: "payment"; item: Payment }
+    | { kind: "bill"; item: Bill }
+    | { kind: "quote"; item: Quote }
+
+function voidRequest(target: VoidTarget, reason: string): Promise<unknown> {
+    const body = { reason }
+    switch (target.kind) {
+        case "charge":
+            return unwrap(api.POST("/api/v1/charges/{charge_id}/void", { params: { path: { charge_id: target.item.id } }, body }))
+        case "payment":
+            return unwrap(api.POST("/api/v1/payments/{payment_id}/void", { params: { path: { payment_id: target.item.id } }, body }))
+        case "bill":
+            return unwrap(api.POST("/api/v1/bills/{bill_id}/void", { params: { path: { bill_id: target.item.id } }, body }))
+        case "quote":
+            return unwrap(api.POST("/api/v1/quotes/{quote_id}/void", { params: { path: { quote_id: target.item.id } }, body }))
+    }
+}
+
+const VOID_TEXT: Record<VoidTarget["kind"], { title: (t: VoidTarget) => string; description: string; submit: string }> = {
+    charge: { title: (t) => `Cancel "${(t.item as Charge).description}"?`, description: "It stays in the history, crossed out, and no longer counts in the balance.", submit: "Cancel it" },
+    payment: { title: (t) => `Cancel payment ${(t.item as Payment).receipt_no}?`, description: "It stays in the history, crossed out, and no longer counts in the balance. The receipt number is not reused.", submit: "Cancel it" },
+    bill: { title: (t) => `Cancel bill ${(t.item as Bill).bill_no}?`, description: "The bill stays on record marked cancelled and its number is not reused. Charges are not affected.", submit: "Cancel bill" },
+    quote: { title: (t) => `Decline quote ${(t.item as Quote).quote_no}?`, description: "The quote stays on record as declined. Nothing is added to the bill.", submit: "Decline" },
+}
+
+export function VoidDialog({ target, ...props }: DialogProps & { target: VoidTarget }) {
     const [reason, setReason] = React.useState("")
-    const save = useAction(
-        (): Promise<unknown> =>
-            target.kind === "charge"
-                ? unwrap(api.POST("/api/v1/charges/{charge_id}/void", { params: { path: { charge_id: target.item.id } }, body: { reason } }))
-                : unwrap(api.POST("/api/v1/payments/{payment_id}/void", { params: { path: { payment_id: target.item.id } }, body: { reason } })),
-        "Cancelled",
-    )
-    const what = target.kind === "payment" ? `payment ${target.item.receipt_no}` : `"${target.item.description}"`
+    const save = useAction(() => voidRequest(target, reason), target.kind === "quote" ? "Quote declined" : "Cancelled")
+    const text = VOID_TEXT[target.kind]
     return (
-        <FormDialog {...props} title={`Cancel ${what}?`} description="It stays in the history, crossed out, and no longer counts in the balance."
-            submitLabel="Cancel it" destructive busy={save.isPending} onSubmit={() => save.mutateAsync(undefined)}>
+        <FormDialog {...props} title={text.title(target)} description={text.description}
+            submitLabel={text.submit} destructive busy={save.isPending} onSubmit={() => save.mutateAsync(undefined)}>
             <Field label="Why?">
-                <Input required autoFocus value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. entered twice" />
+                <Input required autoFocus value={reason} onChange={(e) => setReason(e.target.value)}
+                    placeholder={target.kind === "quote" ? "e.g. client chose not to go ahead" : "e.g. entered twice"} />
             </Field>
+        </FormDialog>
+    )
+}
+
+/** The written summary at the top of the consultation report. */
+export function SummaryDialog({ property, ...props }: DialogProps & { property: PropertyDetail }) {
+    const [text, setText] = React.useState(property.recommendations ?? "")
+    const save = useAction(
+        () => unwrap(api.PATCH("/api/v1/properties/{property_id}", {
+            params: { path: { property_id: property.id } },
+            body: { recommendations: text.trim() || null },
+        })),
+        "Summary saved",
+    )
+    return (
+        <FormDialog {...props} title="Summary for the report" description="Printed at the top of the consultation report, above the remedies and visit observations."
+            busy={save.isPending} onSubmit={() => save.mutateAsync(undefined)}>
+            <Textarea rows={10} value={text} onChange={(e) => setText(e.target.value)}
+                placeholder={"Main findings and what the client should do, one point per line."} />
         </FormDialog>
     )
 }

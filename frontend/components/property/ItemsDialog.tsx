@@ -98,8 +98,21 @@ function GroupRow({
     )
 }
 
-/** Add everything sold or done on one day in one go: remedies, services and one free-text line. */
-export function ItemsDialog({ propertyId, open, onOpenChange }: { propertyId: string; open: boolean; onOpenChange: (o: boolean) => void }) {
+/**
+ * Add everything sold or done on one day in one go: remedies, services and one free-text line.
+ * In quote mode the same lines become a numbered quote instead of charges.
+ */
+export function ItemsDialog({
+    propertyId,
+    open,
+    onOpenChange,
+    mode = "charges",
+}: {
+    propertyId: string
+    open: boolean
+    onOpenChange: (o: boolean) => void
+    mode?: "charges" | "quote"
+}) {
     const catalog = useCatalog()
     const [tab, setTab] = React.useState<Tab>("remedy")
     const [query, setQuery] = React.useState("")
@@ -107,6 +120,8 @@ export function ItemsDialog({ propertyId, open, onOpenChange }: { propertyId: st
     const [quantities, setQuantities] = React.useState<Map<string, number>>(new Map())
     const [notes, setNotes] = React.useState<Map<string, string>>(new Map())
     const [other, setOther] = React.useState({ description: "", unit_price: "", quantity: "1" })
+    const [quoteNotes, setQuoteNotes] = React.useState("")
+    const quoting = mode === "quote"
 
     const items = catalog.data ?? []
     const byId = new Map(items.map((i) => [i.id, i]))
@@ -128,14 +143,17 @@ export function ItemsDialog({ propertyId, open, onOpenChange }: { propertyId: st
     const count = lines.reduce((sum, l) => sum + (l.quantity ?? 1), 0)
 
     const save = useAction(
-        () =>
-            unwrap(
-                api.POST("/api/v1/properties/{property_id}/charges", {
+        (): Promise<unknown> =>
+            quoting
+                ? unwrap(api.POST("/api/v1/properties/{property_id}/quotes", {
+                    params: { path: { property_id: propertyId } },
+                    body: { issued_on: date, notes: quoteNotes.trim() || null, lines },
+                }))
+                : unwrap(api.POST("/api/v1/properties/{property_id}/charges", {
                     params: { path: { property_id: propertyId } },
                     body: { charge_date: date, lines },
-                }),
-            ),
-        `${count} item${count === 1 ? "" : "s"} added`,
+                })),
+        quoting ? "Quote made" : `${count} item${count === 1 ? "" : "s"} added`,
     )
 
     const groups = tab === "other" ? [] : groupItems(items, tab)
@@ -145,8 +163,8 @@ export function ItemsDialog({ propertyId, open, onOpenChange }: { propertyId: st
         <FormDialog
             open={open}
             onOpenChange={onOpenChange}
-            title="Add remedies and services"
-            submitLabel={count ? `Add ${count} for ${rupees(total)}` : "Add"}
+            title={quoting ? "New quote" : "Add remedies and services"}
+            submitLabel={count ? `${quoting ? "Quote" : "Add"} ${count} for ${rupees(total)}` : quoting ? "Make quote" : "Add"}
             busy={save.isPending}
             disabled={lines.length === 0}
             onSubmit={() => save.mutateAsync(undefined)}
@@ -195,6 +213,11 @@ export function ItemsDialog({ propertyId, open, onOpenChange }: { propertyId: st
                         {shown.length === 0 && <li className="p-4 text-center text-sm text-muted-foreground">Nothing found. Use Other, or add it in Catalog.</li>}
                     </ul>
                 </>
+            )}
+            {quoting && (
+                <Field label="Notes on the quote (optional)">
+                    <Input value={quoteNotes} onChange={(e) => setQuoteNotes(e.target.value)} placeholder="e.g. Valid for 30 days" />
+                </Field>
             )}
         </FormDialog>
     )

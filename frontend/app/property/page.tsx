@@ -4,19 +4,21 @@ import * as React from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import {
-    BadgePercent, CalendarPlus, ChevronLeft, FolderOpen, IndianRupee, MoreVertical, Package, Pencil,
+    BadgePercent, CalendarPlus, ChevronLeft, FolderOpen, IndianRupee, MessageCircle, MoreVertical, Package, Pencil,
 } from "lucide-react"
 
 import { Empty, ErrorMessage, Loading, Section, StatusBadge } from "@/components/common"
 import {
     DiscountDialog, EditChargeDialog, EditPropertyDialog, PaymentDialog, VisitDialog, VoidDialog,
 } from "@/components/property/dialogs"
+import { DocumentDialog, type DocumentRequest } from "@/components/property/DocumentDialog"
+import { Documents } from "@/components/property/Documents"
 import { ItemsDialog } from "@/components/property/ItemsDialog"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { Charge, Payment, PropertyDetail, Visit } from "@/lib/api/client"
-import { PAYMENT_METHODS, PROPERTY_TYPES, rupees, shortDate } from "@/lib/format"
-import { useProperty } from "@/lib/queries"
+import { PAYMENT_METHODS, PROPERTY_TYPES, rupees, shortDate, whatsappLink } from "@/lib/format"
+import { useProperty, useReminderText } from "@/lib/queries"
 import { cn } from "@/lib/utils"
 
 type Open =
@@ -27,6 +29,7 @@ type Open =
     | { kind: "editCharge"; charge: Charge }
     | { kind: "void"; target: { kind: "charge"; item: Charge } | { kind: "payment"; item: Payment } }
     | { kind: "editProperty" }
+    | { kind: "document"; request: DocumentRequest }
     | null
 
 type Entry =
@@ -51,7 +54,7 @@ function RowMenu({ items }: { items: { label: string; onSelect: () => void; dest
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label="More">
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label="Options">
                     <MoreVertical className="h-4 w-4" />
                 </Button>
             </DropdownMenuTrigger>
@@ -159,6 +162,14 @@ function PaymentCard({ payment, setOpen }: { payment: Payment; setOpen: (o: Open
             {!payment.voided_at && (
                 <RowMenu
                     items={[
+                        {
+                            label: "Share receipt",
+                            onSelect: () => setOpen({ kind: "document", request: {
+                                title: `Receipt ${payment.receipt_no}`,
+                                path: `/api/v1/payments/${payment.id}/receipt.pdf`,
+                                shareText: `Receipt ${payment.receipt_no} for ${rupees(payment.amount)}. Thank you.`,
+                            } }),
+                        },
                         { label: "Edit", onSelect: () => setOpen({ kind: "payment", payment }) },
                         { label: "Cancel this payment", destructive: true, onSelect: () => setOpen({ kind: "void", target: { kind: "payment", item: payment } }) },
                     ]}
@@ -182,6 +193,7 @@ function PropertyView({ id }: { id: string }) {
     const [open, setOpen] = React.useState<Open>(null)
     const [showCancelled, setShowCancelled] = React.useState(false)
     const close = (o: boolean) => !o && setOpen(null)
+    const reminderText = useReminderText()
 
     if (property.isPending) return <Loading />
     if (property.isError) return <ErrorMessage error={property.error} />
@@ -228,12 +240,22 @@ function PropertyView({ id }: { id: string }) {
                 </div>
             </div>
 
+            {balance > 0 && p.client.phone && (
+                <Button asChild variant="outline" className="mb-4 h-11 w-full">
+                    <a href={whatsappLink(p.client.phone, reminderText(p.client.name, p.label, balance))} target="_blank" rel="noreferrer">
+                        <MessageCircle className="mr-2 h-4 w-4" /> Remind {p.client.name.split(" ")[0]} on WhatsApp
+                    </a>
+                </Button>
+            )}
+
             <div className="mb-6 grid grid-cols-4 gap-2">
                 <ActionButton icon={CalendarPlus} label="Visit" onClick={() => setOpen({ kind: "visit" })} />
                 <ActionButton icon={Package} label="Remedies" onClick={() => setOpen({ kind: "items" })} />
                 <ActionButton icon={BadgePercent} label="Discount" onClick={() => setOpen({ kind: "discount" })} />
                 <ActionButton icon={IndianRupee} label="Payment" primary onClick={() => setOpen({ kind: "payment" })} />
             </div>
+
+            <Documents property={p} showDocument={(request) => setOpen({ kind: "document", request })} />
 
             <Section
                 title="History"
@@ -274,6 +296,7 @@ function PropertyView({ id }: { id: string }) {
             {open?.kind === "editCharge" && <EditChargeDialog open onOpenChange={close} charge={open.charge} />}
             {open?.kind === "void" && <VoidDialog open onOpenChange={close} target={open.target} />}
             {open?.kind === "editProperty" && <EditPropertyDialog open onOpenChange={close} property={p} />}
+            {open?.kind === "document" && <DocumentDialog request={open.request} onOpenChange={close} />}
         </>
     )
 }

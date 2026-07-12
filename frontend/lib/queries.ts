@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { api, unwrap } from "@/lib/api/client"
+import { reminderMessage } from "@/lib/documents"
+import { rupees } from "@/lib/format"
 
 export const keys = {
     me: ["me"] as const,
@@ -63,4 +65,18 @@ export function useAction<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>,
         },
         onError: (error: Error) => toast.error(error.message),
     })
+}
+
+/** WhatsApp reminder text for a balance, with the payment details from the app settings. */
+export function useReminderText() {
+    const config = useAppConfig().data
+    return (clientName: string, label: string, balance: number) =>
+        reminderMessage({
+            clientName,
+            label,
+            balance: rupees(balance),
+            business: config?.project?.name ?? "Shree Vastu Vaibhav",
+            upiId: config?.payment?.upiId || undefined,
+            gpay: config?.contact?.gpayPhone || undefined,
+        })
 }

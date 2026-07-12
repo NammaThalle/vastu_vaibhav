@@ -21,6 +21,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bills/{bill_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Bill Pdf */
+        get: operations["bill_pdf_api_v1_bills__bill_id__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bills/{bill_id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Void Bill */
+        post: operations["void_bill_api_v1_bills__bill_id__void_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog": {
         parameters: {
             query?: never;
@@ -284,6 +318,26 @@ export interface paths {
         patch: operations["update_payment_api_v1_payments__payment_id__patch"];
         trace?: never;
     };
+    "/api/v1/payments/{payment_id}/receipt.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Receipt Pdf
+         * @description Receipt for one payment, with the balance as it stood on that day.
+         */
+        get: operations["receipt_pdf_api_v1_payments__payment_id__receipt_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/payments/{payment_id}/void": {
         parameters: {
             query?: never;
@@ -317,6 +371,26 @@ export interface paths {
         head?: never;
         /** Update Property */
         patch: operations["update_property_api_v1_properties__property_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/properties/{property_id}/bills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Bill
+         * @description Issue a numbered bill: a frozen copy of every current charge and the amount paid so far.
+         */
+        post: operations["create_bill_api_v1_properties__property_id__bills_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/properties/{property_id}/charges": {
@@ -356,6 +430,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/properties/{property_id}/quotes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Quote */
+        post: operations["create_quote_api_v1_properties__property_id__quotes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/properties/{property_id}/report.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Report Pdf
+         * @description Written summary, remedies with where they go, and every completed visit's observations.
+         *     No prices: this is the document the client keeps.
+         */
+        get: operations["report_pdf_api_v1_properties__property_id__report_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/properties/{property_id}/visits": {
         parameters: {
             query?: never;
@@ -367,6 +479,60 @@ export interface paths {
         put?: never;
         /** Add Visit */
         post: operations["add_visit_api_v1_properties__property_id__visits_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quotes/{quote_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Quote
+         * @description Add every line of the quote to the property's bill as charges.
+         */
+        post: operations["accept_quote_api_v1_quotes__quote_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quotes/{quote_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Quote Pdf */
+        get: operations["quote_pdf_api_v1_quotes__quote_id__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quotes/{quote_id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline Quote */
+        post: operations["decline_quote_api_v1_quotes__quote_id__void_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -448,6 +614,38 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** BillCreate */
+        BillCreate: {
+            /**
+             * Issued On
+             * Format: date
+             */
+            issued_on: string;
+        };
+        /** BillOut */
+        BillOut: {
+            /** Balance */
+            balance: number;
+            /** Bill No */
+            bill_no: string;
+            /** Id */
+            id: string;
+            /**
+             * Issued On
+             * Format: date
+             */
+            issued_on: string;
+            /** Paid */
+            paid: number;
+            /** Property Id */
+            property_id: string;
+            /** Total */
+            total: number;
+            /** Void Reason */
+            void_reason: string | null;
+            /** Voided At */
+            voided_at: string | null;
+        };
         /** Body_login_access_token_api_v1_login_access_token_post */
         Body_login_access_token_api_v1_login_access_token_post: {
             /** Client Id */
@@ -782,11 +980,18 @@ export interface components {
             notes?: string | null;
             /** @default other */
             property_type?: components["schemas"]["PropertyType"];
+            /**
+             * Recommendations
+             * @description Summary printed on the consultation report
+             */
+            recommendations?: string | null;
         };
         /** PropertyDetail */
         PropertyDetail: {
             /** Address */
             address: string | null;
+            /** Bills */
+            bills: components["schemas"]["BillOut"][];
             /** Charges */
             charges: components["schemas"]["ChargeOut"][];
             client: components["schemas"]["ClientRef"];
@@ -811,6 +1016,13 @@ export interface components {
             payments: components["schemas"]["PaymentOut"][];
             /** @default other */
             property_type: components["schemas"]["PropertyType"];
+            /** Quotes */
+            quotes: components["schemas"]["QuoteOut"][];
+            /**
+             * Recommendations
+             * @description Summary printed on the consultation report
+             */
+            recommendations: string | null;
             summary: components["schemas"]["Summary"];
             /** Visits */
             visits: components["schemas"]["VisitOut"][];
@@ -838,6 +1050,11 @@ export interface components {
             notes: string | null;
             /** @default other */
             property_type: components["schemas"]["PropertyType"];
+            /**
+             * Recommendations
+             * @description Summary printed on the consultation report
+             */
+            recommendations: string | null;
         };
         /**
          * PropertyStatus
@@ -865,6 +1082,8 @@ export interface components {
             /** Notes */
             notes?: string | null;
             property_type?: components["schemas"]["PropertyType"] | null;
+            /** Recommendations */
+            recommendations?: string | null;
         };
         /** PropertyWithSummary */
         PropertyWithSummary: {
@@ -889,8 +1108,80 @@ export interface components {
             notes: string | null;
             /** @default other */
             property_type: components["schemas"]["PropertyType"];
+            /**
+             * Recommendations
+             * @description Summary printed on the consultation report
+             */
+            recommendations: string | null;
             summary: components["schemas"]["Summary"];
         };
+        /** QuoteAccept */
+        QuoteAccept: {
+            /**
+             * Charge Date
+             * Format: date
+             * @description Date the accepted lines are added to the bill
+             */
+            charge_date: string;
+        };
+        /** QuoteCreate */
+        QuoteCreate: {
+            /**
+             * Issued On
+             * Format: date
+             */
+            issued_on: string;
+            /** Lines */
+            lines: components["schemas"]["ChargeLine"][];
+            /** Notes */
+            notes?: string | null;
+        };
+        /** QuoteLineOut */
+        QuoteLineOut: {
+            /** Amount */
+            amount: number;
+            /** Description */
+            description: string;
+            kind: components["schemas"]["ChargeKind"];
+            /** Note */
+            note: string | null;
+            /** Quantity */
+            quantity: number;
+            /** Unit Price */
+            unit_price: number;
+        };
+        /** QuoteOut */
+        QuoteOut: {
+            /** Accepted At */
+            accepted_at: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Issued On
+             * Format: date
+             */
+            issued_on: string;
+            /** Lines */
+            lines: components["schemas"]["QuoteLineOut"][];
+            /** Notes */
+            notes: string | null;
+            /** Property Id */
+            property_id: string;
+            /** Quote No */
+            quote_no: string;
+            status: components["schemas"]["QuoteStatus"];
+            /** Total */
+            total: number;
+            /** Void Reason */
+            void_reason: string | null;
+            /** Voided At */
+            voided_at: string | null;
+        };
+        /**
+         * QuoteStatus
+         * @enum {string}
+         */
+        QuoteStatus: "open" | "accepted" | "declined";
         /**
          * ReferralSource
          * @enum {string}
@@ -1058,6 +1349,72 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    bill_pdf_api_v1_bills__bill_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A4 PDF */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    void_bill_api_v1_bills__bill_id__void_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoidRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1570,6 +1927,37 @@ export interface operations {
             };
         };
     };
+    receipt_pdf_api_v1_payments__payment_id__receipt_pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A4 PDF */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     void_payment_api_v1_payments__payment_id__void_post: {
         parameters: {
             query?: never;
@@ -1671,6 +2059,41 @@ export interface operations {
             };
         };
     };
+    create_bill_api_v1_properties__property_id__bills_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                property_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BillCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     add_charges_api_v1_properties__property_id__charges_post: {
         parameters: {
             query?: never;
@@ -1741,6 +2164,72 @@ export interface operations {
             };
         };
     };
+    create_quote_api_v1_properties__property_id__quotes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                property_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_pdf_api_v1_properties__property_id__report_pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                property_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A4 PDF */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     add_visit_api_v1_properties__property_id__visits_post: {
         parameters: {
             query?: never;
@@ -1763,6 +2252,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VisitOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_quote_api_v1_quotes__quote_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quote_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteAccept"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    quote_pdf_api_v1_quotes__quote_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quote_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A4 PDF */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decline_quote_api_v1_quotes__quote_id__void_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quote_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoidRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteOut"];
                 };
             };
             /** @description Validation Error */

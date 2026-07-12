@@ -6,10 +6,11 @@ import { CalendarDays, MessageCircle, Phone, Plus } from "lucide-react"
 import { Empty, ErrorMessage, Loading, PageHeader, Section } from "@/components/common"
 import { Button } from "@/components/ui/button"
 import { rupees, shortDate, telLink, whatsappLink } from "@/lib/format"
-import { useHome } from "@/lib/queries"
+import { useHome, useReminderText } from "@/lib/queries"
 
 export default function HomePage() {
     const home = useHome()
+    const reminderText = useReminderText()
     if (home.isPending) return <Loading />
     if (home.isError) return <ErrorMessage error={home.error} />
     const { dues, upcoming_visits, outstanding_total, collected_this_month } = home.data
@@ -58,8 +59,8 @@ export default function HomePage() {
                                         <Button asChild size="icon" variant="ghost" aria-label="Call">
                                             <a href={telLink(due.phone)}><Phone className="h-4 w-4" /></a>
                                         </Button>
-                                        <Button asChild size="icon" variant="ghost" aria-label="WhatsApp">
-                                            <a href={whatsappLink(due.phone)} target="_blank" rel="noreferrer">
+                                        <Button asChild size="icon" variant="ghost" aria-label="Send a payment reminder on WhatsApp">
+                                            <a href={whatsappLink(due.phone, reminderText(due.client_name, due.label, due.balance))} target="_blank" rel="noreferrer">
                                                 <MessageCircle className="h-4 w-4" />
                                             </a>
                                         </Button>
