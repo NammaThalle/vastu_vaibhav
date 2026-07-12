@@ -6,8 +6,9 @@ from sqlalchemy import select
 
 from app.api.api_v1.endpoints.clients import with_summary
 from app.api.deps import DB, get_or_404
-from app.models import CatalogItem, Charge, Client, Payment, Property, Visit
+from app.models import Bill, CatalogItem, Charge, Client, Payment, Property, Quote, Visit
 from app.schemas.clients import ClientRef, PropertyDetail, PropertyUpdate
+from app.schemas.documents import BillOut, QuoteOut
 from app.schemas.ledger import (
     ChargeOut, ChargesCreate, ChargeUpdate, PaymentCreate, PaymentOut, PaymentUpdate, VisitCreate, VisitOut,
     VisitUpdate, VoidRequest,
@@ -39,6 +40,10 @@ async def get_property(property_id: str, db: DB) -> PropertyDetail:
         visits=[VisitOut.model_validate(v) for v in visits],
         charges=[ChargeOut.model_validate(c) for c in charges],
         payments=[PaymentOut.model_validate(p) for p in payments],
+        bills=[BillOut.model_validate(b) for b in await db.scalars(
+            select(Bill).where(Bill.property_id == property_id).order_by(Bill.issued_on.desc(), Bill.bill_seq.desc()))],
+        quotes=[QuoteOut.of(q) for q in await db.scalars(
+            select(Quote).where(Quote.property_id == property_id).order_by(Quote.issued_on.desc(), Quote.quote_seq.desc()))],
     )
 
 
