@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes how Vastu Vaibhav is put together and why. It reflects the redesign that replaced the original package-based service catalog with a model built around how the business actually bills.
+This document describes how Shree Vastu Vaibhav is put together and why. It reflects the redesign that replaced the original package-based service catalog with a model built around how the business actually bills.
 
 ## The business, in data
 
@@ -20,17 +20,21 @@ The design follows that: a client can have several properties, and everything bi
 Client ──< Property ──< Visit
                     ──< Charge >── CatalogItem
                     ──< Payment
+                    ──< Bill ──< BillLine
+                    ──< Quote ──< QuoteLine
 User
 ```
 
 | Table | Purpose |
 | --- | --- |
 | `clients` | A person: name, phone, how they came to us, notes. |
-| `properties` | One job: a flat, house, shop, office, factory or plot. Type, address, Google Drive folder link, an optional manual close. |
+| `properties` | One job: a flat, house, shop, office, factory or plot. Type, address, Google Drive folder link, the written summary for the consultation report, an optional manual close. |
 | `visits` | A site visit with date, purpose and observations. Status `done`, `scheduled` (future date) or `cancelled`. |
 | `catalog_items` | What we sell. A remedy is one row per bottle size (5ml or 15ml), or has no size when sold per piece (Surya Pratima, Surya Kiran); a service has no size. Current list price. |
 | `charges` | A bill line: description, quantity and unit price copied at the time of sale, or a discount, plus a short note on where it goes (shutter, main door). Optionally linked to a catalog item and a visit. |
 | `payments` | Money received, with method, date, reference, and a receipt number unique within the financial year. |
+| `bills`, `bill_lines` | A numbered bill: a frozen copy of the property's charges and the amount paid on the day it was issued. Later edits never change it; a new bill is issued instead. |
+| `quotes`, `quote_lines` | A numbered quote. Accepting it copies its lines into `charges`; declining keeps it on record. |
 | `users` | Sign-in accounts. The first account is the admin; only the admin can add or block users. |
 
 Rules the database enforces:
@@ -38,7 +42,7 @@ Rules the database enforces:
 - Money is stored as whole rupees in integer columns.
 - Foreign keys are on (`PRAGMA foreign_keys=ON` on every connection) and use `RESTRICT`, so nothing with history can be deleted by accident.
 - Remedies are 5ml, 15ml or sold per piece; services have no size.
-- Receipt numbers are unique per financial year (`fiscal_year`, `receipt_seq`).
+- Receipt, bill and quote numbers are unique per financial year (`R/`, `B/` and `Q/2026-27/0001`). Cancelled documents keep their number, so numbers are never reused.
 - Charges and payments are never deleted. They are voided with a reason and stay visible, crossed out.
 
 ### Derived, never stored
@@ -60,7 +64,8 @@ backend/
     db/          declarative base with naming convention, sessions
     models/      tables: the single source of truth for the schema
     schemas/     Pydantic request and response models: the API contract
-    services/    ledger (balances, status), numbering (financial year, receipts)
+    services/    ledger (balances, status), numbering (financial year, receipts, bills, quotes)
+    documents/   PDF templates (Jinja2 + WeasyPrint), logo, amounts in words, UPI QR
     api/         routes only
     cli/         seed, backup, openapi, one-time legacy import
   migrations/    Alembic environment and versions
@@ -90,6 +95,10 @@ All routes are under `/api/v1` and need a signed-in user, except login.
 | `PATCH /charges/{id}`, `POST /charges/{id}/void` | Edit or cancel a line |
 | `POST /properties/{id}/payments` | Record a payment and assign the next receipt number |
 | `PATCH /payments/{id}`, `POST /payments/{id}/void` | Edit or cancel a payment; the receipt number never changes or gets reused |
+| `GET /payments/{id}/receipt.pdf` | Receipt with the amount in words and the balance on that day |
+| `POST /properties/{id}/bills`, `GET /bills/{id}/pdf`, `POST /bills/{id}/void` | Issue a numbered bill, download it, cancel it |
+| `POST /properties/{id}/quotes`, `GET /quotes/{id}/pdf`, `POST /quotes/{id}/accept`, `POST /quotes/{id}/void` | Make a quote, download it, accept it into charges, decline it |
+| `GET /properties/{id}/report.pdf` | Consultation report: summary, remedies with where they go, visit observations; no prices |
 | `GET, POST /catalog`, `PATCH /catalog/{id}` | Price list; add items; change price or hide |
 | `GET /users`, `PATCH /users/{id}`, `POST /register` | Admin only after the first account |
 
@@ -103,6 +112,14 @@ A Next.js static export: plain HTML and JavaScript served by Caddy, with no Node
 - `lib/queries.ts` holds the React Query hooks. Any change invalidates all queries, since a single payment moves numbers on several screens.
 - Pages: `/` (home), `/clients`, `/clients/new`, `/client?id=`, `/property?id=`, `/catalog`, `/settings`, `/login`. Detail pages use query parameters because a static export cannot generate a page per ID.
 - Layout: top navigation on wide screens, bottom tab bar on phones. Forms open in dialogs with large touch targets.
+
+## Documents
+
+PDFs are rendered on the server: Jinja2 fills an HTML template in `app/documents/templates/`, and WeasyPrint lays it out as A4. The API image carries Pango and the Noto Sans font (which has the rupee sign), so output is the same on every machine. The phone gets the PDF through the browser's share sheet, which offers WhatsApp directly; on a Mac it opens for printing.
+
+- Business details, bank account and the optional UPI ID come from `config/app-settings.json`. With a UPI ID set, bills and receipts carry a QR code for the exact balance.
+- The logo is `app/documents/assets/logo.jpg`, or an image in the config folder named by `invoice.logoFile`.
+- WhatsApp reminders are prefilled `wa.me` links that open the chat with the message written; the user presses send. Automatic sending would need the paid WhatsApp Business API.
 
 ## Deployment
 
@@ -127,8 +144,5 @@ CI (`.github/workflows/docker-publish.yml`) runs backend tests, `alembic check`,
 
 ## Not built yet
 
-- PDF receipts, bills and consultation reports, and sharing them on WhatsApp.
-- WhatsApp payment reminders with a UPI link.
-- Quotes that turn into charges.
 - Remedy stock, supplier orders synced from the supplier site, and margins. Planned in [plans/phase-4-stock.md](plans/phase-4-stock.md).
 - Financial-year reports and GST fields, ahead of registering the business.

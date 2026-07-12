@@ -1,4 +1,4 @@
-# Vastu Vaibhav
+# Shree Vastu Vaibhav
 
 A small business app for a Vastu consultant in Goa. It records clients and their properties, site visits and observations, remedies and services sold, discounts and payments, and shows at a glance who still owes money.
 
@@ -9,6 +9,8 @@ It is built for two people: the consultant, on a phone at the site or a MacBook 
 - **Home**: total still to collect, money collected this month, a "who owes" list with call and WhatsApp buttons, and upcoming visits.
 - **Clients**: search, filter by "owes money" or "open", add a client together with their first property, merge a client who was added twice.
 - **Property page**: one history of visits, charges and payments, with four buttons: Visit, Remedies, Discount, Payment. Remedies are added from a grid with plus and minus buttons, in 5ml or 15ml bottles or per piece, each with an optional word on where it goes (shutter, main gate) shown next to the line.
+- **Documents**: numbered bills (B/2026-27/0001), receipts for every payment, quotes (Q/2026-27/0001) that turn into charges when accepted, and a consultation report with a written summary, the remedies and where each goes, and the visit observations. All are A4 PDFs, shared from the phone straight to WhatsApp or printed.
+- **Reminders**: a WhatsApp button on Home and on each property that owes money, with the amount and payment details already written.
 - **Catalog**: the remedy and service price list. Price changes only affect new charges; old bills keep the price they were sold at.
 - **Settings**: users (admin only), theme, sign out.
 
@@ -16,7 +18,7 @@ Status (Enquiry, In progress, Payment due, Closed) is worked out from the data a
 
 ## Stack
 
-- **Backend**: FastAPI, SQLAlchemy 2 (async), SQLite, Alembic. Python 3.13.
+- **Backend**: FastAPI, SQLAlchemy 2 (async), SQLite, Alembic, WeasyPrint for PDFs. Python 3.13.
 - **Frontend**: Next.js 15 static export, React Query, Tailwind, types generated from the API's OpenAPI schema.
 - **Deployment**: Docker Compose on the home server, behind the central Caddy.
 
@@ -24,7 +26,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design.
 
 ## Local development
 
-Backend:
+Backend (PDFs need Pango: `brew install pango` on macOS):
 
 ```bash
 cd backend
@@ -84,6 +86,8 @@ On the server, copy `deploy/compose.yml` and `deploy/.env.example` (as `.env`), 
 ```bash
 docker compose pull && docker compose up -d
 ```
+
+Business details on the documents (name, phones, bank, UPI ID for the payment QR code) come from `config/app-settings.json`, which is not in git; `config/app-settings.example.json` lists every field. To use a different logo, put the image in the config folder and set `invoice.logoFile`.
 
 The `migrate` service applies pending migrations before the API starts. The Caddy snippet in `deploy/caddy/vastu.caddy` routes `/api/*` to the API and everything else to the web container. Backups run weekly from the host's crontab; the line is in `deploy/compose.yml`.
 
