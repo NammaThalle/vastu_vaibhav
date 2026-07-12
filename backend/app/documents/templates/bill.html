@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Bill {{ bill.bill_no }}{% endblock %}
+{% block heading %}BILL{% endblock %}
+{% block footer %}This is a computer-generated bill and does not need a signature{% endblock %}
+{% block body %}
+<div class="meta">
+  <div><div class="label">Bill no</div><div class="value">{{ bill.bill_no }}</div></div>
+  <div><div class="label">Bill date</div><div class="value">{{ bill.issued_on | long_date }}</div></div>
+</div>
+<div class="to">
+  <div class="label">Bill to</div>
+  <div class="who">{{ client.name }}</div>
+  <div class="small"><b>Property:</b> {{ prop.label }}{% if prop.address and prop.address != prop.label %}, {{ prop.address }}{% endif %}</div>
+  {% if client.phone %}<div class="small muted">{{ client.phone }}</div>{% endif %}
+</div>
+{% if bill.voided_at %}<div class="stamp">Cancelled: {{ bill.void_reason }}</div>{% endif %}
+<table class="lines">
+  <thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th></tr></thead>
+  <tbody>
+  {% for line in bill.lines %}
+  <tr>
+    <td><div class="desc">{{ loop.index }}. {{ line.description }}{% if line.note %} <span class="where">· {{ line.note }}</span>{% endif %}</div>
+        <div class="sub">{{ line.charge_date | long_date }}</div></td>
+    <td class="num">{{ line.quantity }}</td>
+    <td class="num">{{ line.unit_price | rupees }}</td>
+    <td class="num{% if line.kind == 'discount' %} discount{% endif %}">{{ line.signed_amount | rupees }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<div class="bottom">
+  {% include "_payment.html" %}
+  <div class="totals">
+    <div class="row"><span>Total</span><span class="num">{{ bill.total | rupees }}</span></div>
+    <div class="row"><span>Amount paid</span><span class="num">{{ bill.paid | rupees }}</span></div>
+    <div class="due{% if bill.balance <= 0 %} clear{% endif %}">
+      <span class="label">{% if bill.balance > 0 %}Balance{% elif bill.balance < 0 %}Advance{% else %}Paid in full{% endif %}</span>
+      <span class="amount">{{ (bill.balance if bill.balance >= 0 else -bill.balance) | rupees }}</span>
+    </div>
+  </div>
+</div>
+{% if payments %}
+<div class="section">
+  <table class="lines paid">
+    <thead><tr><th>Payment history</th><th>Date</th><th class="num">Amount paid</th></tr></thead>
+    <tbody>
+    {% for p in payments %}
+    <tr><td>{{ p.receipt_no }} · {{ methods[p.method] }}</td><td>{{ p.paid_on | long_date }}</td><td class="num">{{ p.amount | rupees }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Quote {{ quote.quote_no }}{% endblock %}
+{% block heading %}QUOTATION{% endblock %}
+{% block footer %}Prices in Indian rupees. This quotation is computer-generated and does not need a signature{% endblock %}
+{% block body %}
+<div class="meta">
+  <div><div class="label">Quote no</div><div class="value">{{ quote.quote_no }}</div></div>
+  <div><div class="label">Date</div><div class="value">{{ quote.issued_on | long_date }}</div></div>
+</div>
+<div class="to">
+  <div class="label">Prepared for</div>
+  <div class="who">{{ client.name }}</div>
+  <div class="small"><b>Property:</b> {{ prop.label }}{% if prop.address and prop.address != prop.label %}, {{ prop.address }}{% endif %}</div>
+</div>
+<table class="lines">
+  <thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th></tr></thead>
+  <tbody>
+  {% for line in quote.lines %}
+  <tr>
+    <td><div class="desc">{{ loop.index }}. {{ line.description }}{% if line.note %} <span class="where">· {{ line.note }}</span>{% endif %}</div></td>
+    <td class="num">{{ line.quantity }}</td>
+    <td class="num">{{ line.unit_price | rupees }}</td>
+    <td class="num{% if line.kind == 'discount' %} discount{% endif %}">{{ line.signed_amount | rupees }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<div class="bottom">
+  <div class="pay">{% if quote.notes %}<h3>Notes</h3><div class="prose">{{ quote.notes }}</div>{% endif %}</div>
+  <div class="totals">
+    <div class="due clear"><span class="label">Total</span><span class="amount">{{ quote.total | rupees }}</span></div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Vastu report, {{ prop.label }}{% endblock %}
+{% block heading %}VASTU CONSULTATION REPORT{% endblock %}
+{% block footer %}Prepared for {{ client.name }} by {{ biz.name }}{% endblock %}
+{% block body %}
+<div class="meta">
+  <div><div class="label">Prepared for</div><div class="value">{{ client.name }}</div></div>
+  <div><div class="label">Property</div><div class="value">{{ prop.label }}{% if property_type %} ({{ property_type }}){% endif %}</div></div>
+  <div><div class="label">Date</div><div class="value">{{ today | long_date }}</div></div>
+</div>
+{% if prop.address and prop.address != prop.label %}<div class="small muted" style="margin-top:2mm">{{ prop.address }}</div>{% endif %}
+
+{% if prop.recommendations %}
+<div class="section">
+  <h2>Summary and recommendations</h2>
+  <div class="prose">{{ prop.recommendations }}</div>
+</div>
+{% endif %}
+
+{% if remedies %}
+<div class="section">
+  <h2>Remedies</h2>
+  <table class="lines">
+    <thead><tr><th>Remedy</th><th>Where it goes</th><th class="num">Qty</th></tr></thead>
+    <tbody>
+    {% for r in remedies %}
+    <tr><td class="desc">{{ r.name }}</td><td>{{ r.note or "" }}</td><td class="num">{{ r.quantity }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if visits %}
+<div class="section">
+  <h2>Site visits</h2>
+  {% for v in visits %}
+  <div style="margin-bottom:4mm; page-break-inside:avoid">
+    <div><b>{{ v.visit_date | long_date }}</b>{% if v.purpose %} · {{ v.purpose }}{% endif %}</div>
+    {% if v.observations %}<div class="prose" style="margin-top:1mm">{{ v.observations }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
