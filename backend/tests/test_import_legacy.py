@@ -109,6 +109,15 @@ def test_import_folds_old_names_into_one_item(legacy, session, charge_id, descri
         description, note, quantity, unit_price)
 
 
+def test_import_skips_named_accounts(legacy, session):
+    legacy.execute("INSERT INTO users VALUES ('u2', 'test@test.com', 'hash', 1, 0, '2026-01-02 10:00:00')")
+    seed_catalog(session)
+    report = Report()
+    import_all(legacy, session, report, frozenset({"Test@Test.com"}))
+    assert session.get(User, "u2") is None and session.get(User, "u1") is not None
+    assert report.counts["users skipped"] == 1
+
+
 def test_import_numbers_receipts_per_fiscal_year(legacy, session):
     run_import(legacy, session)
     numbers = {p.id: p.receipt_no for p in session.query(Payment)}

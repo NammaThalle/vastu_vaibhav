@@ -8,6 +8,7 @@ data has been moved.
 
 Usage:
     python -m app.cli.import_legacy --legacy data/legacy/old.db [--url sqlite:///new.db] [--dry-run]
+        [--skip-user test@example.com ...]
 """
 import argparse
 import re
@@ -189,11 +190,16 @@ def check_target(session: Session) -> None:
         sys.exit("Target catalog is empty; run `python -m app.cli.seed` first.")
 
 
-def import_all(conn: sqlite3.Connection, session: Session, report: Report) -> dict[str, str]:
-    """Returns legacy client id -> new property id."""
+def import_all(conn: sqlite3.Connection, session: Session, report: Report,
+               skip_users: frozenset[str] = frozenset()) -> dict[str, str]:
+    """Returns legacy client id -> new property id. Accounts listed in skip_users are left out."""
     catalog = CatalogIndex(list(session.scalars(select(CatalogItem))))
+    skip = {email.strip().lower() for email in skip_users}
 
     for row in legacy_rows(conn, "SELECT * FROM users"):
+        if row["email"].strip().lower() in skip:
+            report.counts["users skipped"] += 1
+            continue
         session.add(User(id=row["id"], email=row["email"], hashed_password=row["hashed_password"],
                          is_active=bool(row["is_active"]), is_admin=bool(row["is_admin"]),
                          created_at=to_datetime(row["created_at"])))
@@ -331,6 +337,8 @@ def main() -> None:
     parser.add_argument("--legacy", required=True, type=Path, help="path to the old SQLite database")
     parser.add_argument("--url", help="target database URL (defaults to DATABASE_URL)")
     parser.add_argument("--dry-run", action="store_true", help="verify everything, then roll back")
+    parser.add_argument("--skip-user", action="append", default=[], metavar="EMAIL",
+                        help="leave this sign-in account out (repeat for several)")
     args = parser.parse_args()
 
     conn = sqlite3.connect(f"file:{args.legacy}?mode=ro", uri=True)
@@ -338,7 +346,7 @@ def main() -> None:
     report = Report()
     with sync_session(args.url) as session:
         check_target(session)
-        property_of = import_all(conn, session, report)
+        property_of = import_all(conn, session, report, frozenset(args.skip_user))
         verify(conn, session, property_of, report)
         print_report(report)
         if report.mismatches:
