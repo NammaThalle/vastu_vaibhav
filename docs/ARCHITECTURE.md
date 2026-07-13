@@ -140,7 +140,7 @@ Phone / MacBook ── VPN ── central Caddy (10.0.50.12, vastu.home, tls int
 - `web`: the static frontend.
 - `backup` (on demand): a safe SQLite snapshot, gzipped, keeping the last four. Run weekly from the host crontab at Sunday 00:00 IST.
 
-CI (`.github/workflows/docker-publish.yml`) runs backend tests, `alembic check`, the generated-types check, the frontend typecheck and build, then publishes both images on pushes to `main`, tagged `latest` and with the commit SHA.
+CI (`.github/workflows/docker-publish.yml`) runs backend tests, `alembic check`, the generated-types check, the frontend typecheck and build, on every pull request and push to `main`. A version tag such as `v1.0.0` runs the same checks and then publishes both images under that version and `latest`. The server pins a version in `VASTU_TAG`.
 
 The move from the old app to this design is planned in [plans/switchover.md](plans/switchover.md).
 

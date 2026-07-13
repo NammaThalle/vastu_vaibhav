@@ -8,7 +8,7 @@ Status: planned, not started. Every step that changes the server, Caddy or GitHu
 | --- | --- | --- |
 | Folder on portress (10.0.50.9) | `~/docker/vastu_vaibhav` | `~/docker/vastu` (new, side by side) |
 | Containers | one: `vastu_vaibhav-vastu_vaibhav-1`, port 8000 | `migrate`, `api` on 8010, `web` on 8011, `backup` on demand; Compose project `vastu` |
-| Image | `ghcr.io/nammathalle/vastu_vaibhav:latest` | `ghcr.io/nammathalle/vastu_vaibhav-api` and `-web`, built by CI on pushes to `main` |
+| Image | `ghcr.io/nammathalle/vastu_vaibhav:latest` | `ghcr.io/nammathalle/vastu_vaibhav-api` and `-web`, published by CI from a version tag such as `v1.0.0` |
 | Database | `data/vastu.db`, last change 1 Nov 2026 | `data/vastu.db`, schema from Alembic, data from the one-time import |
 | Settings | `backend/.env`, `config/app-settings.json` | `.env`, `config/app-settings.json` (name now Shree Vastu Vaibhav) |
 | Backups | daily, made inside the old container, kept in `data/backups` | weekly from the host crontab, Sunday 00:00 IST, last 4 kept |
@@ -20,22 +20,21 @@ The old app is never changed or deleted during the switch. Rolling back means po
 
 ## Decisions needed before starting
 
-1. **Test accounts.** The old database has two `test@` accounts. Recommended: skip them in the import, so only the two real users can sign in.
-2. **When.** About 15 minutes when nobody is entering data. The father should know the app is briefly down and that he will need to sign in again with the same password.
-3. **Caddy file.** The `vastu.home` block is in the main `Caddyfile`. Recommended: remove it there and add `conf.d/vastu.caddy`, like frigate, immich and ntopng. If Ansible manages the main `Caddyfile`, the same change goes into the Ansible files, or Ansible will put the old block back.
-4. **UPI ID.** Optional; add it to `config/app-settings.json` before the switch so bills carry the payment QR code from day one.
+1. **When.** About 15 minutes when nobody is entering data. The father should know the app is briefly down and that he will need to sign in again with the same password.
+2. **Caddy file.** The `vastu.home` block is in the main `Caddyfile`. Recommended: remove it there and add `conf.d/vastu.caddy`, like frigate, immich and ntopng. If Ansible manages the main `Caddyfile`, the same change goes into the Ansible files, or Ansible will put the old block back.
+3. **UPI ID.** Optional; add it to `config/app-settings.json` before the switch so bills carry the payment QR code from day one.
 
 ## Stage 1: release (no effect on the live app)
 
-1. Push `feat/redesign-phase-1` and open a pull request into `dev`. CI runs the tests, the migration check, the generated-types check and the frontend build.
-2. Merge into `dev`, back-date the merge commit per `.agents/rules/git-commits.md`, then merge `dev` into `main`.
-3. The push to `main` publishes both images, tagged `latest` and with the commit SHA. Note the SHA; the server pins it in `VASTU_TAG` so a later push cannot change what is running.
+1. Push `feat/redesign-phase-1` and open a pull request into `main`. CI runs the tests, the migration check, the generated-types check and the frontend build.
+2. Merge it, then back-date the merge commit and force push `main`, per `.agents/rules/git-commits.md`.
+3. Tag the merge commit `v1.0.0` and push the tag. CI tests again and publishes both images as `1.0.0` and `latest`. The server pins `VASTU_TAG=1.0.0`, so a later release changes nothing until the tag in `.env` is changed.
 
 ## Stage 2: rehearsal on the server (live app keeps running)
 
-1. Create `~/docker/vastu` with `compose.yml`, `.env` (new `SECRET_KEY` from `openssl rand -hex 32`, `VASTU_TAG=<sha>`), `config/app-settings.json` (copied from the old folder, name changed to Shree Vastu Vaibhav, `upiId` and `logoFile` added) and empty `data/` and `backups/`.
+1. Create `~/docker/vastu` with `compose.yml`, `.env` (new `SECRET_KEY` from `openssl rand -hex 32`, `VASTU_TAG=1.0.0`), `config/app-settings.json` (copied from the old folder, name changed to Shree Vastu Vaibhav, `upiId` and `logoFile` added) and empty `data/` and `backups/`.
 2. `docker compose pull`, then `docker compose run --rm migrate`, then `docker compose run --rm api python -m app.cli.seed`.
-3. Take a fresh safe copy of the live database with `sqlite3 data/vastu.db ".backup ..."` and run the import with `--dry-run`. It must report that all totals match (last check: Rs 4,65,800 billed, Rs 4,21,200 paid, 40 clients).
+3. Take a fresh safe copy of the live database with `sqlite3 data/vastu.db ".backup ..."` and run the import with `--dry-run --skip-user test@abc.com --skip-user test@test.com`. It must report that all totals match (last check: Rs 4,65,800 billed, Rs 4,21,200 paid, 40 clients).
 4. Run the import for real into the rehearsal database, start `api` and `web`, and check them without touching `vastu.home`:
    - the containers directly: `curl http://10.0.50.9:8010/api/health` and `curl -I http://10.0.50.9:8011/`;
    - optionally, a temporary `vastu-next.home` site in Caddy with the new routing, opened from the Mac through a hosts-file entry, to try sign-in, a bill PDF and a receipt PDF on real data.
@@ -46,7 +45,7 @@ The old app is never changed or deleted during the switch. Rolling back means po
 
 1. `docker compose stop` in `~/docker/vastu_vaibhav`. From now on nobody can write to the old database.
 2. Take the final copy: `sqlite3 ~/docker/vastu_vaibhav/data/vastu.db ".backup /home/nammathalle/docker/vastu/legacy-final.db"`, and keep a gzipped copy next to the old backups.
-3. In `~/docker/vastu`: `docker compose run --rm migrate`, `docker compose run --rm api python -m app.cli.seed`, then `docker compose run --rm -v ./legacy-final.db:/legacy.db:ro api python -m app.cli.import_legacy --legacy /legacy.db`. The import refuses to commit if any client's totals differ.
+3. In `~/docker/vastu`: `docker compose run --rm migrate`, `docker compose run --rm api python -m app.cli.seed`, then `docker compose run --rm -v ./legacy-final.db:/legacy.db:ro api python -m app.cli.import_legacy --legacy /legacy.db --skip-user test@abc.com --skip-user test@test.com`. The import refuses to commit if any client's totals differ.
 4. `docker compose up -d api web` and wait for the API health check to pass.
 5. On Caddy: remove the `vastu.home` block from the main `Caddyfile` (backup first), add `conf.d/vastu.caddy` from `deploy/caddy/vastu.caddy`, run `caddy validate`, then `systemctl reload caddy`.
 6. Check from the MacBook and from a phone on the VPN:
@@ -55,6 +54,10 @@ The old app is never changed or deleted during the switch. Rolling back means po
    - open Girish Sawkar's property, make a bill, share the PDF to WhatsApp on the phone;
    - open a receipt and the report.
 7. Add the backup line to the portress crontab: `0 0 * * 0 cd ~/docker/vastu && docker compose run --rm backup`, then run it once by hand and check that a `.db.gz` file appears.
+
+## Later releases
+
+Merge the pull request into `main`, tag the next version (`v1.1.0` for features, `v1.0.1` for fixes), push the tag, wait for CI to publish, then on portress set `VASTU_TAG` in `~/docker/vastu/.env` and run `docker compose pull && docker compose up -d`. Migrations run first, on their own. To go back, set the previous version and run the same command; take a backup first if the release had a migration.
 
 ## Rollback
 
@@ -78,7 +81,7 @@ Anything entered in the new app after the switch is not in the old database. If 
 
 ## Things that will look different to the users
 
-- They sign in again once (new signing key); passwords are unchanged.
+- They sign in again once (new signing key); passwords are unchanged. Only `admin@test.com` is carried over; the two test accounts (`test@abc.com`, `test@test.com`) are left out. The father gets his own account from Settings after the switch.
 - A phone that had the old app installed may show the old screen once; pulling to refresh loads the new app. The old service worker removes itself.
 - The name on screen and on documents is Shree Vastu Vaibhav.
 - Clients without a phone number get no WhatsApp reminder button. None of the five clients who owe money have a number saved yet.

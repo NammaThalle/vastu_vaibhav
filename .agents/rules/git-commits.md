@@ -8,7 +8,7 @@ This repository follows a strict internal strategy for all git commits. AI agent
 
 > [!IMPORTANT]
 > **When to commit**
-> Never commit to `main` or `dev` directly. Once the user has approved a task, commit as you go on that task's working branch, in small semantic commits. Without that approval, do not commit at all.
+> Never commit to `main` directly; there is no `dev` branch. Once the user has approved a task, commit as you go on that task's working branch, in small semantic commits. Without that approval, do not commit at all.
 > Commits stay local. Push, open a PR or force push only when the user asks for it.
 
 ## 1. Commit Realignment & Simulation
@@ -33,12 +33,19 @@ This repository follows a strict internal strategy for all git commits. AI agent
 - **No prefixes** such as `feat:`, `fix:`, `chore:`, `docs:` or scopes like `feat(api):`.
 - **No emojis** in commits, PR titles or descriptions, or any documentation.
 
-## 5. Post-Merge Timeline Maintenance
-Upon notification that a branch has been merged and deleted on remote (e.g., via a PR), agents must perform the following maintenance flow:
-- **Switch and Pull**: Checkout the target branch (usually `dev`) and pull the latest changes.
-- **Back-date the Merge**: If the merge commit is the most recent, amend its date to follow the natural sequential timeline (randomly after the last commit of the feature branch).
+## 5. Branches, Merging and Releases
+Work happens on a feature branch, and a pull request merges it straight into `main`. Releases are version tags on `main`.
+
+After the user reports that a pull request was merged:
+- **Switch and Pull**: Checkout `main` and pull the latest changes.
+- **Back-date the Merge**: If the merge commit is the most recent, amend its date to follow the natural sequential timeline (randomly after the last commit of the feature branch), keeping the same rules for time window and daily count.
 - **Cleanup**: Delete the local feature branch that was merged.
-- **Push**: Force push the back-dated merge commit to remote to ensure the timeline remains consistent (only after the user confirms).
+- **Push**: Force push the back-dated `main` to remote (only after the user confirms).
+
+To release, after the back-dated merge is on remote:
+- **Tag**: Create an annotated tag `vMAJOR.MINOR.PATCH` (semantic versioning) on the merge commit, with the tagger set to Shravan Manerikar and `GIT_COMMITTER_DATE` set to a simulated time a few minutes after the merge commit. The tag message is a plain 10 to 15 word sentence, like a commit message.
+- **Push the tag** only after the user confirms. Pushing a `v*.*.*` tag makes CI test everything and publish the images under that version and `latest`.
+- Tag only after the force push, so the tag points at the back-dated commit.
 
 ## 6. Retrospective Note
 The absence of a standardized rule file led to misaligned commit histories and date anomalies earlier in the project. This document now serves as the permanent source of truth to prevent random/un-strategized commits. Commits up to 1st July 2026 used Conventional Commit prefixes; from 2nd July 2026 onward, the plain-sentence style in section 4 applies.

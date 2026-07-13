@@ -79,7 +79,7 @@ cd frontend && npm run typecheck && npm run build
 
 ## Production
 
-Images are built by CI on every push to `main`: `ghcr.io/nammathalle/vastu_vaibhav-api` and `ghcr.io/nammathalle/vastu_vaibhav-web`.
+Images are published by CI when a version tag such as `v1.0.0` is pushed: `ghcr.io/nammathalle/vastu_vaibhav-api` and `ghcr.io/nammathalle/vastu_vaibhav-web`.
 
 On the server, copy `deploy/compose.yml` and `deploy/.env.example` (as `.env`), plus `config/app-settings.json`, into the deploy folder, then:
 
