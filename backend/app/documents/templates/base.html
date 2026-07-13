@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{% block title %}{% endblock %}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 12mm 13mm 16mm;
+    @bottom-center {
+      content: "{% block footer %}{% endblock %}";
+      font: 8pt "Noto Sans", "DejaVu Sans", Verdana, sans-serif;
+      color: #64748b;
+    }
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font: 8pt "Noto Sans", "DejaVu Sans", Verdana, sans-serif;
+      color: #94a3b8;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "Noto Sans", "DejaVu Sans", Verdana, sans-serif; font-size: 10pt; color: #1e293b; margin: 0; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .muted { color: #64748b; }
+  .small { font-size: 8.5pt; }
+
+  header.letterhead { display: flex; align-items: center; gap: 6mm; }
+  .logo { width: 28mm; height: 28mm; flex: none; }
+  .logo img { width: 100%; height: 100%; object-fit: contain; }
+  .logo .mark { width: 100%; height: 100%; border-radius: 50%; background: {{ biz.color }}; color: #fff;
+                font-size: 30pt; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .brand { flex: 1; text-align: center; }
+  .brand .name { font-size: 22pt; letter-spacing: 1.5pt; color: #a8822e; text-transform: uppercase; }
+  .brand .tagline { color: #64748b; font-size: 9pt; margin-top: 1mm; }
+  .brand h1 { font-size: 15pt; letter-spacing: 2pt; margin: 2mm 0 0; color: #334155; }
+  .member { width: 28mm; flex: none; text-align: right; }
+  .member img { width: 14mm; }
+
+  .contacts { margin: 3mm 0 0; padding: 2mm 0; white-space: nowrap; background: #f1f5fb; border-top: 1px solid #dbe4f3;
+              border-bottom: 1px solid #dbe4f3; text-align: center; font-size: 8pt; }
+  .contacts span { display: inline-block; margin: 0 1mm; padding: 0.8mm 2.5mm; background: #fff;
+                   border: 1px solid #dbe4f3; border-radius: 10pt; }
+
+  .meta { display: flex; gap: 14mm; margin: 4mm 0 0; padding-bottom: 2.5mm; border-bottom: 1px solid #e2e8f0; }
+  .meta .label, .to .label { font-size: 8pt; color: #64748b; }
+  .meta .value { font-weight: 700; font-size: 10.5pt; margin-top: 1mm; }
+  .to { margin: 3mm 0 4mm; }
+  .to .who { font-size: 14pt; font-weight: 700; margin-top: 1mm; }
+
+  table.lines { width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid #dbe4f3;
+                border-radius: 3mm; }
+  table.lines thead { display: table-header-group; }
+  table.lines thead tr { background: {{ biz.color }}; }
+  table.lines.paid thead tr { background: #067a57; }
+  table.lines th { color: #fff; font-size: 8.5pt; letter-spacing: 0.8pt;
+                   text-transform: uppercase; padding: 2.4mm 4mm; text-align: left; }
+  table.lines th.num { text-align: right; }
+  table.lines td { padding: 1.6mm 4mm; border-top: 1px solid #e2e8f0; vertical-align: top; }
+  table.lines tr { page-break-inside: avoid; }
+  table.lines { overflow: hidden; }
+  table.lines tbody tr:nth-child(even) td { background: #f8fafc; }
+  table.lines .desc { font-weight: 700; }
+  table.lines .sub { font-size: 7.5pt; color: #64748b; margin-top: 0.2mm; }
+  table.lines .where { font-weight: 400; color: #475569; }
+  .discount { color: #067a57; }
+
+  .bottom { display: flex; gap: 8mm; margin-top: 5mm; page-break-inside: avoid; }
+  .pay { flex: 1; font-size: 9pt; line-height: 1.6; }
+  .pay h3 { font-size: 10.5pt; margin: 0 0 1.5mm; }
+  .pay .upi { display: flex; gap: 3mm; align-items: center; margin-top: 2mm; }
+  .pay .upi img { width: 26mm; height: 26mm; }
+  .pay .gpay { height: 3.2mm; vertical-align: middle; }
+  .totals { width: 70mm; border: 1px solid #e2e8f0; border-radius: 3mm; padding: 3mm 4mm; }
+  .totals .row { display: flex; justify-content: space-between; padding: 1mm 0; color: #475569; }
+  .totals .due { margin-top: 2mm; padding: 3mm; border-radius: 2.5mm; background: #fdecef; border: 1px solid #f6c4cf;
+                 display: flex; justify-content: space-between; align-items: center; color: #9f1239; }
+  .totals .due.clear { background: #e8f6f0; border-color: #b6e3d0; color: #067a57; }
+  .totals .due .label { font-size: 8pt; font-weight: 700; letter-spacing: 1.5pt; text-transform: uppercase; }
+  .totals .due .amount { font-size: 17pt; font-weight: 700; }
+
+  .section { margin-top: 7mm; }
+  .section h2 { font-size: 11pt; color: {{ biz.color }}; text-transform: uppercase; letter-spacing: 1pt;
+                border-bottom: 1px solid #dbe4f3; padding-bottom: 1.5mm; margin: 0 0 3mm; }
+  .prose { white-space: pre-line; line-height: 1.55; }
+  .stamp { margin-top: 3mm; display: inline-block; padding: 1mm 3mm; border: 1.5px solid #9f1239; color: #9f1239;
+           font-weight: 700; letter-spacing: 2pt; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<header class="letterhead">
+  <div class="logo">
+    {% if biz.logo_data_uri %}<img src="{{ biz.logo_data_uri }}" alt="">{% else %}<div class="mark">{{ biz.logo_initial }}</div>{% endif %}
+  </div>
+  <div class="brand">
+    <div class="name">{{ biz.name }}</div>
+    <h1>{% block heading %}{% endblock %}</h1>
+  </div>
+  <div class="member">{% if biz.member_logo_data_uri %}<img src="{{ biz.member_logo_data_uri }}" alt="">{% endif %}</div>
+</header>
+<div class="contacts">
+  {% for phone in biz.phones %}<span>{{ phone }}</span>{% endfor %}
+  {% if biz.email %}<span>{{ biz.email }}</span>{% endif %}
+  {% if biz.website %}<span>{{ biz.website }}</span>{% endif %}
+</div>
+{% block body %}{% endblock %}
+</body>
+</html>

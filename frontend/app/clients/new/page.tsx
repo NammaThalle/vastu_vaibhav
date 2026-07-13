@@ -2,277 +2,60 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import {
-    User,
-    MapPin,
-    Phone,
-    Mail,
-    IndianRupee,
-    ArrowLeft,
-    Save,
-    Loader2,
-    CheckCircle2,
-    AlertCircle
-} from "lucide-react"
+
+import { PageHeader } from "@/components/common"
+import { ClientFields, emptyClient, emptyProperty, nullable, PropertyFields } from "@/components/forms"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { clientsApi } from "@/services/api"
-import { toast } from "sonner"
-import { cn } from "@/lib/utils"
+import { api, unwrap } from "@/lib/api/client"
+import { useAction } from "@/lib/queries"
 
 export default function NewClientPage() {
     const router = useRouter()
-    const [loading, setLoading] = React.useState(false)
-    const [success, setSuccess] = React.useState(false)
+    const [client, setClient] = React.useState(emptyClient)
+    const [property, setProperty] = React.useState(emptyProperty)
 
-    const [formData, setFormData] = React.useState({
-        full_name: "",
-        project_address: "",
-        phone: "",
-        email: "",
-        location_type: "Goa",
-        lead_status: "Inquiry",
-        total_fees_fixed: 0,
-        service_id: ""
-    })
+    const create = useAction(
+        () =>
+            unwrap(
+                api.POST("/api/v1/clients", {
+                    body: {
+                        ...nullable(client),
+                        name: client.name.trim(),
+                        referral_source: client.referral_source || null,
+                        property: { ...nullable(property), label: property.label.trim(), property_type: property.property_type },
+                    },
+                }),
+            ),
+        "Client added",
+    )
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!formData.full_name) {
-            toast.error("Client name is required")
-            return
-        }
-
-        setLoading(true)
-        try {
-            const payload = { ...formData }
-            if (!payload.service_id) {
-                delete (payload as any).service_id
-            }
-            await clientsApi.create(payload)
-            setSuccess(true)
-            toast.success("Client registered successfully")
-            setTimeout(() => {
-                router.push("/clients")
-            }, 1500)
-        } catch (err) {
-            toast.error("Failed to register client profile")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    if (success) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-                <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="h-20 w-20 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center dark:text-emerald-300 dark:border dark:border-emerald-400/20"
-                >
-                    <CheckCircle2 size={48} />
-                </motion.div>
-                <h2 className="text-2xl font-bold">Registration Successful!</h2>
-                <p className="text-muted-foreground">Redirecting you to the client directory...</p>
-            </div>
-        )
+    async function submit(event: React.FormEvent) {
+        event.preventDefault()
+        const created = await create.mutateAsync(undefined)
+        router.replace(`/property?id=${created.properties[0].id}`)
     }
 
     return (
-        <div className="max-w-3xl mx-auto space-y-6">
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">New Client</h1>
-                    <p className="text-muted-foreground">Initialize a new consulting profile.</p>
+        <form onSubmit={submit} className="mx-auto max-w-xl">
+            <PageHeader title="New client" />
+            <div className="space-y-6">
+                <section className="rounded-lg border bg-card p-4">
+                    <h2 className="mb-4 font-medium">Client</h2>
+                    <ClientFields values={client} onChange={setClient} />
+                </section>
+                <section className="rounded-lg border bg-card p-4">
+                    <h2 className="mb-4 font-medium">Property</h2>
+                    <PropertyFields values={property} onChange={setProperty} showNotes={false} />
+                </section>
+                <div className="flex gap-3">
+                    <Button type="button" variant="outline" className="h-11 flex-1" onClick={() => router.back()}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" className="h-11 flex-1" disabled={create.isPending}>
+                        {create.isPending ? "Saving..." : "Save client"}
+                    </Button>
                 </div>
             </div>
-
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-            >
-                <form onSubmit={handleSubmit}>
-                    <Card className="border-border/50 shadow-xl overflow-hidden">
-                        <CardHeader className="bg-muted/30 border-b pb-8 dark:bg-white/[0.02] dark:border-white/[0.06]">
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center border border-primary/20">
-                                    <User size={20} />
-                                </div>
-                                <div>
-                                    <CardTitle>Profile Information</CardTitle>
-                                    <CardDescription>Primary identification and contact details.</CardDescription>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-6 pt-8">
-                            <div className="space-y-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="full_name" className="text-sm font-semibold">Full Legal Name *</Label>
-                                    <div className="relative">
-                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="full_name"
-                                            placeholder="e.g. Rajesh Kumar Sharma"
-                                            className="pl-9 bg-muted/20"
-                                            value={formData.full_name}
-                                            onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                                            autoComplete="name"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="project_address" className="text-sm font-semibold">Site / Project Address</Label>
-                                    <div className="relative">
-                                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                        <textarea
-                                            id="project_address"
-                                            className="flex min-h-[100px] w-full rounded-md border border-input bg-muted/20 px-3 py-2 pl-9 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                            placeholder="Enter full property address for Vastu analysis..."
-                                            value={formData.project_address}
-                                            onChange={(e) => setFormData({ ...formData, project_address: e.target.value })}
-                                            autoComplete="street-address"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="location_type" className="text-sm font-semibold">Location Region</Label>
-                                    <select
-                                        id="location_type"
-                                        className="flex h-10 w-full rounded-md border border-input bg-muted/20 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                        value={formData.location_type}
-                                        onChange={e => setFormData({ ...formData, location_type: e.target.value })}
-                                    >
-                                        <option value="Goa">Goa (Standard)</option>
-                                        <option value="Maharashtra">Maharashtra (Subject to Travel Add-ons)</option>
-                                        <option value="Karnataka">Karnataka (Subject to Travel Add-ons)</option>
-                                    </select>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="phone" className="text-sm font-semibold">Mobile Number</Label>
-                                        <div className="relative">
-                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                id="phone"
-                                                type="tel"
-                                                inputMode="numeric"
-                                                autoComplete="tel"
-                                                placeholder="+91 00000 00000"
-                                                className="pl-9 bg-muted/20"
-                                                value={formData.phone}
-                                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="email" className="text-sm font-semibold">Email Address</Label>
-                                        <div className="relative">
-                                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                id="email"
-                                                type="email"
-                                                autoComplete="email"
-                                                placeholder="client@example.com"
-                                                className="pl-9 bg-muted/20"
-                                                value={formData.email}
-                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 bg-orange-500/10 text-orange-500 rounded-lg flex items-center justify-center border border-orange-500/20 dark:text-amber-300 dark:bg-amber-400/10 dark:border-amber-400/20">
-                                        <IndianRupee size={16} />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold">Financial Configuration</h3>
-                                        <p className="text-xs text-muted-foreground">Define professional consulting fees.</p>
-                                    </div>
-                                </div>
-
-                                <div className="grid gap-2 w-full sm:max-w-xs">
-                                    <Label htmlFor="fees" className="text-sm font-semibold">Base Fixed Fee (₹)</Label>
-                                    <div className="relative">
-                                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="fees"
-                                            type="number"
-                                            placeholder="0"
-                                            className="pl-9 bg-muted/20 font-mono font-bold"
-                                            value={formData.total_fees_fixed}
-                                            onChange={(e) => setFormData({ ...formData, total_fees_fixed: Number(e.target.value) })}
-                                        />
-                                    </div>
-                                </div>
-
-                                <Separator className="my-2" />
-                                <div className="space-y-3 bg-muted/40 p-4 rounded-xl border border-dashed text-sm dark:bg-white/[0.03] dark:border-white/[0.08]">
-                                    <div className="font-semibold text-primary mb-2 flex items-center gap-2">
-                                        <CheckCircle2 className="h-4 w-4" />
-                                        Phase 1: Initial Property Audit
-                                    </div>
-                                    <div className="space-y-4">
-                                        <Label>Select Property Type to assign Phase 1 Base Fee</Label>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                            {[
-                                                { label: "Residential", price: 2000 },
-                                                { label: "Commercial", price: 2000 },
-                                                { label: "Plot / Land", price: 2500 }
-                                            ].map((opt) => (
-                                                <button
-                                                    key={opt.label}
-                                                    type="button"
-                                                    onClick={() => setFormData({ ...formData, total_fees_fixed: opt.price })}
-                                                    className={cn(
-                                                        "flex flex-col items-center justify-center p-4 min-h-[56px] rounded-lg border transition-all",
-                                                        formData.total_fees_fixed === opt.price
-                                                            ? "bg-primary/10 border-primary text-primary"
-                                                            : "bg-background border-border hover:border-primary/50 text-muted-foreground hover:text-foreground"
-                                                    )}
-                                                >
-                                                    <span className="font-medium">{opt.label}</span>
-                                                    <span className="text-xs font-bold mt-1">₹ {opt.price}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                        <CardFooter className="bg-muted/10 border-t p-6 flex justify-end gap-3">
-                            <Button type="button" variant="ghost" onClick={() => router.back()}>Cancel</Button>
-                            <Button type="submit" disabled={loading} className="px-8 flex gap-2">
-                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                                Register Client
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                </form>
-            </motion.div>
-
-            <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-xl border border-primary/10">
-                <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                    * Required fields must be completed. Finalizing this form will create a unique consulting ID for the client.
-                    You can track visits and manage billing after the profile is active.
-                </p>
-            </div>
-        </div>
+        </form>
     )
 }

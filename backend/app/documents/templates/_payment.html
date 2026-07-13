@@ -1,0 +1,12 @@
+<div class="pay">
+  <h3>Payment instructions</h3>
+  {% if biz.bank_name %}<div>Bank: {{ biz.bank_name }}</div>{% endif %}
+  {% if biz.account_no %}<div>Account no: {{ biz.account_no }} | IFSC: {{ biz.ifsc }}</div>{% endif %}
+  {% if biz.gpay_phone %}<div>{% if biz.gpay_data_uri %}<img class="gpay" src="{{ biz.gpay_data_uri }}" alt=""> {% else %}GPay {% endif %}{{ biz.gpay_phone }}</div>{% endif %}
+  {% if upi_qr %}
+  <div class="upi">
+    <img src="{{ upi_qr }}" alt="">
+    <div class="small">Scan with any UPI app to pay<br><b>{{ due | rupees }}</b><br>{{ biz.upi_id }}</div>
+  </div>
+  {% endif %}
+</div>

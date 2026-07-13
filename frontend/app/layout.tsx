@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { LayoutShell } from "@/components/LayoutShell"
+import { AppShell } from "@/components/AppShell"
 import { QueryProvider } from "@/components/QueryProvider"
 import { DevServiceWorkerCleanup } from "@/components/DevServiceWorkerCleanup"
 import { Toaster } from "@/components/ui/sonner"
@@ -9,8 +9,6 @@ import { Toaster } from "@/components/ui/sonner"
 export const viewport: Viewport = {
     width: "device-width",
     initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
     viewportFit: "cover",
     themeColor: [
         { media: "(prefers-color-scheme: light)", color: "#C96C2D" },
@@ -19,13 +17,13 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-    title: "Vastu Vaibhav | Professional Consulting",
-    description: "Advanced Platform for Vastu Consultants — manage clients, visits, and financials.",
+    title: "Shree Vastu Vaibhav",
+    description: "Clients, visits, remedies and payments for Shree Vastu Vaibhav.",
     manifest: "/manifest.json",
     appleWebApp: {
         capable: true,
         statusBarStyle: "default",
-        title: "Vastu Vaibhav",
+        title: "Shree Vastu Vaibhav",
     },
     icons: {
         icon: [
@@ -54,7 +52,7 @@ export default function RootLayout({
                 >
                     <QueryProvider>
                         <DevServiceWorkerCleanup />
-                        <LayoutShell>{children}</LayoutShell>
+                        <AppShell>{children}</AppShell>
                         <Toaster position="top-center" />
                     </QueryProvider>
                 </ThemeProvider>

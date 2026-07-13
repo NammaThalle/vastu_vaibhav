@@ -1,338 +1,99 @@
 "use client"
 
-import * as React from "react"
 import Link from "next/link"
-import { motion } from "framer-motion"
-import {
-    Users,
-    IndianRupee,
-    Calendar,
-    Plus,
-    Search,
-    TrendingUp,
-    UserPlus,
-    FileText,
-    ChevronRight,
-    ArrowUpRight,
-    AlertCircle,
-    Settings
-} from "lucide-react"
+import { CalendarDays, MessageCircle, Phone, Plus } from "lucide-react"
+
+import { Empty, ErrorMessage, Loading, PageHeader, Section } from "@/components/common"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { dashboardApi } from "@/services/api"
-import { toast } from "sonner"
-import { cn } from "@/lib/utils"
-import { logger } from "@/lib/logger"
+import { rupees, shortDate, telLink, whatsappLink } from "@/lib/format"
+import { useHome, useReminderText } from "@/lib/queries"
 
-export default function Dashboard() {
-    const [period, setPeriod] = React.useState("month")
-    const [stats, setStats] = React.useState({
-        totalClients: 0,
-        newClientsTrend: "",
-        totalVisits: 0,
-        newVisitsTrend: "",
-        collectedThisPeriod: 0,
-        goalForPeriod: 0,
-        goalCompletion: 0,
-        pendingBalance: 0,
-        overdueBalance: 0,
-        totalRevenue: 0,
-    })
-    const [recentActivity, setRecentActivity] = React.useState<Array<{
-        id: string
-        title: string
-        subtitle: string
-        when: string
-    }>>([])
-    const [loading, setLoading] = React.useState(true)
-
-    React.useEffect(() => {
-        loadDashboardData()
-    }, [period])
-
-    const loadDashboardData = async () => {
-        try {
-            setLoading(true)
-            const summary = await dashboardApi.getSummary(period)
-
-            setRecentActivity(
-                (summary.recent_activity || []).map((item: any) => ({
-                    id: item.id,
-                    title: item.title,
-                    subtitle: item.subtitle,
-                    when: formatRelativeTime(item.when),
-                }))
-            )
-
-            setStats({
-                totalClients: summary.total_clients,
-                newClientsTrend: summary.new_clients_trend,
-                totalVisits: summary.total_visits,
-                newVisitsTrend: summary.new_visits_trend,
-                collectedThisPeriod: summary.collected_this_period,
-                goalForPeriod: summary.goal_for_period,
-                goalCompletion: summary.goal_completion,
-                pendingBalance: summary.pending_balance,
-                overdueBalance: summary.overdue_balance,
-                totalRevenue: summary.total_revenue,
-            })
-        } catch (err) {
-            console.error(err)
-            toast.error("Failed to load dashboard statistics")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const statCards = [
-        {
-            title: "Total Clients",
-            value: stats.totalClients,
-            icon: Users,
-            color: "text-blue-500",
-            bg: "bg-blue-500/10",
-            trend: stats.newClientsTrend,
-            description: "Active consulting profiles"
-        },
-        {
-            title: "Consulting Visits",
-            value: stats.totalVisits,
-            icon: Calendar,
-            color: "text-emerald-500",
-            bg: "bg-emerald-500/10",
-            trend: stats.newVisitsTrend,
-            description: "Site & virtual sessions"
-        },
-        {
-            title: "Total Revenue",
-            value: `₹${stats.totalRevenue.toLocaleString()}`,
-            icon: FileText,
-            color: "text-purple-500",
-            bg: "bg-purple-500/10",
-            trend: "Gross billings",
-            description: "Total volume generated"
-        },
-        {
-            title: "Outstanding Balance",
-            value: `₹${stats.pendingBalance.toLocaleString()}`,
-            icon: IndianRupee,
-            color: "text-orange-500",
-            bg: "bg-orange-500/10",
-            trend: "Across all accounts",
-            description: "Total pending payments",
-            urgent: stats.pendingBalance > 50000
-        }
-    ]
-
-    function formatRelativeTime(value: string | Date) {
-        const date = new Date(value)
-        const diffMs = Date.now() - date.getTime()
-        const diffMins = Math.max(1, Math.floor(diffMs / 60000))
-        if (diffMins < 60) return `${diffMins}m ago`
-        const diffHours = Math.floor(diffMins / 60)
-        if (diffHours < 24) return `${diffHours}h ago`
-        const diffDays = Math.floor(diffHours / 24)
-        return `${diffDays}d ago`
-    }
-
-    const progressWidth = Math.min(100, stats.goalCompletion)
+export default function HomePage() {
+    const home = useHome()
+    const reminderText = useReminderText()
+    if (home.isPending) return <Loading />
+    if (home.isError) return <ErrorMessage error={home.error} />
+    const { dues, upcoming_visits, outstanding_total, collected_this_month } = home.data
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto">
-            {/* Welcome Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div className="space-y-1">
-                    <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Executive Dashboard</h1>
-                    <p className="text-muted-foreground flex items-center gap-2">
-                        Professional Vastu Consulting Metrics
-                        <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground">Live</span>
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <Select value={period} onValueChange={(val) => {
-                        setPeriod(val)
-                        logger.debug("Dashboard period changed", { period: val })
-                    }}>
-                        <SelectTrigger className="w-[140px] bg-background">
-                            <SelectValue placeholder="Period" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="month">This Month</SelectItem>
-                            <SelectItem value="year">This Year</SelectItem>
-                            <SelectItem value="total">All Time</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Button 
-                        variant="outline" 
-                        className="hidden sm:flex items-center"
-                        onClick={() => logger.info("Full executive report requested")}
-                    >
-                        <FileText className="mr-2 h-4 w-4" />
-                        Full Report
-                    </Button>
-                    <Button asChild className="shadow-lg shadow-primary/20">
-                        <Link href="/clients/new" className="flex items-center">
-                            <Plus className="mr-2 h-4 w-4" />
-                            New Registration
+        <>
+            <PageHeader
+                title="Home"
+                action={
+                    <Button asChild>
+                        <Link href="/clients/new">
+                            <Plus className="mr-1 h-4 w-4" /> New client
                         </Link>
                     </Button>
+                }
+            />
+
+            <div className="mb-6 grid grid-cols-2 gap-3">
+                <div className="rounded-lg border bg-card p-4">
+                    <div className="text-xs text-muted-foreground">To collect</div>
+                    <div className="mt-1 text-2xl font-semibold text-red-600 dark:text-red-400">{rupees(outstanding_total)}</div>
+                </div>
+                <div className="rounded-lg border bg-card p-4">
+                    <div className="text-xs text-muted-foreground">Collected this month</div>
+                    <div className="mt-1 text-2xl font-semibold">{rupees(collected_this_month)}</div>
                 </div>
             </div>
 
-            {/* Grid: Stat Cards */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {statCards.map((stat, i) => (
-                    <motion.div
-                        key={stat.title}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                    >
-                        <Card className={cn("relative overflow-hidden group border-border/50 transition-all hover:border-primary/50", stat.urgent && "animate-breathing")}>
-                            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                                <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{stat.title}</CardTitle>
-                                <div className={cn("p-2 rounded-lg transition-colors group-hover:scale-110", stat.bg)}>
-                                    <stat.icon className={cn("h-4 w-4", stat.color)} />
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl sm:text-3xl font-bold tracking-tight">
-                                    {loading ? (
-                                        <div className="h-8 w-24 bg-muted animate-pulse rounded" />
-                                    ) : (
-                                        stat.value
-                                    )}
-                                </div>
-                                <div className="mt-2 flex items-center text-xs">
-                                    <TrendingUp className="mr-1 h-3 w-3 text-emerald-500" />
-                                    <span className="text-emerald-500 font-medium mr-1">{stat.trend}</span>
-                                </div>
-                            </CardContent>
-                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                <stat.icon size={80} />
-                            </div>
-                        </Card>
-                    </motion.div>
-                ))}
-            </div>
-
-            {/* Row 2: Main Operations */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="lg:col-span-4 bg-card/40 backdrop-blur border-border/50">
-                    <CardHeader>
-                        <CardTitle>Recent Activity</CardTitle>
-                        <CardDescription>Latest client interactions and visits overview.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {recentActivity.length > 0 ? (
-                            <div className="space-y-6">
-                                {recentActivity.map((item) => (
-                                    <div key={item.id} className="flex items-center gap-4">
-                                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center border border-border">
-                                            <Users className="h-5 w-5 text-muted-foreground" />
-                                        </div>
-                                        <div className="flex-1 space-y-1">
-                                            <p className="text-sm font-semibold">{item.title}</p>
-                                            <p className="text-xs text-muted-foreground">{item.subtitle}</p>
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">{item.when}</div>
+            <Section title={`Who owes money (${dues.length})`}>
+                {dues.length === 0 ? (
+                    <Empty>Nobody owes anything right now.</Empty>
+                ) : (
+                    <ul className="divide-y rounded-lg border bg-card">
+                        {dues.map((due) => (
+                            <li key={due.property_id} className="flex items-center gap-3 p-3">
+                                <Link href={`/property?id=${due.property_id}`} className="min-w-0 flex-1">
+                                    <div className="truncate font-medium">{due.client_name}</div>
+                                    <div className="truncate text-xs text-muted-foreground">
+                                        {due.label}
+                                        {due.last_activity && ` · last activity ${shortDate(due.last_activity)}`}
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-6 text-center">
-                                <p className="text-sm font-semibold">No recent activity yet</p>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                    New visits and client interactions will appear here once the database has data.
-                                </p>
-                            </div>
-                        )}
-                    </CardContent>
-                    <CardFooter className="border-t pt-4">
-                        <Button variant="ghost" className="w-full justify-between" asChild>
-                            <Link href="/clients">
-                                View all activity
-                                <ChevronRight className="h-4 w-4" />
-                            </Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
+                                </Link>
+                                <div className="text-right font-semibold text-red-600 dark:text-red-400">{rupees(due.balance)}</div>
+                                {due.phone && (
+                                    <div className="flex gap-1">
+                                        <Button asChild size="icon" variant="ghost" aria-label="Call">
+                                            <a href={telLink(due.phone)}><Phone className="h-4 w-4" /></a>
+                                        </Button>
+                                        <Button asChild size="icon" variant="ghost" aria-label="Send a payment reminder on WhatsApp">
+                                            <a href={whatsappLink(due.phone, reminderText(due.client_name, due.label, due.balance))} target="_blank" rel="noreferrer">
+                                                <MessageCircle className="h-4 w-4" />
+                                            </a>
+                                        </Button>
+                                    </div>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </Section>
 
-                {/* Operational Insights */}
-                <div className="lg:col-span-3 space-y-6">
-                    <Card className="border-emerald-500/20 bg-emerald-500/[0.02]">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-base flex items-center gap-2">
-                                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                                Revenue Collection
-                            </CardTitle>
-                            <CardDescription>Target vs. Actuals</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-end justify-between">
-                                <div className="space-y-1">
-                                    <span className="text-2xl font-bold">
-                                        {loading ? "..." : `₹${stats.collectedThisPeriod.toLocaleString()}`}
-                                    </span>
-                                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
-                                        Collected {period === "total" ? "Overall" : "this " + period}
-                                    </p>
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-blue-600 font-bold dark:text-cyan-300">{loading ? "..." : `${stats.goalCompletion}%`}</span>
-                                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter text-right">Of Goal</p>
-                                </div>
-                            </div>
-                            <div className="h-2 w-full bg-muted rounded-full overflow-hidden flex">
-                                <div
-                                    className="h-full bg-emerald-500 transition-all"
-                                    style={{ width: `${progressWidth}%` }}
-                                />
-                                <div
-                                    className="h-full bg-blue-400 transition-all"
-                                    style={{ width: `${Math.max(0, 100 - progressWidth)}%` }}
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <div className="p-2 rounded bg-background border border-border/50 dark:bg-white/[0.03] dark:border-white/[0.08]">
-                                    <span className="text-[10px] text-muted-foreground block font-bold uppercase">Pending</span>
-                                    <span className="text-sm font-bold text-orange-600 dark:text-amber-300">
-                                        {loading ? "..." : `₹${stats.pendingBalance.toLocaleString()}`}
-                                    </span>
-                                </div>
-                                <div className="p-2 rounded bg-background border border-border/50 dark:bg-white/[0.03] dark:border-white/[0.08]">
-                                    <span className="text-[10px] text-muted-foreground block font-bold uppercase">Overdue</span>
-                                    <span className="text-sm font-bold text-destructive">
-                                        {loading ? "..." : `₹${stats.overdueBalance.toLocaleString()}`}
-                                    </span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-
-            {/* Row 3: Quick Links Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                    { label: "Client Directory", href: "/clients", icon: Users, color: "bg-blue-500/10 text-blue-500" },
-                    { label: "New Project", href: "/clients/new", icon: Plus, color: "bg-purple-500/10 text-purple-500" },
-                    { label: "Billing", href: "/clients", icon: IndianRupee, color: "bg-orange-500/10 text-orange-500" },
-                    { label: "Settings", href: "/", icon: Settings, color: "bg-gray-500/10 text-gray-500" },
-                ].map((item) => (
-                    <Link key={item.label} href={item.href}>
-                        <div className="flex items-center gap-3 p-4 rounded-xl border border-border/50 hover:border-primary/50 hover:bg-accent/50 transition-all group dark:border-white/[0.08] dark:bg-white/[0.03] dark:hover:bg-white/[0.06]">
-                            <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center shrink-0", item.color)}>
-                                <item.icon className="h-5 w-5" />
-                            </div>
-                            <span className="font-semibold text-sm">{item.label}</span>
-                            <ArrowUpRight className="ml-auto h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                    </Link>
-                ))}
-            </div>
-        </div>
+            <Section title="Upcoming visits">
+                {upcoming_visits.length === 0 ? (
+                    <Empty>No visits scheduled. Schedule one from a property page.</Empty>
+                ) : (
+                    <ul className="divide-y rounded-lg border bg-card">
+                        {upcoming_visits.map((visit) => (
+                            <li key={visit.visit_id}>
+                                <Link href={`/property?id=${visit.property_id}`} className="flex items-center gap-3 p-3">
+                                    <CalendarDays className="h-5 w-5 shrink-0 text-primary" />
+                                    <div className="min-w-0 flex-1">
+                                        <div className="truncate font-medium">{visit.client_name}</div>
+                                        <div className="truncate text-xs text-muted-foreground">
+                                            {visit.purpose || "Visit"} · {visit.label}
+                                        </div>
+                                    </div>
+                                    <div className="text-sm font-medium">{shortDate(visit.visit_date)}</div>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </Section>
+        </>
     )
 }

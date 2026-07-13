@@ -1,0 +1,52 @@
+# Production stack on portress, in ~/docker/vastu with its .env, config/ and data/.
+# The central Caddy (10.0.50.12) routes vastu.home: /api/* to api, everything else to web.
+# A fixed project name keeps container names the same whatever the folder is called.
+name: vastu
+
+x-api: &api
+  image: ghcr.io/nammathalle/vastu_vaibhav-api:${VASTU_TAG:-latest}
+  env_file: .env
+  environment:
+    DATABASE_URL: sqlite+aiosqlite:////data/vastu.db
+    ENVIRONMENT: production
+  volumes:
+    - ./data:/data
+    - ./config:/app/config:ro
+
+services:
+  migrate:
+    <<: *api
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+
+  api:
+    <<: *api
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8010:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  web:
+    image: ghcr.io/nammathalle/vastu_vaibhav-web:${VASTU_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "8011:80"
+
+  # First install only: docker compose run --rm api python -m app.cli.seed
+  # Weekly backup, Sunday 00:00 IST, keeping the last 4. Host crontab on portress:
+  #   0 0 * * 0 cd ~/docker/vastu && docker compose run --rm backup
+  backup:
+    <<: *api
+    profiles: ["tools"]
+    command: ["python", "-m", "app.cli.backup", "--dest", "/backups"]
+    restart: "no"
+    volumes:
+      - ./data:/data
+      - ${BACKUP_DIR:-./backups}:/backups

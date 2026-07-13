@@ -1,15 +1,16 @@
-
 from fastapi import APIRouter, Depends
-from app.api.api_v1.endpoints import login, clients, visits, ledger, services, dashboard, utils, config
-from app.api import deps
+
+from app.api.deps import get_current_user
+from app.api.api_v1.endpoints import catalog, clients, config, documents, home, login, properties, users
+
+signed_in = [Depends(get_current_user)]
 
 api_router = APIRouter()
-api_router.include_router(login.router, tags=["login"])
-protected_dependencies = [Depends(deps.get_current_user)]
-api_router.include_router(clients.router, prefix="/clients", tags=["clients"], dependencies=protected_dependencies)
-api_router.include_router(services.router, prefix="/services", tags=["services"], dependencies=protected_dependencies)
-api_router.include_router(visits.router, prefix="/visits", tags=["visits"], dependencies=protected_dependencies)
-api_router.include_router(ledger.router, prefix="/ledger", tags=["ledger"], dependencies=protected_dependencies)
-api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"], dependencies=protected_dependencies)
-api_router.include_router(utils.router, prefix="/utils", tags=["utils"], dependencies=protected_dependencies)
+api_router.include_router(login.router, tags=["auth"])
 api_router.include_router(config.router, prefix="/config", tags=["config"])
+api_router.include_router(home.router, prefix="/home", tags=["home"], dependencies=signed_in)
+api_router.include_router(clients.router, prefix="/clients", tags=["clients"], dependencies=signed_in)
+api_router.include_router(properties.router, tags=["properties"], dependencies=signed_in)
+api_router.include_router(documents.router, tags=["documents"], dependencies=signed_in)
+api_router.include_router(catalog.router, prefix="/catalog", tags=["catalog"], dependencies=signed_in)
+api_router.include_router(users.router, prefix="/users", tags=["users"], dependencies=signed_in)

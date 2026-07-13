@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Receipt {{ payment.receipt_no }}{% endblock %}
+{% block heading %}RECEIPT{% endblock %}
+{% block footer %}This is a computer-generated receipt and does not need a signature{% endblock %}
+{% block body %}
+<div class="meta">
+  <div><div class="label">Receipt no</div><div class="value">{{ payment.receipt_no }}</div></div>
+  <div><div class="label">Date</div><div class="value">{{ payment.paid_on | long_date }}</div></div>
+  <div><div class="label">Paid by</div><div class="value">{{ methods[payment.method] }}{% if payment.reference %}, {{ payment.reference }}{% endif %}</div></div>
+</div>
+<div class="to">
+  <div class="label">Received with thanks from</div>
+  <div class="who">{{ client.name }}</div>
+  <div class="small"><b>Property:</b> {{ prop.label }}{% if prop.address and prop.address != prop.label %}, {{ prop.address }}{% endif %}</div>
+</div>
+<table class="lines">
+  <thead><tr><th>Received</th><th class="num">Amount</th></tr></thead>
+  <tbody>
+    <tr><td><div class="desc">{{ payment.amount | in_words }}</div>
+            <div class="sub">Towards Vastu consultation and remedies</div></td>
+        <td class="num"><b>{{ payment.amount | rupees }}</b></td></tr>
+  </tbody>
+</table>
+<div class="bottom">
+  {% if due > 0 %}{% include "_payment.html" %}{% else %}<div class="pay"></div>{% endif %}
+  <div class="totals">
+    <div class="row"><span>Billed to date</span><span class="num">{{ billed | rupees }}</span></div>
+    <div class="row"><span>Paid to date</span><span class="num">{{ paid | rupees }}</span></div>
+    <div class="due{% if due <= 0 %} clear{% endif %}">
+      <span class="label">{% if due > 0 %}Balance{% elif due < 0 %}Advance{% else %}Paid in full{% endif %}</span>
+      <span class="amount">{{ (due if due >= 0 else -due) | rupees }}</span>
+    </div>
+  </div>
+</div>
+{% endblock %}

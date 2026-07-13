@@ -1,72 +1,109 @@
+from datetime import date, datetime
 
-from pydantic import BaseModel, Field
-from typing import Literal, Optional, List
-from datetime import datetime
-import uuid
+from pydantic import BaseModel, Field, model_validator
 
-# Service Entry Schemas
-class ServiceEntryBase(BaseModel):
+from app.models.enums import ChargeKind, PaymentMethod, VisitStatus
+from app.schemas.common import ORMModel, PositiveRupees, Rupees
+
+
+class VoidRequest(BaseModel):
+    reason: str = Field(min_length=1, max_length=300)
+
+
+# Visits
+
+class VisitCreate(BaseModel):
+    visit_date: date
+    status: VisitStatus = VisitStatus.DONE
+    purpose: str | None = Field(default=None, max_length=200)
+    observations: str | None = None
+
+
+class VisitUpdate(BaseModel):
+    visit_date: date | None = None
+    status: VisitStatus | None = None
+    purpose: str | None = Field(default=None, max_length=200)
+    observations: str | None = None
+
+
+class VisitOut(ORMModel, VisitCreate):
+    id: str
+    property_id: str
+    created_at: datetime
+
+
+# Charges
+
+class ChargeLine(BaseModel):
+    """One line to add. Pick a catalog item, or type a description and price."""
+
+    catalog_item_id: str | None = None
+    description: str | None = Field(default=None, max_length=300)
+    note: str | None = Field(default=None, max_length=200, description="Where it goes, e.g. shutter or main gate")
+    quantity: int = Field(default=1, gt=0)
+    unit_price: Rupees | None = Field(default=None, description="Defaults to the catalog price")
+    kind: ChargeKind = ChargeKind.CHARGE
+
+    @model_validator(mode="after")
+    def needs_item_or_text(self):
+        if self.catalog_item_id is None and (not self.description or self.unit_price is None):
+            raise ValueError("Give a catalog item, or both a description and a unit price")
+        return self
+
+
+class ChargesCreate(BaseModel):
+    charge_date: date
+    visit_id: str | None = None
+    lines: list[ChargeLine] = Field(min_length=1)
+
+
+class ChargeUpdate(BaseModel):
+    description: str | None = Field(default=None, min_length=1, max_length=300)
+    note: str | None = Field(default=None, max_length=200)
+    quantity: int | None = Field(default=None, gt=0)
+    unit_price: Rupees | None = None
+    charge_date: date | None = None
+
+
+class ChargeOut(ORMModel):
+    id: str
+    property_id: str
+    visit_id: str | None
+    catalog_item_id: str | None
+    kind: ChargeKind
     description: str
-    amount: float = Field(ge=0)
-    entry_type: Literal["charge", "discount"] = "charge"
-    date: Optional[datetime] = None
+    note: str | None
+    quantity: int
+    unit_price: int
+    amount: int
+    charge_date: date
+    voided_at: datetime | None
+    void_reason: str | None
 
-class ServiceEntryCreate(ServiceEntryBase):
-    client_id: str
-    visit_id: Optional[str] = None
 
-class ServiceEntry(ServiceEntryBase):
-    id: str
-    client_id: str
-    visit_id: Optional[str] = None
-    created_at: datetime
+# Payments
 
-    class Config:
-        from_attributes = True
+class PaymentCreate(BaseModel):
+    amount: PositiveRupees
+    method: PaymentMethod
+    paid_on: date
+    reference: str | None = Field(default=None, max_length=300)
 
-class ServiceEntryUpdate(BaseModel):
-    description: Optional[str] = None
-    amount: Optional[float] = Field(default=None, ge=0)
-    entry_type: Optional[Literal["charge", "discount"]] = None
-    date: Optional[datetime] = None
-
-# Payment Schemas
-class PaymentBase(BaseModel):
-    amount: float = Field(gt=0)
-    method: Optional[str] = "Cash"
-    date: Optional[datetime] = None
-    notes: Optional[str] = None
-
-class PaymentCreate(PaymentBase):
-    client_id: str
-
-class Payment(PaymentBase):
-    id: str
-    client_id: str
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 class PaymentUpdate(BaseModel):
-    amount: Optional[float] = Field(default=None, gt=0)
-    method: Optional[str] = None
-    date: Optional[datetime] = None
-    notes: Optional[str] = None
+    amount: PositiveRupees | None = None
+    method: PaymentMethod | None = None
+    paid_on: date | None = None
+    reference: str | None = Field(default=None, max_length=300)
 
-# Aggregated Ledger Schemas
-class LedgerEntry(BaseModel):
+
+class PaymentOut(ORMModel):
     id: str
-    type: str # "charge", "discount", or "payment"
-    description: str
-    amount: float
-    date: datetime
-    balance_after: float
-    visit_id: Optional[str] = None
-
-class ClientLedger(BaseModel):
-    client_id: str
-    history: List[LedgerEntry]
-    total_billed: float
-    total_paid: float
-    current_balance: float
+    property_id: str
+    amount: int
+    method: PaymentMethod
+    paid_on: date
+    reference: str | None
+    receipt_no: str
+    voided_at: datetime | None
+    void_reason: str | None

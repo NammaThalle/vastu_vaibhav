@@ -1,33 +1,36 @@
+"""Declarative base shared by every model.
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, declarative_base
-from app.core.config import settings
-from app.utils.logger import logger
+The naming convention gives every index and constraint a stable name, which is what
+lets Alembic autogenerate migrations on SQLite without hand edits. Money columns are
+plain integers holding whole rupees.
+"""
+import uuid
+from datetime import datetime
 
-# Create Async Engine
-logger.info("Initializing Async Database Engine for: %s", settings.DATABASE_URL.split("///")[-1])
-engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=False, # Disable raw SQL query logging
-    future=True,
-    # SQLite specific args for concurrency
-    connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {}
-)
+from sqlalchemy import DateTime, MetaData, String, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-# Async Session Factory
-AsyncSessionLocal = sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=False,
-)
+NAMING_CONVENTION = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_N_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
 
-Base = declarative_base()
 
-# Dependency for API endpoints
-async def get_db():
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+class Base(DeclarativeBase):
+    metadata = MetaData(naming_convention=NAMING_CONVENTION)
+
+
+def new_id() -> str:
+    return str(uuid.uuid4())
+
+
+class IdMixin:
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+
+
+class TimestampMixin:
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now())

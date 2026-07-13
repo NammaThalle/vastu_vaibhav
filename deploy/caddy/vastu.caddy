@@ -1,0 +1,11 @@
+# Central Caddy on 10.0.50.12: /etc/caddy/conf.d/vastu.caddy
+# Replaces the vastu.home block in /etc/caddy/Caddyfile.
+vastu.home {
+	tls internal
+	handle /api/* {
+		reverse_proxy 10.0.50.9:8010
+	}
+	handle {
+		reverse_proxy 10.0.50.9:8011
+	}
+}

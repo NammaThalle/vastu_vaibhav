@@ -1,98 +1,103 @@
-from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-from app.api import deps
-from app.models.client import Client as ClientModel
-from app.schemas.client import Client, ClientCreate, ClientUpdate
-from app.services.ledger_service import apply_loaded_client_balances
-from app.utils.logger import logger
+from dataclasses import asdict
+
+from fastapi import APIRouter, HTTPException
+from sqlalchemy import select, update
+
+from app.api.deps import DB, get_or_404
+from app.models import Client, Property
+from app.schemas.clients import (
+    ClientCreate, ClientDetail, ClientListItem, ClientMerge, ClientOut, ClientUpdate, PropertyCreate, PropertyOut,
+    PropertyWithSummary,
+)
+from app.schemas.common import Summary
+from app.services.ledger import PropertySummary, most_urgent, summaries_for
 
 router = APIRouter()
 
-@router.get("/", response_model=List[Client])
-async def read_clients(
-    db: AsyncSession = Depends(deps.get_db),
-    skip: int = 0,
-    limit: int = 100,
-) -> Any:
-    """
-    Retrieve clients with computed balances.
-    """
-    logger.debug("Retrieving clients list (skip=%d, limit=%d)", skip, limit)
-    stmt = select(ClientModel).options(
-        selectinload(ClientModel.service_entries),
-        selectinload(ClientModel.payments)
-    ).offset(skip).limit(limit)
-    result = await db.execute(stmt)
-    clients_db = result.scalars().all()
-    
-    return [apply_loaded_client_balances(client) for client in clients_db]
 
-@router.post("/", response_model=Client)
-async def create_client(
-    *,
-    db: AsyncSession = Depends(deps.get_db),
-    client_in: ClientCreate,
-) -> Any:
-    logger.info("Creating new client: %s", client_in.full_name)
-    client = ClientModel(**client_in.dict())
+def with_summary(prop: Property, summary: PropertySummary) -> PropertyWithSummary:
+    return PropertyWithSummary(**PropertyOut.model_validate(prop).model_dump(), summary=Summary(**asdict(summary)))
+
+
+@router.get("", response_model=list[ClientListItem])
+async def list_clients(db: DB) -> list[ClientListItem]:
+    clients = list(await db.scalars(select(Client).order_by(Client.name)))
+    properties = list(await db.scalars(select(Property)))
+    summaries = await summaries_for(db, properties)
+
+    by_client: dict[str, list[PropertySummary]] = {}
+    for prop in properties:
+        by_client.setdefault(prop.client_id, []).append(summaries[prop.id])
+
+    items = []
+    for client in clients:
+        own = by_client.get(client.id, [])
+        activity = [s.last_activity for s in own if s.last_activity]
+        items.append(ClientListItem(
+            **ClientOut.model_validate(client).model_dump(),
+            property_count=len(own),
+            balance=sum(s.balance for s in own),
+            status=most_urgent(s.status for s in own),
+            last_activity=max(activity) if activity else None,
+        ))
+    return items
+
+
+@router.post("", response_model=ClientDetail, status_code=201)
+async def create_client(body: ClientCreate, db: DB) -> ClientDetail:
+    client = Client(**body.model_dump(exclude={"property"}))
     db.add(client)
+    await db.flush()
+    db.add(Property(client_id=client.id, **body.property.model_dump()))
     await db.commit()
-    await db.refresh(client)
-    logger.info("Client created successfully with ID: %s", client.id)
-    return client
+    return await get_client(client.id, db)
 
-@router.put("/{id}", response_model=Client)
-async def update_client(
-    *,
-    db: AsyncSession = Depends(deps.get_db),
-    id: str,
-    client_in: ClientUpdate,
-) -> Any:
-    logger.info("Updating client: %s", client_in.full_name)
-    result = await db.execute(select(ClientModel).where(ClientModel.id == id))
-    client = result.scalars().first()
-    if not client:
-        logger.warning("Update failed: %s", id[:6])
-        raise HTTPException(status_code=404, detail="Client not found")
-    
-    update_data = client_in.dict(exclude_unset=True)
-    for field in update_data:
-        setattr(client, field, update_data[field])
-    
-    db.add(client)
+
+@router.get("/{client_id}", response_model=ClientDetail)
+async def get_client(client_id: str, db: DB) -> ClientDetail:
+    client = await get_or_404(db, Client, client_id)
+    properties = list(await db.scalars(
+        select(Property).where(Property.client_id == client_id).order_by(Property.created_at)))
+    summaries = await summaries_for(db, properties)
+    return ClientDetail(
+        **ClientOut.model_validate(client).model_dump(),
+        properties=[with_summary(p, summaries[p.id]) for p in properties],
+    )
+
+
+@router.patch("/{client_id}", response_model=ClientDetail)
+async def update_client(client_id: str, body: ClientUpdate, db: DB) -> ClientDetail:
+    client = await get_or_404(db, Client, client_id)
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(client, field, value)
     await db.commit()
-    await db.refresh(client)
-    logger.info("Client updated successfully: %s", client.full_name)
-    return client
+    return await get_client(client_id, db)
 
-@router.get("/{id}", response_model=Client)
-async def read_client(
-    *,
-    db: AsyncSession = Depends(deps.get_db),
-    id: str,
-) -> Any:
-    result = await db.execute(select(ClientModel).where(ClientModel.id == id))
-    client = result.scalars().first()
-    if not client:
-        raise HTTPException(status_code=404, detail="Client not found")
-    return client
 
-@router.delete("/{id}", response_model=Client)
-async def delete_client(
-    *,
-    db: AsyncSession = Depends(deps.get_db),
-    id: str,
-) -> Any:
-    logger.info("Deleting client ID: %s", id)
-    result = await db.execute(select(ClientModel).where(ClientModel.id == id))
-    client = result.scalars().first()
-    if not client:
-        logger.warning("Delete fail: %s", id[:6])
-        raise HTTPException(status_code=404, detail="Client not found")
-    await db.delete(client)
+@router.post("/{client_id}/properties", response_model=PropertyOut, status_code=201)
+async def add_property(client_id: str, body: PropertyCreate, db: DB) -> Property:
+    await get_or_404(db, Client, client_id)
+    prop = Property(client_id=client_id, **body.model_dump())
+    db.add(prop)
     await db.commit()
-    logger.info("Client deleted successfully: %s", id)
-    return client
+    await db.refresh(prop)
+    return prop
+
+
+@router.post("/{client_id}/merge", response_model=ClientDetail)
+async def merge_client(client_id: str, body: ClientMerge, db: DB) -> ClientDetail:
+    """Fold a duplicate client into another: its properties (with all their visits,
+    charges and payments) move across, and the empty duplicate is removed."""
+    if client_id == body.into_client_id:
+        raise HTTPException(status_code=400, detail="Pick a different client to merge into")
+    duplicate = await get_or_404(db, Client, client_id)
+    keeper = await get_or_404(db, Client, body.into_client_id)
+
+    await db.execute(update(Property).where(Property.client_id == duplicate.id).values(client_id=keeper.id))
+    keeper.phone = keeper.phone or duplicate.phone
+    keeper.referral_source = keeper.referral_source or duplicate.referral_source
+    keeper.notes = "\n".join(n for n in (keeper.notes, duplicate.notes) if n) or None
+    await db.flush()
+    await db.delete(duplicate)
+    await db.commit()
+    return await get_client(keeper.id, db)

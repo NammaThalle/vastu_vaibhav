@@ -38,12 +38,10 @@ async def login_access_token(
     result = await db.execute(select(User).where(User.email == form_data.username))
     user = result.scalars().first()
     
-    if not user or not security.verify_password(form_data.password, user.hashed_password):
+    if not user or not user.is_active or not security.verify_password(form_data.password, user.hashed_password):
         logger.warning("Failed login attempt for user: %s", anon_email)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
     
-    # if hasattr(user, "is_active") and not user.is_active: ...
-
     logger.info("User authenticated: %s.", anon_email)
     logger.info("Generating token")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -92,43 +90,29 @@ async def register(
     db: AsyncSession = Depends(deps.get_db),
     current_user: User | None = Depends(deps.get_optional_current_user),
 ) -> Any:
-    """
-    Create the first user during bootstrap. Later user creation requires authentication.
-    """
+    """The first user becomes the admin. After that, only the admin can add users."""
     user_count = await db.scalar(select(func.count(User.id)))
-    # If users exist, enforce that the creator is an admin.
     if user_count and current_user is None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Registration is closed after initial setup.",
         )
-        
-    if user_count and current_user and getattr(current_user, "is_admin", False) == False:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only administrators can register new users.",
-        )
+    if user_count and not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the admin can add users.")
 
     anon_email = anonymize_email(user_in.email)
-    logger.info("Registering new user: %s", anon_email)
-    result = await db.execute(select(User).where(User.email == user_in.email))
-    user = result.scalars().first()
-    if user:
-        # Don't reveal if user exists in production, but here it's an admin registering so it's fine.
+    existing = await db.execute(select(User).where(User.email == user_in.email))
+    if existing.scalars().first():
         logger.warning("Registration failed - user already exists: %s", anon_email)
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this username already exists in the system.",
-        )
-    
+        raise HTTPException(status_code=400, detail="A user with this email already exists.")
+
     user = User(
         email=user_in.email,
         hashed_password=security.get_password_hash(user_in.password),
-        is_2fa_enabled=user_in.is_2fa_enabled,
-        is_admin=user_in.is_admin if hasattr(user_in, "is_admin") else False
+        is_admin=not user_count,
     )
     db.add(user)
     await db.commit()
     await db.refresh(user)
-    logger.info("New user registered successfully: %s", anon_email)
+    logger.info("New user registered: %s", anon_email)
     return user

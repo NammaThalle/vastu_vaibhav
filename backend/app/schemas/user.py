@@ -1,26 +1,20 @@
-from pydantic import BaseModel, EmailStr, Field
-import uuid
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-class UserBase(BaseModel):
+
+class UserCreate(BaseModel):
     email: EmailStr
-    is_2fa_enabled: bool = False
-    is_active: bool = True
-    is_admin: bool = False
-
-class UserCreate(UserBase):
     password: str = Field(min_length=8)
 
-class UserUpdate(UserBase):
-    password: str | None = Field(default=None, min_length=8)
 
-class UserInDBBase(UserBase):
-    id: str | uuid.UUID
-    
-    class Config:
-        from_attributes = True
+class User(BaseModel):
+    # Fields with defaults are always present in responses; mark them required in the schema.
+    model_config = ConfigDict(from_attributes=True, json_schema_serialization_defaults_required=True)
 
-class User(UserInDBBase):
-    pass
+    id: str
+    email: str  # echo what is stored; only new input is validated as an email address
+    is_active: bool
+    is_admin: bool
 
-class UserInDB(UserInDBBase):
-    hashed_password: str
+
+class UserUpdate(BaseModel):
+    is_active: bool | None = None
