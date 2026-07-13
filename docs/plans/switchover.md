@@ -1,6 +1,6 @@
 # Switchover plan: from the old app to the redesign
 
-Status: release `v1.0.0` published and rehearsal done on 27 Nov 2026; the switch itself has not started. Every step that changes the server, Caddy or GitHub waits for the user's go-ahead.
+Status: switched on 27 Nov 2026 at about 23:25 IST. `vastu.home` serves the new app; the old container is stopped with its restart policy set to `no`. Stage 4 (homelab repo) and the one-week cleanup are still to do. Every step that changes the server, Caddy or GitHub waits for the user's go-ahead.
 
 ## Where things stand (checked 27 Nov 2026)
 
@@ -72,13 +72,21 @@ On the Caddy host (`ssh -i ~/.ssh/homelab_key nammathalle@10.0.50.12`):
 sudo cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.before-vastu-switch
 sudo nano /etc/caddy/Caddyfile        # delete the vastu.home { ... } block
 sudo tee /etc/caddy/conf.d/vastu.caddy < vastu.caddy   # contents of deploy/caddy/vastu.caddy
-sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
+sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl restart caddy   # admin off: reload is not possible
 ```
 
 Then:
 
 6. Check from the MacBook and from a phone on the VPN: sign in with the existing account; Home shows Rs 60,600 across 5 properties; make a bill on Girish Sawkar's property and share the PDF to WhatsApp from the phone; open a receipt and the report.
 7. Add the weekly backup to the portress crontab: `0 0 * * 0 cd ~/docker/vastu && docker compose run --rm backup`.
+
+### What happened on the day
+
+- The old backups folder is owned by root, so the gzipped final copy went to `~/docker/vastu/backups/legacy/vastu_final_before_switch.db.gz` instead.
+- The final import matched every client: 40 clients, 52 payments, Rs 4,65,800 billed, Rs 4,21,200 paid, one account.
+- The central `Caddyfile` has `admin off`, so `systemctl reload caddy` cannot work. Caddy was restarted instead (`sudo systemctl restart caddy`), a one-second blip for every site. Future Caddy changes need a restart too.
+- The old container had `restart: always`; it was set to `no` (`docker update --restart=no vastu_vaibhav-vastu_vaibhav-1`) so a reboot does not bring it back. Rollback still works with `docker compose up -d` in the old folder.
+- The crontab line writes to `backups/backup.log`. A first backup ran by hand.
 
 ## Stage 4: homelab repo (same day)
 
@@ -97,7 +105,7 @@ Merge the pull request into `main`, tag the next version (`v1.1.0` for features,
 
 Use this if anything in Stage 3 fails, or within the first week if the new app is not usable.
 
-1. On Caddy: `sudo rm /etc/caddy/conf.d/vastu.caddy`, `sudo cp /etc/caddy/Caddyfile.before-vastu-switch /etc/caddy/Caddyfile`, validate, reload.
+1. On Caddy: `sudo rm /etc/caddy/conf.d/vastu.caddy`, `sudo cp /etc/caddy/Caddyfile.before-vastu-switch /etc/caddy/Caddyfile`, validate, `sudo systemctl restart caddy`.
 2. `docker compose up -d` in `~/docker/vastu_vaibhav`. The old database is exactly as it was at step 1 of Stage 3.
 3. `docker compose down` in `~/docker/vastu`.
 
