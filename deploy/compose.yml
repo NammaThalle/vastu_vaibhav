@@ -1,5 +1,7 @@
-# Production stack on portress. Copy this file, .env and config/ to ~/docker/vastu_vaibhav.
+# Production stack on portress, in ~/docker/vastu with its .env, config/ and data/.
 # The central Caddy (10.0.50.12) routes vastu.home: /api/* to api, everything else to web.
+# A fixed project name keeps container names the same whatever the folder is called.
+name: vastu
 
 x-api: &api
   image: ghcr.io/nammathalle/vastu_vaibhav-api:${VASTU_TAG:-latest}
@@ -39,7 +41,7 @@ services:
 
   # First install only: docker compose run --rm api python -m app.cli.seed
   # Weekly backup, Sunday 00:00 IST, keeping the last 4. Host crontab on portress:
-  #   0 0 * * 0 cd ~/docker/vastu_vaibhav && docker compose run --rm backup
+  #   0 0 * * 0 cd ~/docker/vastu && docker compose run --rm backup
   backup:
     <<: *api
     profiles: ["tools"]

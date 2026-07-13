@@ -142,6 +142,8 @@ Phone / MacBook ── VPN ── central Caddy (10.0.50.12, vastu.home, tls int
 
 CI (`.github/workflows/docker-publish.yml`) runs backend tests, `alembic check`, the generated-types check, the frontend typecheck and build, then publishes both images on pushes to `main`, tagged `latest` and with the commit SHA.
 
+The move from the old app to this design is planned in [plans/switchover.md](plans/switchover.md).
+
 ## Not built yet
 
 - Remedy stock, supplier orders synced from the supplier site, and margins. Planned in [plans/phase-4-stock.md](plans/phase-4-stock.md).
