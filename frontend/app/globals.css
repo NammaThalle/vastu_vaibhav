@@ -99,6 +99,13 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    /* Warm saffron, rose and gold light behind the glass, so the blur has something to show. */
+    background:
+      radial-gradient(circle at 8% -10%, rgba(245, 158, 11, 0.16), transparent 30rem),
+      radial-gradient(circle at 105% 18%, rgba(244, 114, 182, 0.12), transparent 28rem),
+      radial-gradient(circle at 30% 108%, rgba(217, 119, 6, 0.10), transparent 30rem),
+      hsl(36 33% 96%);
+    background-attachment: fixed;
     font-feature-settings: "rlig" 1, "calt" 1;
     /* Prevent overscroll bounce on iOS */
     overscroll-behavior: none;
@@ -110,6 +117,7 @@
       radial-gradient(circle at 108% 24%, rgba(8, 145, 178, 0.10), transparent 30rem),
       radial-gradient(circle at 36% 110%, rgba(79, 70, 229, 0.10), transparent 28rem),
       #080c14;
+    background-attachment: fixed;
   }
 
   .dark body::selection {
@@ -166,8 +174,27 @@
     @apply bg-background/60 backdrop-blur-md border border-white/20 dark:bg-white/[0.03] dark:border-white/[0.08] dark:backdrop-blur-xl;
   }
 
+  /* Frosted card: the main surface for every list, stat and form. */
   .glass-card {
-    @apply bg-card/50 backdrop-blur-lg border border-border/50 shadow-xl dark:bg-white/[0.03] dark:border-white/[0.08] dark:backdrop-blur-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)];
+    @apply rounded-2xl border border-white/70 bg-white/55 shadow-[0_8px_30px_rgba(146,84,26,0.08)] backdrop-blur-xl dark:border-white/[0.08] dark:bg-white/[0.04] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)];
+  }
+
+  /* Header, bottom bar and dialogs: more opaque so text stays readable over anything. */
+  .glass-bar {
+    @apply border-white/60 bg-white/65 backdrop-blur-2xl dark:border-white/[0.07] dark:bg-[#0b111d]/70;
+  }
+
+  /* Buttons and tappable rows sink a little when pressed. */
+  .press {
+    @apply transition-transform duration-150 active:scale-[0.97];
+  }
+
+  /* Gradient money figures. */
+  .text-gradient-warm {
+    @apply bg-gradient-to-r from-rose-600 via-orange-600 to-amber-500 bg-clip-text text-transparent dark:from-rose-300 dark:via-orange-300 dark:to-amber-200;
+  }
+  .text-gradient-cool {
+    @apply bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent dark:from-emerald-300 dark:to-teal-200;
   }
 
   .glass-panel {
@@ -225,4 +252,54 @@
 
 .animate-breathing {
   animation: breathe-primary 3s ease-in-out infinite;
+}
+
+@keyframes breathe-warm {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.0), 0 6px 18px rgba(146, 84, 26, 0.18); }
+  50% { box-shadow: 0 0 18px 2px rgba(217, 119, 6, 0.35), 0 6px 18px rgba(146, 84, 26, 0.18); }
+}
+
+/* Light mode breathes saffron, dark mode keeps the old violet glow. */
+.animate-breathing-brand {
+  animation: breathe-warm 3.2s ease-in-out infinite;
+}
+.dark .animate-breathing-brand {
+  animation-name: breathe-primary;
+}
+
+/* Slow drift for the background glows. */
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(2.5rem, 1.5rem, 0) scale(1.08); }
+}
+.animate-drift {
+  animation: drift 18s ease-in-out infinite;
+}
+.animate-drift-slow {
+  animation: drift 26s ease-in-out infinite reverse;
+}
+
+/* The logo turns slowly while something loads. */
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin-slow 6s linear infinite;
+}
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: translateY(6px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-pop-in {
+  animation: pop-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-breathing, .animate-breathing-brand, .animate-drift, .animate-drift-slow, .animate-spin-slow, .animate-pop-in {
+    animation: none;
+  }
+  .press:active {
+    transform: none;
+  }
 }
