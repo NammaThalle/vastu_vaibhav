@@ -9,6 +9,12 @@
 	try_files {path} {path}/ {path}.html /index.html
 	file_server
 
+	# Build files have a content hash in their name, so they can be kept forever.
 	@static path /_next/static/*
 	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	# Everything else (pages, sw.js, manifest, icons) is checked with the server on every
+	# load, so a new release shows up straight away instead of a cached old page.
+	@pages not path /_next/static/*
+	header @pages Cache-Control "no-cache"
 }
