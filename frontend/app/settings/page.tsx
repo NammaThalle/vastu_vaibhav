@@ -54,7 +54,7 @@ function Users({ me }: { me: User }) {
     const [adding, setAdding] = React.useState(false)
     return (
         <Section title="Users" action={<Button size="sm" variant="outline" onClick={() => setAdding(true)}>Add user</Button>}>
-            <ul className="divide-y rounded-lg border bg-card">
+            <ul className="divide-y divide-amber-900/5 glass-card dark:divide-white/[0.06]">
                 {(users.data ?? []).map((user) => <UserRow key={user.id} user={user} isSelf={user.id === me.id} />)}
             </ul>
             {adding && <AddUser open={adding} onOpenChange={setAdding} />}

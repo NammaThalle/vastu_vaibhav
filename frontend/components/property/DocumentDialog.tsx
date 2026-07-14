@@ -39,7 +39,7 @@ export function DocumentDialog({ request, onOpenChange }: { request: DocumentReq
                     <DialogTitle>{request.title}</DialogTitle>
                     <DialogDescription>{pdf ? pdf.file.name : error ? "" : "Making the PDF..."}</DialogDescription>
                 </DialogHeader>
-                {error && <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
+                {error && <p className="rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
                 {!pdf && !error && (
                     <div className="flex justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
                 )}

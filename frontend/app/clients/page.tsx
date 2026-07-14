@@ -64,9 +64,9 @@ export default function ClientsPage() {
             </div>
 
             {shown.length === 0 ? (
-                <Empty>No clients match.</Empty>
+                <Empty>No one by that name. Check the spelling, or add them as a new client.</Empty>
             ) : (
-                <ul className="divide-y rounded-lg border bg-card">
+                <ul className="divide-y divide-amber-900/5 glass-card dark:divide-white/[0.06]">
                     {shown.map((client) => (
                         <li key={client.id}>
                             <Link href={`/client?id=${client.id}`} className="flex items-center gap-3 p-3 hover:bg-secondary/50">

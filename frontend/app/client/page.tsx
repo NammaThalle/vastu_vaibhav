@@ -126,12 +126,12 @@ function ClientView({ id }: { id: string }) {
                     </Button>
                 </div>
             ) : (
-                <button onClick={() => setEditing(true)} className="mb-6 w-full rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                <button onClick={() => setEditing(true)} className="press mb-6 w-full rounded-2xl border border-dashed border-amber-500/30 bg-white/30 p-3 backdrop-blur dark:border-white/10 dark:bg-white/[0.02] text-sm text-muted-foreground">
                     No phone number yet. Tap to add one.
                 </button>
             )}
 
-            {c.notes && <p className="mb-6 whitespace-pre-line rounded-lg border bg-card p-3 text-sm">{c.notes}</p>}
+            {c.notes && <p className="mb-6 whitespace-pre-line glass-card p-3 text-sm">{c.notes}</p>}
 
             <Section
                 title="Properties"
@@ -142,9 +142,9 @@ function ClientView({ id }: { id: string }) {
                 }
             >
                 {c.properties.length === 0 ? (
-                    <Empty>No properties yet.</Empty>
+                    <Empty>No properties yet. Add one to start billing.</Empty>
                 ) : (
-                    <ul className="divide-y rounded-lg border bg-card">
+                    <ul className="divide-y divide-amber-900/5 glass-card dark:divide-white/[0.06]">
                         {c.properties.map((p) => (
                             <li key={p.id}>
                                 <Link href={`/property?id=${p.id}`} className="flex items-center gap-3 p-3 hover:bg-secondary/50">
