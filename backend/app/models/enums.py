@@ -54,3 +54,31 @@ class PaymentMethod(StrEnum):
     UPI = "upi"
     BANK_TRANSFER = "bank_transfer"
     CHEQUE = "cheque"
+
+
+class SupplierOrderStatus(StrEnum):
+    ON_THE_WAY = "on_the_way"   # ordered, not every delivery shipped yet
+    RECEIVED = "received"       # every delivery shipped: the bottles count as stock
+    CANCELLED = "cancelled"
+
+
+class OrderSource(StrEnum):
+    SYNC = "sync"
+    PASTE = "paste"
+    MANUAL = "manual"
+
+
+class OrderLineKind(StrEnum):
+    PRODUCT = "product"   # a supplier product, counted as stock once matched
+    EXTRA = "extra"       # delivery charge, wallet credit and the like: money only
+
+
+class DeliveryKind(StrEnum):
+    OUTGOING = "outgoing"  # WH/OUT: goods sent to us
+    RETURN = "return"      # WH/IN: goods sent back
+
+
+class AdjustmentKind(StrEnum):
+    COUNT = "count"     # sets the stock to an exact number on a date
+    ADD = "add"
+    REMOVE = "remove"
