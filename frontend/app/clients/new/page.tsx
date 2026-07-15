@@ -39,11 +39,11 @@ export default function NewClientPage() {
         <form onSubmit={submit} className="mx-auto max-w-xl">
             <PageHeader title="New client" />
             <div className="space-y-6">
-                <section className="rounded-lg border bg-card p-4">
+                <section className="glass-card p-4">
                     <h2 className="mb-4 font-medium">Client</h2>
                     <ClientFields values={client} onChange={setClient} />
                 </section>
-                <section className="rounded-lg border bg-card p-4">
+                <section className="glass-card p-4">
                     <h2 className="mb-4 font-medium">Property</h2>
                     <PropertyFields values={property} onChange={setProperty} showNotes={false} />
                 </section>

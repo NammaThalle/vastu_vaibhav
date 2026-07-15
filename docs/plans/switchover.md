@@ -1,6 +1,6 @@
 # Switchover plan: from the old app to the redesign
 
-Status: planned, not started. Every step that changes the server, Caddy or GitHub waits for the user's go-ahead.
+Status: switched on 27 Nov 2026 at about 23:25 IST. `vastu.home` serves the new app; the old container is stopped with its restart policy set to `no`. Stage 4 (homelab repo) and the one-week cleanup are still to do. Every step that changes the server, Caddy or GitHub waits for the user's go-ahead.
 
 ## Where things stand (checked 27 Nov 2026)
 
@@ -21,8 +21,9 @@ The old app is never changed or deleted during the switch. Rolling back means po
 ## Decisions needed before starting
 
 1. **When.** About 15 minutes when nobody is entering data. The father should know the app is briefly down and that he will need to sign in again with the same password.
-2. **Caddy file.** The `vastu.home` block is in the main `Caddyfile`. Recommended: remove it there and add `conf.d/vastu.caddy`, like frigate, immich and ntopng. If Ansible manages the main `Caddyfile`, the same change goes into the Ansible files, or Ansible will put the old block back.
-3. **UPI ID.** Optional; add it to `config/app-settings.json` before the switch so bills carry the payment QR code from day one.
+2. **UPI ID.** Optional; add it to `~/docker/vastu/config/app-settings.json` before the switch so bills carry the payment QR code from day one.
+
+Checked on 27 Nov 2026: the main Caddy `Caddyfile` is edited by hand (only `conf.d/immich.caddy` is Ansible-managed), so the Caddy change is made directly on the Caddy host. The homelab repo still needs two edits, in Stage 4.
 
 ## Stage 1: release (no effect on the live app)
 
@@ -30,30 +31,71 @@ The old app is never changed or deleted during the switch. Rolling back means po
 2. Merge it, then back-date the merge commit and force push `main`, per `.agents/rules/git-commits.md`.
 3. Tag the merge commit `v1.0.0` and push the tag. CI tests again and publishes both images as `1.0.0` and `latest`. The server pins `VASTU_TAG=1.0.0`, so a later release changes nothing until the tag in `.env` is changed.
 
-## Stage 2: rehearsal on the server (live app keeps running)
+## Stage 2: rehearsal on the server (done 27 Nov 2026)
 
-1. Create `~/docker/vastu` with `compose.yml`, `.env` (new `SECRET_KEY` from `openssl rand -hex 32`, `VASTU_TAG=1.0.0`), `config/app-settings.json` (copied from the old folder, name changed to Shree Vastu Vaibhav, `upiId` and `logoFile` added) and empty `data/` and `backups/`.
-2. `docker compose pull`, then `docker compose run --rm migrate`, then `docker compose run --rm api python -m app.cli.seed`.
-3. Take a fresh safe copy of the live database with `sqlite3 data/vastu.db ".backup ..."` and run the import with `--dry-run --skip-user test@abc.com --skip-user test@test.com`. It must report that all totals match (last check: Rs 4,65,800 billed, Rs 4,21,200 paid, 40 clients).
-4. Run the import for real into the rehearsal database, start `api` and `web`, and check them without touching `vastu.home`:
-   - the containers directly: `curl http://10.0.50.9:8010/api/health` and `curl -I http://10.0.50.9:8011/`;
-   - optionally, a temporary `vastu-next.home` site in Caddy with the new routing, opened from the Mac through a hosts-file entry, to try sign-in, a bill PDF and a receipt PDF on real data.
-5. Render one bill and one report PDF inside the container to confirm fonts and the logo on the server.
-6. Stop the rehearsal stack and delete its `data/vastu.db`. Nothing from the rehearsal is kept.
+- `~/docker/vastu` created with `compose.yml` from `v1.0.0`, `.env` (new `SECRET_KEY` generated on the server, `VASTU_TAG=1.0.0`, mode 600) and `config/app-settings.json` copied from the old folder with the new name, `upiId` and `logoFile`.
+- Images pulled (api 268 MB, web 60 MB); both migrations ran; seed added 41 catalog items.
+- Import on a fresh safe copy of the live database: dry run and real run both matched every client. 40 clients, 52 payments, Rs 4,65,800 billed, Rs 4,21,200 paid; `admin@test.com` carried over, the two test accounts skipped.
+- `api` healthy on 8010, `web` serving on 8011, data routes refuse requests without a login.
+- In-process check inside the container: Home shows Rs 60,600 across 5 properties; Girish Sawkar's bill is Rs 35,500 billed, Rs 10,000 paid, Rs 25,500 due, matching the old invoice; bill, receipt and report PDFs render with the logo and Noto Sans.
+- One backup written and restored: integrity check ok, 40 clients.
+- The copy of live data and the check files were deleted. The rehearsal database stays until Stage 3, which replaces it.
 
 ## Stage 3: switch (about 15 minutes of downtime)
 
-1. `docker compose stop` in `~/docker/vastu_vaibhav`. From now on nobody can write to the old database.
-2. Take the final copy: `sqlite3 ~/docker/vastu_vaibhav/data/vastu.db ".backup /home/nammathalle/docker/vastu/legacy-final.db"`, and keep a gzipped copy next to the old backups.
-3. In `~/docker/vastu`: `docker compose run --rm migrate`, `docker compose run --rm api python -m app.cli.seed`, then `docker compose run --rm -v ./legacy-final.db:/legacy.db:ro api python -m app.cli.import_legacy --legacy /legacy.db --skip-user test@abc.com --skip-user test@test.com`. The import refuses to commit if any client's totals differ.
-4. `docker compose up -d api web` and wait for the API health check to pass.
-5. On Caddy: remove the `vastu.home` block from the main `Caddyfile` (backup first), add `conf.d/vastu.caddy` from `deploy/caddy/vastu.caddy`, run `caddy validate`, then `systemctl reload caddy`.
-6. Check from the MacBook and from a phone on the VPN:
-   - sign in with the existing account;
-   - Home shows Rs 60,600 to collect across 5 properties;
-   - open Girish Sawkar's property, make a bill, share the PDF to WhatsApp on the phone;
-   - open a receipt and the report.
-7. Add the backup line to the portress crontab: `0 0 * * 0 cd ~/docker/vastu && docker compose run --rm backup`, then run it once by hand and check that a `.db.gz` file appears.
+On portress (`ssh -i ~/.ssh/homelab_key nammathalle@10.0.50.9`):
+
+```bash
+# 1. Freeze the old app. Nothing can write to the old database from here on.
+cd ~/docker/vastu_vaibhav && docker compose stop
+
+# 2. Final copy of the old database, plus a gzipped copy kept with the old backups.
+sqlite3 ~/docker/vastu_vaibhav/data/vastu.db ".backup /home/nammathalle/docker/vastu/legacy-final.db"
+gzip -c ~/docker/vastu/legacy-final.db > ~/docker/vastu_vaibhav/data/backups/vastu_final_before_switch.db.gz
+
+# 3. Replace the rehearsal database with a clean import of the final copy.
+cd ~/docker/vastu && docker compose stop api web && rm data/vastu.db
+docker compose run --rm migrate
+docker compose run --rm api python -m app.cli.seed
+docker compose run --rm -v ./legacy-final.db:/legacy.db:ro api python -m app.cli.import_legacy \
+  --legacy /legacy.db --skip-user test@abc.com --skip-user test@test.com
+# Must end with "Import committed: all totals match." Otherwise stop and roll back.
+
+# 4. Start the new app and wait for "healthy".
+docker compose up -d api web && docker compose ps
+```
+
+On the Caddy host (`ssh -i ~/.ssh/homelab_key nammathalle@10.0.50.12`):
+
+```bash
+# 5. Back up, remove the old vastu.home block (3 lines plus braces), add the new site, validate, reload.
+sudo cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.before-vastu-switch
+sudo nano /etc/caddy/Caddyfile        # delete the vastu.home { ... } block
+sudo tee /etc/caddy/conf.d/vastu.caddy < vastu.caddy   # contents of deploy/caddy/vastu.caddy
+sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl restart caddy   # admin off: reload is not possible
+```
+
+Then:
+
+6. Check from the MacBook and from a phone on the VPN: sign in with the existing account; Home shows Rs 60,600 across 5 properties; make a bill on Girish Sawkar's property and share the PDF to WhatsApp from the phone; open a receipt and the report.
+7. Add the weekly backup to the portress crontab: `0 0 * * 0 cd ~/docker/vastu && docker compose run --rm backup`.
+
+### What happened on the day
+
+- The old backups folder is owned by root, so the gzipped final copy went to `~/docker/vastu/backups/legacy/vastu_final_before_switch.db.gz` instead.
+- The final import matched every client: 40 clients, 52 payments, Rs 4,65,800 billed, Rs 4,21,200 paid, one account.
+- The central `Caddyfile` has `admin off`, so `systemctl reload caddy` cannot work. Caddy was restarted instead (`sudo systemctl restart caddy`), a one-second blip for every site. Future Caddy changes need a restart too.
+- The old container had `restart: always`; it was set to `no` (`docker update --restart=no vastu_vaibhav-vastu_vaibhav-1`) so a reboot does not bring it back. Rollback still works with `docker compose up -d` in the old folder.
+- The crontab line writes to `backups/backup.log`. A first backup ran by hand.
+
+## Stage 4: homelab repo (same day)
+
+In `~/git/homelab`, on its own branch and following that repo's `AGENTS.md`:
+
+- `ansible/services/docker/inventory.yml`: replace the `vastu_vaibhav` stack with `name: vastu`, `dir: /home/nammathalle/docker/vastu`, and no `post_update_cmd` (the `migrate` service runs migrations itself). Until this is done, do not run `ha docker updates`: it would start the old app again and skip the new one.
+- `docs/infrastructure/proxmox/sentinel/lxc-caddy-runbook.md` and `docs/infrastructure/portress/README.md`: `vastu.home` now routes `/api/*` to `10.0.50.9:8010` and everything else to `10.0.50.9:8011`, defined in `conf.d/vastu.caddy`.
+
+With `VASTU_TAG` pinned, `ha docker updates` keeps the app on the same release; a new release still needs `VASTU_TAG` changed by hand.
 
 ## Later releases
 
@@ -63,8 +105,8 @@ Merge the pull request into `main`, tag the next version (`v1.1.0` for features,
 
 Use this if anything in Stage 3 fails, or within the first week if the new app is not usable.
 
-1. On Caddy: remove `conf.d/vastu.caddy`, restore the old `vastu.home` block from the backup, reload.
-2. `docker compose up -d` in `~/docker/vastu_vaibhav`. The old database is exactly as it was at step 3.1.
+1. On Caddy: `sudo rm /etc/caddy/conf.d/vastu.caddy`, `sudo cp /etc/caddy/Caddyfile.before-vastu-switch /etc/caddy/Caddyfile`, validate, `sudo systemctl restart caddy`.
+2. `docker compose up -d` in `~/docker/vastu_vaibhav`. The old database is exactly as it was at step 1 of Stage 3.
 3. `docker compose down` in `~/docker/vastu`.
 
 Anything entered in the new app after the switch is not in the old database. If rollback happens after real use, those entries have to be re-entered by hand; the new app's database stays in `~/docker/vastu/data` to read them from.
@@ -75,7 +117,7 @@ Anything entered in the new app after the switch is not in the old database. If 
 - Move `~/docker/vastu_vaibhav/data` (old database and old daily backups) into `~/docker/vastu/backups/legacy/` and delete the old folder.
 - Delete `data/legacy/` on the MacBook and `legacy-final.db` on the server, keeping the gzipped copy.
 - Delete `backend/app/cli/import_legacy.py` and its test from the repo.
-- Remove the temporary `vastu-next.home` site and hosts entry if they were used.
+- Delete `/etc/caddy/Caddyfile.before-vastu-switch` on the Caddy host.
 - Mount the Synology share on portress and point `BACKUP_DIR` at it, so backups leave the server.
 - Delete the old GitHub package `vastu_vaibhav`, so nothing pulls the old image by mistake.
 

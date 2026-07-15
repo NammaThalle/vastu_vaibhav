@@ -73,7 +73,7 @@ function VisitCard({ visit, onEdit }: { visit: Visit; onEdit: () => void }) {
     const [expanded, setExpanded] = React.useState(false)
     const long = (visit.observations?.length ?? 0) > 180
     return (
-        <div className={cn("rounded-lg border bg-card p-3", visit.status === "cancelled" && "opacity-60")}>
+        <div className={cn("glass-card p-3", visit.status === "cancelled" && "opacity-60")}>
             <div className="flex items-start gap-2">
                 <CalendarPlus className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <div className="min-w-0 flex-1">
@@ -105,7 +105,7 @@ function VisitCard({ visit, onEdit }: { visit: Visit; onEdit: () => void }) {
 function ChargesCard({ charges, setOpen }: { charges: Charge[]; setOpen: (o: Open) => void }) {
     const total = charges.filter((c) => !c.voided_at).reduce((sum, c) => sum + (c.kind === "discount" ? -c.amount : c.amount), 0)
     return (
-        <div className="rounded-lg border bg-card">
+        <div className="glass-card">
             <ul className="divide-y">
                 {charges.map((charge) => (
                     <li key={charge.id} className={cn("flex items-center gap-2 px-3 py-2", charge.voided_at && "opacity-50")}>
@@ -147,7 +147,7 @@ function ChargesCard({ charges, setOpen }: { charges: Charge[]; setOpen: (o: Ope
 
 function PaymentCard({ payment, setOpen }: { payment: Payment; setOpen: (o: Open) => void }) {
     return (
-        <div className={cn("flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/5", payment.voided_at && "opacity-50")}>
+        <div className={cn("flex items-center gap-2 rounded-2xl border border-emerald-500/25 bg-emerald-400/10 p-3 shadow-[0_8px_30px_rgba(16,185,129,0.10)] backdrop-blur-xl dark:border-emerald-500/20 dark:bg-emerald-500/5", payment.voided_at && "opacity-50")}>
             <IndianRupee className="h-4 w-4 shrink-0 text-emerald-600" />
             <div className="min-w-0 flex-1">
                 <div className={cn("text-sm font-medium", payment.voided_at && "line-through")}>
@@ -181,7 +181,7 @@ function PaymentCard({ payment, setOpen }: { payment: Payment; setOpen: (o: Open
 
 function ActionButton({ icon: Icon, label, onClick, primary }: { icon: React.ElementType; label: string; onClick: () => void; primary?: boolean }) {
     return (
-        <Button variant={primary ? "default" : "outline"} className="h-14 flex-col gap-1 text-xs sm:h-12 sm:flex-row sm:text-sm" onClick={onClick}>
+        <Button variant={primary ? "default" : "outline"} className={cn("h-14 flex-col gap-1 rounded-2xl text-xs sm:h-12 sm:flex-row sm:text-sm", primary && "animate-breathing-brand")} onClick={onClick}>
             <Icon className="h-5 w-5 sm:h-4 sm:w-4" />
             {label}
         </Button>
@@ -231,17 +231,23 @@ function PropertyView({ id }: { id: string }) {
                 </div>
             </div>
 
-            <div className="mb-4 grid grid-cols-3 divide-x rounded-lg border bg-card text-center">
-                <div className="p-3"><div className="text-xs text-muted-foreground">Billed</div><div className="font-semibold">{rupees(billed)}</div></div>
-                <div className="p-3"><div className="text-xs text-muted-foreground">Paid</div><div className="font-semibold">{rupees(paid)}</div></div>
+            <div className="glass-card animate-pop-in relative mb-4 grid grid-cols-3 divide-x divide-amber-900/5 overflow-hidden text-center dark:divide-white/[0.06]">
+                <div className="p-3"><div className="text-xs text-muted-foreground">Billed</div><div className="font-semibold tabular-nums">{rupees(billed)}</div></div>
+                <div className="p-3"><div className="text-xs text-muted-foreground">Paid</div><div className="text-gradient-cool font-semibold tabular-nums">{rupees(paid)}</div></div>
                 <div className="p-3">
                     <div className="text-xs text-muted-foreground">{balance < 0 ? "Advance" : "Balance"}</div>
-                    <div className={cn("font-semibold", balance > 0 && "text-red-600 dark:text-red-400")}>{rupees(Math.abs(balance))}</div>
+                    {balance === 0 && billed > 0 ? (
+                        <div className="mx-auto mt-0.5 w-fit -rotate-6 rounded-md border-2 border-emerald-500/70 px-1.5 text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-300">
+                            Settled
+                        </div>
+                    ) : (
+                        <div className={cn("font-bold tabular-nums", balance > 0 && "text-gradient-warm")}>{rupees(Math.abs(balance))}</div>
+                    )}
                 </div>
             </div>
 
             {balance > 0 && p.client.phone && (
-                <Button asChild variant="outline" className="mb-4 h-11 w-full">
+                <Button asChild variant="outline" className="mb-4 h-11 w-full border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-300">
                     <a href={whatsappLink(p.client.phone, reminderText(p.client.name, p.label, balance))} target="_blank" rel="noreferrer">
                         <MessageCircle className="mr-2 h-4 w-4" /> Remind {p.client.name.split(" ")[0]} on WhatsApp
                     </a>
@@ -268,7 +274,7 @@ function PropertyView({ id }: { id: string }) {
                 }
             >
                 {timeline.length === 0 ? (
-                    <Empty>Nothing recorded yet. Start with a visit.</Empty>
+                    <Empty>A blank page. Every good consultation starts with a visit.</Empty>
                 ) : (
                     <ol className="space-y-4">
                         {timeline.map((entry, index) => (

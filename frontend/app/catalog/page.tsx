@@ -120,9 +120,9 @@ export default function CatalogPage() {
                 ))}
             </div>
             {items.length === 0 ? (
-                <Empty>Nothing here yet.</Empty>
+                <Empty>An empty shelf. Add the first item above.</Empty>
             ) : (
-                <ul className="divide-y rounded-lg border bg-card">
+                <ul className="divide-y divide-amber-900/5 glass-card dark:divide-white/[0.06]">
                     {items.map((item) => <ItemRow key={item.id} item={item} />)}
                 </ul>
             )}

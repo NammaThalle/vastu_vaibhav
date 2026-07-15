@@ -4,7 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
 
-import { Field } from "@/components/common"
+import { Field, Logo } from "@/components/common"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -34,11 +34,14 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background px-4">
-            <form onSubmit={submit} className="w-full max-w-sm space-y-5 rounded-xl border bg-card p-6 shadow-sm">
-                <div>
-                    <h1 className="text-2xl font-semibold tracking-tight">Shree Vastu Vaibhav</h1>
-                    <p className="mt-1 text-sm text-muted-foreground">Sign in to continue.</p>
+        <div className="flex min-h-screen items-center justify-center px-4">
+            <form onSubmit={submit} className="glass-card animate-pop-in w-full max-w-sm space-y-5 p-7">
+                <div className="flex flex-col items-center text-center">
+                    <Logo className="mb-4 h-20 w-20" />
+                    <h1 className="text-2xl font-bold tracking-tight">
+                        <span className="text-gradient-warm">Shree</span> Vastu Vaibhav
+                    </h1>
+                    <p className="mt-1 text-sm text-muted-foreground">Health, wealth and prosperity, one bill at a time.</p>
                 </div>
                 <Field label="Email">
                     <Input name="email" type="email" autoComplete="username" required autoFocus />

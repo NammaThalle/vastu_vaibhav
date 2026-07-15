@@ -206,7 +206,7 @@ export function ItemsDialog({
                         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input className="pl-9" placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} />
                     </div>
-                    <ul className="h-[42dvh] divide-y overflow-y-auto rounded-lg border">
+                    <ul className="h-[42dvh] divide-y divide-amber-900/5 overflow-y-auto rounded-2xl border border-white/70 bg-white/50 dark:divide-white/[0.06] dark:border-white/[0.08] dark:bg-white/[0.03]">
                         {shown.map((group) => (
                             <GroupRow key={group.name} group={group} quantities={quantities} setQuantity={setQuantity} notes={notes} setNote={setNote} />
                         ))}

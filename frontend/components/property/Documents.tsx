@@ -118,7 +118,7 @@ export function Documents({ property, showDocument }: { property: PropertyDetail
                 </Button>
             </div>
 
-            <button className="mt-2 w-full rounded-lg border border-dashed p-3 text-left text-sm" onClick={() => setOpen({ kind: "summary" })}>
+            <button className="press mt-2 w-full rounded-2xl border border-dashed border-amber-500/30 bg-white/30 p-3 backdrop-blur dark:border-white/10 dark:bg-white/[0.02] text-left text-sm" onClick={() => setOpen({ kind: "summary" })}>
                 <span className="block text-xs text-muted-foreground">Report summary {property.recommendations ? "(tap to edit)" : ""}</span>
                 <span className={cn("line-clamp-2 whitespace-pre-line", !property.recommendations && "text-muted-foreground")}>
                     {property.recommendations || "Not written yet. Tap to write the findings and recommendations."}
@@ -126,7 +126,7 @@ export function Documents({ property, showDocument }: { property: PropertyDetail
             </button>
 
             {(property.bills.length > 0 || property.quotes.length > 0) && (
-                <ul className="mt-2 divide-y rounded-lg border bg-card">
+                <ul className="mt-2 divide-y divide-amber-900/5 glass-card dark:divide-white/[0.06]">
                     {property.bills.map((bill) => (
                         <li key={bill.id} className={cn("flex items-center gap-2 px-3 py-2", bill.voided_at && "opacity-50")}>
                             <button className="min-w-0 flex-1 text-left" onClick={() => showDocument(billPdf(bill, property.client.name))}>
