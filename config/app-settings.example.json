@@ -28,5 +28,8 @@
       "watermark": "",
       "lateFee": ""
     }
+  },
+  "stock": {
+    "lowStockAt": 3
   }
 }

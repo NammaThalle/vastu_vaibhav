@@ -22,8 +22,18 @@ class UpcomingVisit(BaseModel):
     purpose: str | None
 
 
+class LowStockItem(BaseModel):
+    catalog_item_id: str
+    name: str
+    size_ml: int | None
+    in_stock: int
+
+
 class HomeSummary(BaseModel):
     outstanding_total: int
     collected_this_month: int
     dues: list[DueItem]
     upcoming_visits: list[UpcomingVisit]
+    low_stock: list[LowStockItem]
+    stock_counted: bool
+    supplier_problem: str | None

@@ -42,6 +42,8 @@ services:
   # First install only: docker compose run --rm api python -m app.cli.seed
   # Weekly backup, Sunday 00:00 IST, keeping the last 4. Host crontab on portress:
   #   0 0 * * 0 cd ~/docker/vastu && docker compose run --rm backup
+  # Daily supplier order sync at 07:00 IST (does nothing until SUPPLIER_LOGIN is set):
+  #   0 7 * * * cd ~/docker/vastu && docker compose run --rm api python -m app.cli.supplier_sync
   backup:
     <<: *api
     profiles: ["tools"]
