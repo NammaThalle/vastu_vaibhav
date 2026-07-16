@@ -16,6 +16,7 @@ SHOP_LINK = re.compile(r"/shop/([a-z0-9\-]+?)-(\d+)(?:[/?#].*)?$")
 SIZE = re.compile(r"(\d+)\s*ml\b", re.I)
 DATE = re.compile(r"(\d{1,2})/(\d{1,2})/(\d{4})")
 QTY = re.compile(r"^(-?[\d,]+(?:\.\d+)?)\s*(?:Units?|Unit\(s\)|Nos?|Pcs?|pieces?)?$", re.I)
+STATUS_WORD = re.compile(r"\b(Shipped|Delivered|Done|Received|Preparation|Ready|Waiting|Cancelled)\b", re.I)
 MONEY = re.compile(r"^(-?)\s*₹\s*(-?)\s*([\d,]+(?:\.\d+)?)$")
 
 
@@ -133,9 +134,12 @@ def parse_pasted(text: str) -> ParsedOrder:
     for raw in text.splitlines():
         cells += [clean(part) for part in raw.split("\t") if clean(part)]
 
-    reference = (DELIVERY_REF.search(text) or ORDER_REF.search(text))
-    if not reference:
+    order_ref = ORDER_REF.search(text)
+    delivery_refs = list(dict.fromkeys(DELIVERY_REF.findall(text)))
+    if not order_ref and not delivery_refs:
         raise OrderReadError("No order or delivery number (S08284 or WH/OUT/01261) found in the pasted text")
+    # A whole order is filed under its order number; a single delivery under the delivery number.
+    reference = order_ref.group(1) if order_ref else delivery_refs[0]
     dated = re.search(r"(?:Order\s+)?Date:?\s*(\d{1,2}/\d{1,2}/\d{4})", text, re.I)
     order_date = day_first(dated.group(1)) if dated else None
     if order_date is None:
@@ -162,11 +166,16 @@ def parse_pasted(text: str) -> ParsedOrder:
         else:
             i += 1
 
-    delivery = ParsedDelivery(reference.group(1), "Shipped", order_date) if reference.group(1).startswith("WH/") else None
-    return ParsedOrder(
-        reference=reference.group(1), order_date=order_date, total=rupees(total_match.group(1)), lines=lines,
-        deliveries=[delivery] if delivery else [],
-    ).check()
+    deliveries = []
+    for number in delivery_refs:
+        # The status word (Shipped, Preparation...) follows the number in copied text; a lone
+        # pasted delivery without one has arrived, which is why it is being pasted.
+        after = text[text.find(number) + len(number):][:120]
+        status = STATUS_WORD.search(after)
+        deliveries.append(ParsedDelivery(number, status.group(1) if status else ("Shipped" if not order_ref else "Unknown"),
+                                         order_date))
+    return ParsedOrder(reference=reference, order_date=order_date, total=rupees(total_match.group(1)), lines=lines,
+                       deliveries=deliveries).check()
 
 
 # Odoo portal pages

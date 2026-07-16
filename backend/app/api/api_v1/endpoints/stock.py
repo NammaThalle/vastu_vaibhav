@@ -1,6 +1,6 @@
 """Remedy stock, supplier orders, product matching and the supplier sync."""
 import re
-from collections import Counter
+from datetime import timezone
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import func, select
@@ -85,7 +85,7 @@ async def _sync_status(db: DB) -> SyncStatus:
     return SyncStatus(
         enabled=settings.supplier_sync_enabled,
         running=bool(last and last.finished_at is None),
-        last_run_at=last.started_at if last else None,
+        last_run_at=last.started_at.replace(tzinfo=last.started_at.tzinfo or timezone.utc) if last else None,
         last_ok=last.ok if last else None,
         last_message=last.message if last else None,
     )

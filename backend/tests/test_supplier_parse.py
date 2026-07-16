@@ -35,6 +35,15 @@ def test_pasted_order_as_tab_separated_columns_without_links():
     assert order.deliveries == []
 
 
+def test_pasted_order_with_deliveries_is_filed_under_the_order_number():
+    text = ("Sales Order - S00777\nOrder Date: 05/11/2026\nLast Delivery Orders\nWH/OUT/00300\n Shipped\nDate: 06/11/2026\n"
+            "WH/OUT/00301\n Preparation\nToilet Blocker 5ml\t2.00 Units\t₹ 600\t₹ 1,200\nTotal\t₹ 1,200\n")
+    order = parse_pasted(text)
+    assert order.reference == "S00777"
+    assert [(d.number, d.status, d.shipped) for d in order.deliveries] == [
+        ("WH/OUT/00300", "Shipped", True), ("WH/OUT/00301", "Preparation", False)]
+
+
 @pytest.mark.parametrize("text, message", [
     ("Toilet Blocker\n1.00 Units\n₹ 600\n₹ 600\nTotal ₹ 600", "No order or delivery number"),
     ("WH/OUT/1\nToilet Blocker\n1.00 Units\n₹ 600\n₹ 600\nTotal ₹ 600", "No date"),

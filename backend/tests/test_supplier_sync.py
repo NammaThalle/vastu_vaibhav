@@ -76,6 +76,16 @@ async def test_sync_reads_new_orders_and_follows_them_to_received(db):
     assert "GET /my/orders/1300" not in portal.requests  # received orders are not fetched again
 
 
+async def test_an_order_already_pasted_is_not_a_problem(api, db):
+    # Paste the delivery of order 1300 first, then let the sync find the whole order.
+    pasted = ("WH/OUT/00110\nDate: 13/11/2026\n[Toilet Blocker 5ml](https://shop.example.com/shop/toilet-blocker-5ml-36)\n"
+              "5.00 Units\n₹ 600\n₹ 3,000\nTotal ₹ 3,000")
+    assert (await api.post("/api/v1/supplier/orders/paste", json={"text": pasted})).status_code == 201
+    run = await run_sync(db, await start_run(db), client(FakePortal()))
+    assert "1 already pasted" in run.message and "S01300" not in run.message
+    assert {o.reference for o in await db.scalars(select(SupplierOrder))} == {"WH/OUT/00110", "S01234"}
+
+
 async def test_wrong_password_is_reported_and_nothing_else_is_fetched(db):
     portal = FakePortal()
     run = await run_sync(db, await start_run(db), client(portal, password="wrong"))

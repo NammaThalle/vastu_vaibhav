@@ -49,6 +49,7 @@ async def start_run(db: AsyncSession) -> SyncRun:
 
 async def run_sync(db: AsyncSession, run: SyncRun, client: PortalClient | None = None) -> SyncRun:
     problems: list[str] = []
+    already_pasted = 0
     try:
         async with (client or default_client()) as portal:
             await portal.sign_in()
@@ -72,11 +73,15 @@ async def run_sync(db: AsyncSession, run: SyncRun, client: PortalClient | None =
                         run.orders_added += 1
                     else:
                         run.orders_updated += 1
-                except (OrderReadError, DuplicateOrder) as error:
-                    # Both are raised before anything is written, so there is nothing to undo.
+                except DuplicateOrder:
+                    # Already entered by paste: not a problem, and nothing to save twice.
+                    already_pasted += 1
+                except OrderReadError as error:
+                    # Raised before anything is written, so there is nothing to undo.
                     problems.append(str(error))
         run.ok = not problems
-        summary = f"{run.orders_added} new, {run.orders_updated} checked"
+        summary = f"{run.orders_added} new, {run.orders_updated} checked" + (
+            f", {already_pasted} already pasted" if already_pasted else "")
         run.message = redact(summary + ("; " + "; ".join(problems[:5]) if problems else ""))
     except SignInError as error:
         run.ok, run.message = False, str(error)
