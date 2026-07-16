@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { CalendarDays, MessageCircle, Phone, Plus } from "lucide-react"
+import { AlertTriangle, CalendarDays, MessageCircle, PackageOpen, Phone, Plus } from "lucide-react"
 
 import { Empty, ErrorMessage, Loading, PageHeader, Section } from "@/components/common"
 import { Button } from "@/components/ui/button"
@@ -29,7 +29,7 @@ export default function HomePage() {
     const reminderText = useReminderText()
     if (home.isPending) return <Loading />
     if (home.isError) return <ErrorMessage error={home.error} />
-    const { dues, upcoming_visits, outstanding_total, collected_this_month } = home.data
+    const { dues, upcoming_visits, outstanding_total, collected_this_month, low_stock, supplier_problem } = home.data
 
     return (
         <>
@@ -57,6 +57,30 @@ export default function HomePage() {
                     <div className="text-gradient-cool mt-1 text-3xl font-bold tabular-nums">{rupees(collected_this_month)}</div>
                 </div>
             </div>
+
+            {supplier_problem && (
+                <Link href="/catalog" className="press mb-4 flex items-start gap-3 rounded-2xl border border-rose-500/30 bg-rose-400/10 p-3 text-sm backdrop-blur">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
+                    <span><span className="font-medium">Supplier sync had a problem.</span> {supplier_problem} Paste orders by hand until it is fixed.</span>
+                </Link>
+            )}
+
+            {low_stock.length > 0 && (
+                <Section title="Running low" action={<Link href="/catalog" className="text-xs text-primary">Stock</Link>}>
+                    <div className="flex flex-wrap gap-2">
+                        {low_stock.map((item) => (
+                            <Link key={item.catalog_item_id} href="/catalog"
+                                className="press glass-card flex items-center gap-2 rounded-full px-3 py-1.5 text-sm">
+                                <PackageOpen className="h-4 w-4 text-amber-600" />
+                                {item.name}{item.size_ml ? ` ${item.size_ml}ml` : ""}
+                                <span className={item.in_stock <= 0 ? "font-semibold text-rose-600 dark:text-rose-300" : "font-semibold text-amber-700 dark:text-amber-300"}>
+                                    {item.in_stock <= 0 ? "out" : `${item.in_stock} left`}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                </Section>
+            )}
 
             <Section title={`Who owes money (${dues.length})`}>
                 {dues.length === 0 ? (

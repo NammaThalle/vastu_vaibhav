@@ -15,6 +15,10 @@ export const keys = {
     property: (id: string) => ["property", id] as const,
     catalog: (all = false) => ["catalog", all] as const,
     users: ["users"] as const,
+    stock: ["stock"] as const,
+    supplierOrders: ["supplier-orders"] as const,
+    supplierOrder: (id: string) => ["supplier-order", id] as const,
+    supplierProducts: (unmatchedOnly: boolean) => ["supplier-products", unmatchedOnly] as const,
     config: ["config"] as const,
 }
 
@@ -40,6 +44,24 @@ export const useCatalog = (includeInactive = false) =>
     useQuery({
         queryKey: keys.catalog(includeInactive),
         queryFn: () => unwrap(api.GET("/api/v1/catalog", { params: { query: { include_inactive: includeInactive } } })),
+    })
+
+export const useStock = () => useQuery({ queryKey: keys.stock, queryFn: () => unwrap(api.GET("/api/v1/stock")) })
+
+export const useSupplierOrders = () =>
+    useQuery({ queryKey: keys.supplierOrders, queryFn: () => unwrap(api.GET("/api/v1/supplier/orders")) })
+
+export const useSupplierOrder = (id: string) =>
+    useQuery({
+        queryKey: keys.supplierOrder(id),
+        queryFn: () => unwrap(api.GET("/api/v1/supplier/orders/{order_id}", { params: { path: { order_id: id } } })),
+        enabled: Boolean(id),
+    })
+
+export const useSupplierProducts = (unmatchedOnly = false) =>
+    useQuery({
+        queryKey: keys.supplierProducts(unmatchedOnly),
+        queryFn: () => unwrap(api.GET("/api/v1/supplier/products", { params: { query: { unmatched_only: unmatchedOnly } } })),
     })
 
 export const useUsers = () => useQuery({ queryKey: keys.users, queryFn: () => unwrap(api.GET("/api/v1/users")) })

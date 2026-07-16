@@ -559,6 +559,186 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stock Overview */
+        get: operations["stock_overview_api_v1_stock_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adjust Stock */
+        post: operations["adjust_stock_api_v1_stock_adjustments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Count
+         * @description Set the stock of each listed remedy to what is on the shelf on that day.
+         */
+        post: operations["record_count_api_v1_stock_counts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/supplier/order-lines/{line_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Line */
+        patch: operations["update_line_api_v1_supplier_order_lines__line_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/supplier/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Orders */
+        get: operations["list_orders_api_v1_supplier_orders_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/supplier/orders/paste": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Paste Order
+         * @description Save an order copied from the supplier's site. New products then wait for matching.
+         */
+        post: operations["paste_order_api_v1_supplier_orders_paste_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/supplier/orders/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Order */
+        get: operations["get_order_api_v1_supplier_orders__order_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Order */
+        patch: operations["update_order_api_v1_supplier_orders__order_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/supplier/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Products */
+        get: operations["list_products_api_v1_supplier_products_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/supplier/products/{product_id}/match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Match Product
+         * @description Remember what a supplier product is. Applies to every order, past and future.
+         */
+        post: operations["match_product_api_v1_supplier_products__product_id__match_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/supplier/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sync Now */
+        post: operations["sync_now_api_v1_supplier_sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users": {
         parameters: {
             query?: never;
@@ -876,6 +1056,18 @@ export interface components {
             phone?: string | null;
             referral_source?: components["schemas"]["ReferralSource"] | null;
         };
+        /** CountLine */
+        CountLine: {
+            /** Catalog Item Id */
+            catalog_item_id: string;
+            /** Quantity */
+            quantity: number;
+        };
+        /**
+         * DeliveryKind
+         * @enum {string}
+         */
+        DeliveryKind: "outgoing" | "return";
         /** DueItem */
         DueItem: {
             /** Balance */
@@ -904,8 +1096,14 @@ export interface components {
             collected_this_month: number;
             /** Dues */
             dues: components["schemas"]["DueItem"][];
+            /** Low Stock */
+            low_stock: components["schemas"]["LowStockItem"][];
             /** Outstanding Total */
             outstanding_total: number;
+            /** Stock Counted */
+            stock_counted: boolean;
+            /** Supplier Problem */
+            supplier_problem: string | null;
             /** Upcoming Visits */
             upcoming_visits: components["schemas"]["UpcomingVisit"][];
         };
@@ -914,6 +1112,52 @@ export interface components {
          * @enum {string}
          */
         ItemKind: "remedy" | "service";
+        /** LowStockItem */
+        LowStockItem: {
+            /** Catalog Item Id */
+            catalog_item_id: string;
+            /** In Stock */
+            in_stock: number;
+            /** Name */
+            name: string;
+            /** Size Ml */
+            size_ml: number | null;
+        };
+        /** NewCatalogItem */
+        NewCatalogItem: {
+            /** Name */
+            name: string;
+            /** Size Ml */
+            size_ml?: (5 | 15) | null;
+            /**
+             * Unit Price
+             * @description Whole rupees
+             */
+            unit_price: number;
+        };
+        /**
+         * OrderLineKind
+         * @enum {string}
+         */
+        OrderLineKind: "product" | "extra";
+        /** OrderLineUpdate */
+        OrderLineUpdate: {
+            /**
+             * Quantity
+             * @description Bottles actually kept, e.g. after a return
+             */
+            quantity: number;
+        };
+        /**
+         * OrderSource
+         * @enum {string}
+         */
+        OrderSource: "sync" | "paste" | "manual";
+        /** PastedOrder */
+        PastedOrder: {
+            /** Text */
+            text: string;
+        };
         /** PaymentCreate */
         PaymentCreate: {
             /**
@@ -967,6 +1211,20 @@ export interface components {
             paid_on?: string | null;
             /** Reference */
             reference?: string | null;
+        };
+        /**
+         * ProductMatch
+         * @description Exactly one of: an existing catalog item, a new catalog item, or not for business.
+         */
+        ProductMatch: {
+            /** Catalog Item Id */
+            catalog_item_id?: string | null;
+            new_item?: components["schemas"]["NewCatalogItem"] | null;
+            /**
+             * Not For Business
+             * @default false
+             */
+            not_for_business?: boolean;
         };
         /** PropertyCreate */
         PropertyCreate: {
@@ -1187,6 +1445,74 @@ export interface components {
          * @enum {string}
          */
         ReferralSource: "bni" | "bbb" | "word_of_mouth" | "other";
+        /** StockAdjustmentCreate */
+        StockAdjustmentCreate: {
+            /**
+             * Adjusted On
+             * Format: date
+             */
+            adjusted_on: string;
+            /** Catalog Item Id */
+            catalog_item_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "add" | "remove";
+            /** Quantity */
+            quantity: number;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** StockCount */
+        StockCount: {
+            /**
+             * Adjusted On
+             * Format: date
+             */
+            adjusted_on: string;
+            /** Counts */
+            counts: components["schemas"]["CountLine"][];
+        };
+        /** StockItem */
+        StockItem: {
+            /** Avg Cost */
+            avg_cost: number | null;
+            /** Billed */
+            billed: number;
+            /** Catalog Item Id */
+            catalog_item_id: string;
+            /** Counted On */
+            counted_on: string | null;
+            /** In Stock */
+            in_stock: number;
+            /** Is Active */
+            is_active: boolean;
+            /** Low */
+            low: boolean;
+            /** Margin */
+            margin: number | null;
+            /** Name */
+            name: string;
+            /** Received */
+            received: number;
+            /** Size Ml */
+            size_ml: number | null;
+            /** Unit Price */
+            unit_price: number;
+        };
+        /** StockOverview */
+        StockOverview: {
+            /** Items */
+            items: components["schemas"]["StockItem"][];
+            /** Low Stock At */
+            low_stock_at: number;
+            /** Orders To Review */
+            orders_to_review: number;
+            /** Products To Match */
+            products_to_match: number;
+            sync: components["schemas"]["SyncStatus"];
+        };
         /** Summary */
         Summary: {
             /** Balance */
@@ -1200,6 +1526,151 @@ export interface components {
             /** Paid */
             paid: number;
             status: components["schemas"]["PropertyStatus"];
+        };
+        /** SupplierDeliveryOut */
+        SupplierDeliveryOut: {
+            /** Delivery Date */
+            delivery_date: string | null;
+            /** Delivery No */
+            delivery_no: string;
+            kind: components["schemas"]["DeliveryKind"];
+            /** Status */
+            status: string;
+        };
+        /** SupplierOrderDetail */
+        SupplierOrderDetail: {
+            /** Business Cost */
+            business_cost: number;
+            /** Deliveries */
+            deliveries: components["schemas"]["SupplierDeliveryOut"][];
+            /** Id */
+            id: string;
+            /** Line Count */
+            line_count: number;
+            /** Lines */
+            lines: components["schemas"]["SupplierOrderLineOut"][];
+            /** Needs Review */
+            needs_review: string | null;
+            /** Notes */
+            notes: string | null;
+            /**
+             * Order Date
+             * Format: date
+             */
+            order_date: string;
+            /** Received On */
+            received_on: string | null;
+            /** Reference */
+            reference: string;
+            source: components["schemas"]["OrderSource"];
+            status: components["schemas"]["SupplierOrderStatus"];
+            /** Total */
+            total: number;
+            /** Unmatched Lines */
+            unmatched_lines: number;
+        };
+        /** SupplierOrderLineOut */
+        SupplierOrderLineOut: {
+            /** Amount */
+            amount: number;
+            /** Description */
+            description: string;
+            /** Id */
+            id: string;
+            kind: components["schemas"]["OrderLineKind"];
+            product: components["schemas"]["SupplierProductOut"] | null;
+            /** Quantity */
+            quantity: number;
+            /** Unit Cost */
+            unit_cost: number;
+        };
+        /**
+         * SupplierOrderStatus
+         * @enum {string}
+         */
+        SupplierOrderStatus: "on_the_way" | "received" | "cancelled";
+        /** SupplierOrderSummary */
+        SupplierOrderSummary: {
+            /** Business Cost */
+            business_cost: number;
+            /** Id */
+            id: string;
+            /** Line Count */
+            line_count: number;
+            /** Needs Review */
+            needs_review: string | null;
+            /**
+             * Order Date
+             * Format: date
+             */
+            order_date: string;
+            /** Received On */
+            received_on: string | null;
+            /** Reference */
+            reference: string;
+            source: components["schemas"]["OrderSource"];
+            status: components["schemas"]["SupplierOrderStatus"];
+            /** Total */
+            total: number;
+            /** Unmatched Lines */
+            unmatched_lines: number;
+        };
+        /** SupplierOrderUpdate */
+        SupplierOrderUpdate: {
+            /** Notes */
+            notes?: string | null;
+            /** Received On */
+            received_on?: string | null;
+            /**
+             * Review Done
+             * @description Clear the review note once checked
+             */
+            review_done?: boolean | null;
+            status?: components["schemas"]["SupplierOrderStatus"] | null;
+        };
+        /** SupplierProductOut */
+        SupplierProductOut: {
+            /** Catalog Item Id */
+            catalog_item_id: string | null;
+            /** Catalog Item Name */
+            catalog_item_name: string | null;
+            /** External Ref */
+            external_ref: string;
+            /** Id */
+            id: string;
+            /** Last Cost */
+            last_cost: number | null;
+            /** Matched */
+            matched: boolean;
+            /** Name */
+            name: string;
+            /** Not For Business */
+            not_for_business: boolean;
+            /** Size Ml */
+            size_ml: number | null;
+            /** Suggested Catalog Item Id */
+            suggested_catalog_item_id: string | null;
+            /**
+             * Times Ordered
+             * @default 0
+             */
+            times_ordered: number;
+        };
+        /** SyncStatus */
+        SyncStatus: {
+            /**
+             * Enabled
+             * @description A supplier login is set on the server
+             */
+            enabled: boolean;
+            /** Last Message */
+            last_message: string | null;
+            /** Last Ok */
+            last_ok: boolean | null;
+            /** Last Run At */
+            last_run_at: string | null;
+            /** Running */
+            running: boolean;
         };
         /** Token */
         Token: {
@@ -2395,6 +2866,336 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stock_overview_api_v1_stock_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockOverview"];
+                };
+            };
+        };
+    };
+    adjust_stock_api_v1_stock_adjustments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StockAdjustmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_count_api_v1_stock_counts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StockCount"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_line_api_v1_supplier_order_lines__line_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                line_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrderLineUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierOrderDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_orders_api_v1_supplier_orders_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierOrderSummary"][];
+                };
+            };
+        };
+    };
+    paste_order_api_v1_supplier_orders_paste_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PastedOrder"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierOrderDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_order_api_v1_supplier_orders__order_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierOrderDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_order_api_v1_supplier_orders__order_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierOrderUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierOrderDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_products_api_v1_supplier_products_get: {
+        parameters: {
+            query?: {
+                unmatched_only?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierProductOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    match_product_api_v1_supplier_products__product_id__match_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductMatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_now_api_v1_supplier_sync_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncStatus"];
                 };
             };
         };
