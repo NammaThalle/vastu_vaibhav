@@ -1,6 +1,12 @@
 # Phase 4 plan: remedy stock, supplier orders and margins
 
-Status: planned, not built. Phase 3 (receipts, bills, WhatsApp) comes first.
+Status: built on 28 Nov 2026. Changes from this plan, decided while building against a real order page (S08284):
+
+- Stock is tracked per order, not per delivery: the portal's order page lists quantities for the whole order, not per delivery. An order counts once every delivery has shipped.
+- Returns (WH/IN) do not say which items went back, so an order with a return is flagged for checking and its line quantities can be corrected.
+- Matching has a third option, "new to the catalog", because the supplier sells many items the catalog did not have.
+- Extras (delivery, wallet credit) are kept as money-only lines so every order still adds up to its total.
+- Test pages are synthetic copies of the portal's structure; the repository is public, so real pages stay out of it.
 
 ## Goal
 

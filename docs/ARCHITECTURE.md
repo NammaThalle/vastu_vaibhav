@@ -22,7 +22,11 @@ Client ──< Property ──< Visit
                     ──< Payment
                     ──< Bill ──< BillLine
                     ──< Quote ──< QuoteLine
-User
+Supplier ──< SupplierProduct >── CatalogItem
+         ──< SupplierOrder ──< SupplierOrderLine >── SupplierProduct
+                           ──< SupplierDelivery
+CatalogItem ──< StockAdjustment
+User, SyncRun
 ```
 
 | Table | Purpose |
@@ -35,6 +39,10 @@ User
 | `payments` | Money received, with method, date, reference, and a receipt number unique within the financial year. |
 | `bills`, `bill_lines` | A numbered bill: a frozen copy of the property's charges and the amount paid on the day it was issued. Later edits never change it; a new bill is issued instead. |
 | `quotes`, `quote_lines` | A numbered quote. Accepting it copies its lines into `charges`; declining keeps it on record. |
+| `suppliers`, `supplier_products` | Where remedies are bought, and each product as the supplier sells it (keyed by the supplier's product number), matched once to a catalog remedy or marked not for business. |
+| `supplier_orders`, `supplier_order_lines`, `supplier_deliveries` | An order with what was paid per line (extras such as delivery or wallet credit kept as money-only lines) and its deliveries and returns. Received once every delivery has shipped. |
+| `stock_adjustments` | Stock counts (set the number on a date) and corrections (add, remove). |
+| `sync_runs` | Each supplier sync, for the status line and to stop two at once. |
 | `users` | Sign-in accounts. The first account is the admin; only the admin can add or block users. |
 
 Rules the database enforces:
@@ -99,6 +107,11 @@ All routes are under `/api/v1` and need a signed-in user, except login.
 | `POST /properties/{id}/bills`, `GET /bills/{id}/pdf`, `POST /bills/{id}/void` | Issue a numbered bill, download it, cancel it |
 | `POST /properties/{id}/quotes`, `GET /quotes/{id}/pdf`, `POST /quotes/{id}/accept`, `POST /quotes/{id}/void` | Make a quote, download it, accept it into charges, decline it |
 | `GET /properties/{id}/report.pdf` | Consultation report: summary, remedies with where they go, visit observations; no prices |
+| `GET /stock`, `POST /stock/counts`, `POST /stock/adjustments` | Stock, cost and margin per remedy; record a count or a correction |
+| `GET /supplier/orders`, `GET, PATCH /supplier/orders/{id}`, `POST /supplier/orders/paste` | Supplier orders; mark received or cancelled; read a pasted order |
+| `PATCH /supplier/order-lines/{id}` | Correct a quantity, for example after a return |
+| `GET /supplier/products`, `POST /supplier/products/{id}/match` | Products waiting to be matched; match to a remedy, a new catalog item, or not for business |
+| `POST /supplier/sync` | Admin: fetch supplier orders now |
 | `GET, POST /catalog`, `PATCH /catalog/{id}` | Price list; add items; change price or hide |
 | `GET /users`, `PATCH /users/{id}`, `POST /register` | Admin only after the first account |
 
@@ -120,6 +133,17 @@ PDFs are rendered on the server: Jinja2 fills an HTML template in `app/documents
 - Business details, bank account and the optional UPI ID come from `config/app-settings.json`. With a UPI ID set, bills and receipts carry a QR code for the exact balance.
 - The logo is `app/documents/assets/logo.jpg`, or an image in the config folder named by `invoice.logoFile`.
 - WhatsApp reminders are prefilled `wa.me` links that open the chat with the message written; the user presses send. Automatic sending would need the paid WhatsApp Business API.
+
+## Stock and supplier orders
+
+Stock is derived like balances: last count + bottles received since + added - removed - billed since (`app/services/stock.py`). A count includes everything dated that day. Cost is the average price paid across received order lines.
+
+Supplier orders come from the supplier's Odoo customer portal (`app/services/supplier/`):
+
+- `parse.py` reads pasted text and portal order pages into plain data and refuses anything where quantity x price is not the amount or the lines do not add up to the total.
+- `client.py` signs in with `SUPPLIER_LOGIN` and `SUPPLIER_PASSWORD` from the server's `.env` and fetches the order list and order pages, one request at a time.
+- `sync.py` reads orders that are new or still on the way, saves them through `store.py`, and records a `sync_runs` row. A delivery already entered by paste is recognised, so nothing is counted twice.
+- Run daily from the host crontab (`python -m app.cli.supplier_sync`); the admin can also start it from the Catalog screen.
 
 ## Deployment
 
@@ -146,5 +170,4 @@ The move from the old app to this design is planned in [plans/switchover.md](pla
 
 ## Not built yet
 
-- Remedy stock, supplier orders synced from the supplier site, and margins. Planned in [plans/phase-4-stock.md](plans/phase-4-stock.md).
 - Financial-year reports and GST fields, ahead of registering the business.

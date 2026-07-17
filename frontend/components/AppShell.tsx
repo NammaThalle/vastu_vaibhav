@@ -18,6 +18,7 @@ const NAV = [
 function isActive(pathname: string, href: string): boolean {
     if (href === "/") return pathname === "/"
     if (href === "/clients") return ["/clients", "/client", "/property"].some((p) => pathname.startsWith(p))
+    if (href === "/catalog") return ["/catalog", "/supplier", "/stock"].some((p) => pathname.startsWith(p))
     return pathname.startsWith(href)
 }
 

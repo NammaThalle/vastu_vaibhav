@@ -1,0 +1,22 @@
+Last Delivery Orders
+[WH/OUT/00950](https://shop.example.com/my/picking/pdf/950)
+ Shipped [RETURN](https://shop.example.com/my/picking/return/pdf/950)
+Date: 02/11/2026
+Products	Quantity	Unit Price	Amount
+[Pendulum Board 6 inch](https://shop.example.com/shop/pendulum-board-6-inch-20)
+1.00 Units
+₹ 300
+₹ 300
+[Virtual Entry 5ml](https://shop.example.com/shop/virtual-entry-5ml-34)
+4.00 Units
+₹ 600
+₹ 2,400
+[Toilet Blocker 5ml](https://shop.example.com/shop/toilet-blocker-5ml-36)
+4.00 Units
+₹ 600
+₹ 2,400
+Standard delivery
+1.00 Units
+₹ 0
+₹ 0
+Total	₹ 5,100

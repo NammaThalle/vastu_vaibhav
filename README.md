@@ -11,6 +11,7 @@ It is built for two people: the consultant, on a phone at the site or a MacBook 
 - **Property page**: one history of visits, charges and payments, with four buttons: Visit, Remedies, Discount, Payment. Remedies are added from a grid with plus and minus buttons, in 5ml or 15ml bottles or per piece, each with an optional word on where it goes (shutter, main gate) shown next to the line.
 - **Documents**: numbered bills (B/2026-27/0001), receipts for every payment, quotes (Q/2026-27/0001) that turn into charges when accepted, and a consultation report with a written summary, the remedies and where each goes, and the visit observations. All are A4 PDFs, shared from the phone straight to WhatsApp or printed.
 - **Reminders**: a WhatsApp button on Home and on each property that owes money, with the amount and payment details already written.
+- **Stock**: bottles in hand per remedy, worked out from stock counts, supplier orders and bills; average cost and what each bottle earns; low stock on Home. Supplier orders are fetched every morning from the supplier's portal, or pasted by hand. Each supplier product is matched once to a catalog remedy, a new catalog item, or marked not for business.
 - **Catalog**: the remedy and service price list. Price changes only affect new charges; old bills keep the price they were sold at.
 - **Settings**: users (admin only), theme, sign out.
 

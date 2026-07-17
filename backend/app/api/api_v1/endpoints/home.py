@@ -2,10 +2,11 @@ from fastapi import APIRouter
 from sqlalchemy import func, select
 
 from app.api.deps import DB
-from app.models import Client, Payment, Property, Visit
+from app.models import CatalogItem, Client, Payment, Property, SyncRun, Visit
 from app.models.enums import VisitStatus
-from app.schemas.home import DueItem, HomeSummary, UpcomingVisit
+from app.schemas.home import DueItem, HomeSummary, LowStockItem, UpcomingVisit
 from app.services.ledger import summaries_for, today
+from app.services.stock import stock_levels
 
 router = APIRouter()
 
@@ -41,9 +42,25 @@ async def home(db: DB) -> HomeSummary:
         select(func.coalesce(func.sum(Payment.amount), 0))
         .where(Payment.voided_at.is_(None), Payment.paid_on >= day.replace(day=1)))
 
+    # Stock warnings only make sense once a count exists; before that every remedy reads zero.
+    levels = await stock_levels(db)
+    counted = any(level.counted_on for level in levels.values())
+    items = {i.id: i for i in await db.scalars(select(CatalogItem).where(CatalogItem.id.in_(list(levels))))}
+    low = sorted(
+        (LowStockItem(catalog_item_id=l.catalog_item_id, name=items[l.catalog_item_id].name,
+                      size_ml=items[l.catalog_item_id].size_ml, in_stock=l.in_stock)
+         for l in levels.values() if l.low and l.counted_on is not None),
+        key=lambda x: (x.in_stock, x.name),
+    )
+    last_sync = await db.scalar(select(SyncRun).where(SyncRun.finished_at.is_not(None))
+                                .order_by(SyncRun.started_at.desc()))
+
     return HomeSummary(
         outstanding_total=sum(d.balance for d in dues),
         collected_this_month=collected,
         dues=dues,
         upcoming_visits=upcoming,
+        low_stock=low,
+        stock_counted=counted,
+        supplier_problem=last_sync.message if last_sync and last_sync.ok is False else None,
     )

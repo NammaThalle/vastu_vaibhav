@@ -872,6 +872,33 @@
         "title": "ClientUpdate",
         "type": "object"
       },
+      "CountLine": {
+        "properties": {
+          "catalog_item_id": {
+            "title": "Catalog Item Id",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 0.0,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "catalog_item_id",
+          "quantity"
+        ],
+        "title": "CountLine",
+        "type": "object"
+      },
+      "DeliveryKind": {
+        "enum": [
+          "outgoing",
+          "return"
+        ],
+        "title": "DeliveryKind",
+        "type": "string"
+      },
       "DueItem": {
         "properties": {
           "balance": {
@@ -956,9 +983,31 @@
             "title": "Dues",
             "type": "array"
           },
+          "low_stock": {
+            "items": {
+              "$ref": "#/components/schemas/LowStockItem"
+            },
+            "title": "Low Stock",
+            "type": "array"
+          },
           "outstanding_total": {
             "title": "Outstanding Total",
             "type": "integer"
+          },
+          "stock_counted": {
+            "title": "Stock Counted",
+            "type": "boolean"
+          },
+          "supplier_problem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Problem"
           },
           "upcoming_visits": {
             "items": {
@@ -972,7 +1021,10 @@
           "outstanding_total",
           "collected_this_month",
           "dues",
-          "upcoming_visits"
+          "upcoming_visits",
+          "low_stock",
+          "stock_counted",
+          "supplier_problem"
         ],
         "title": "HomeSummary",
         "type": "object"
@@ -984,6 +1036,125 @@
         ],
         "title": "ItemKind",
         "type": "string"
+      },
+      "LowStockItem": {
+        "properties": {
+          "catalog_item_id": {
+            "title": "Catalog Item Id",
+            "type": "string"
+          },
+          "in_stock": {
+            "title": "In Stock",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "size_ml": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Ml"
+          }
+        },
+        "required": [
+          "catalog_item_id",
+          "name",
+          "size_ml",
+          "in_stock"
+        ],
+        "title": "LowStockItem",
+        "type": "object"
+      },
+      "NewCatalogItem": {
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "size_ml": {
+            "anyOf": [
+              {
+                "enum": [
+                  5,
+                  15
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Ml"
+          },
+          "unit_price": {
+            "description": "Whole rupees",
+            "minimum": 0.0,
+            "title": "Unit Price",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "unit_price"
+        ],
+        "title": "NewCatalogItem",
+        "type": "object"
+      },
+      "OrderLineKind": {
+        "enum": [
+          "product",
+          "extra"
+        ],
+        "title": "OrderLineKind",
+        "type": "string"
+      },
+      "OrderLineUpdate": {
+        "properties": {
+          "quantity": {
+            "description": "Bottles actually kept, e.g. after a return",
+            "minimum": 0.0,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quantity"
+        ],
+        "title": "OrderLineUpdate",
+        "type": "object"
+      },
+      "OrderSource": {
+        "enum": [
+          "sync",
+          "paste",
+          "manual"
+        ],
+        "title": "OrderSource",
+        "type": "string"
+      },
+      "PastedOrder": {
+        "properties": {
+          "text": {
+            "maxLength": 200000,
+            "minLength": 10,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "PastedOrder",
+        "type": "object"
       },
       "PaymentCreate": {
         "properties": {
@@ -1158,6 +1329,39 @@
           }
         },
         "title": "PaymentUpdate",
+        "type": "object"
+      },
+      "ProductMatch": {
+        "description": "Exactly one of: an existing catalog item, a new catalog item, or not for business.",
+        "properties": {
+          "catalog_item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Item Id"
+          },
+          "new_item": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NewCatalogItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "not_for_business": {
+            "default": false,
+            "title": "Not For Business",
+            "type": "boolean"
+          }
+        },
+        "title": "ProductMatch",
         "type": "object"
       },
       "PropertyCreate": {
@@ -1891,6 +2095,207 @@
         "title": "ReferralSource",
         "type": "string"
       },
+      "StockAdjustmentCreate": {
+        "properties": {
+          "adjusted_on": {
+            "format": "date",
+            "title": "Adjusted On",
+            "type": "string"
+          },
+          "catalog_item_id": {
+            "title": "Catalog Item Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "add",
+              "remove"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "quantity": {
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "catalog_item_id",
+          "kind",
+          "quantity",
+          "adjusted_on"
+        ],
+        "title": "StockAdjustmentCreate",
+        "type": "object"
+      },
+      "StockCount": {
+        "properties": {
+          "adjusted_on": {
+            "format": "date",
+            "title": "Adjusted On",
+            "type": "string"
+          },
+          "counts": {
+            "items": {
+              "$ref": "#/components/schemas/CountLine"
+            },
+            "minItems": 1,
+            "title": "Counts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "adjusted_on",
+          "counts"
+        ],
+        "title": "StockCount",
+        "type": "object"
+      },
+      "StockItem": {
+        "properties": {
+          "avg_cost": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Cost"
+          },
+          "billed": {
+            "title": "Billed",
+            "type": "integer"
+          },
+          "catalog_item_id": {
+            "title": "Catalog Item Id",
+            "type": "string"
+          },
+          "counted_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Counted On"
+          },
+          "in_stock": {
+            "title": "In Stock",
+            "type": "integer"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "low": {
+            "title": "Low",
+            "type": "boolean"
+          },
+          "margin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "received": {
+            "title": "Received",
+            "type": "integer"
+          },
+          "size_ml": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Ml"
+          },
+          "unit_price": {
+            "title": "Unit Price",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "catalog_item_id",
+          "name",
+          "size_ml",
+          "unit_price",
+          "is_active",
+          "in_stock",
+          "counted_on",
+          "received",
+          "billed",
+          "avg_cost",
+          "margin",
+          "low"
+        ],
+        "title": "StockItem",
+        "type": "object"
+      },
+      "StockOverview": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StockItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "low_stock_at": {
+            "title": "Low Stock At",
+            "type": "integer"
+          },
+          "orders_to_review": {
+            "title": "Orders To Review",
+            "type": "integer"
+          },
+          "products_to_match": {
+            "title": "Products To Match",
+            "type": "integer"
+          },
+          "sync": {
+            "$ref": "#/components/schemas/SyncStatus"
+          }
+        },
+        "required": [
+          "items",
+          "low_stock_at",
+          "products_to_match",
+          "orders_to_review",
+          "sync"
+        ],
+        "title": "StockOverview",
+        "type": "object"
+      },
       "Summary": {
         "properties": {
           "balance": {
@@ -1942,6 +2347,486 @@
           "last_activity"
         ],
         "title": "Summary",
+        "type": "object"
+      },
+      "SupplierDeliveryOut": {
+        "properties": {
+          "delivery_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Date"
+          },
+          "delivery_no": {
+            "title": "Delivery No",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DeliveryKind"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "delivery_no",
+          "kind",
+          "status",
+          "delivery_date"
+        ],
+        "title": "SupplierDeliveryOut",
+        "type": "object"
+      },
+      "SupplierOrderDetail": {
+        "properties": {
+          "business_cost": {
+            "title": "Business Cost",
+            "type": "integer"
+          },
+          "deliveries": {
+            "items": {
+              "$ref": "#/components/schemas/SupplierDeliveryOut"
+            },
+            "title": "Deliveries",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "line_count": {
+            "title": "Line Count",
+            "type": "integer"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/SupplierOrderLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "needs_review": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needs Review"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "order_date": {
+            "format": "date",
+            "title": "Order Date",
+            "type": "string"
+          },
+          "received_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received On"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/OrderSource"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SupplierOrderStatus"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "unmatched_lines": {
+            "title": "Unmatched Lines",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "order_date",
+          "status",
+          "received_on",
+          "total",
+          "business_cost",
+          "source",
+          "needs_review",
+          "unmatched_lines",
+          "line_count",
+          "notes",
+          "lines",
+          "deliveries"
+        ],
+        "title": "SupplierOrderDetail",
+        "type": "object"
+      },
+      "SupplierOrderLineOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "integer"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/OrderLineKind"
+          },
+          "product": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupplierProductOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "unit_cost": {
+            "title": "Unit Cost",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "description",
+          "quantity",
+          "unit_cost",
+          "amount",
+          "product"
+        ],
+        "title": "SupplierOrderLineOut",
+        "type": "object"
+      },
+      "SupplierOrderStatus": {
+        "enum": [
+          "on_the_way",
+          "received",
+          "cancelled"
+        ],
+        "title": "SupplierOrderStatus",
+        "type": "string"
+      },
+      "SupplierOrderSummary": {
+        "properties": {
+          "business_cost": {
+            "title": "Business Cost",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "line_count": {
+            "title": "Line Count",
+            "type": "integer"
+          },
+          "needs_review": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needs Review"
+          },
+          "order_date": {
+            "format": "date",
+            "title": "Order Date",
+            "type": "string"
+          },
+          "received_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received On"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/OrderSource"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SupplierOrderStatus"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "unmatched_lines": {
+            "title": "Unmatched Lines",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "order_date",
+          "status",
+          "received_on",
+          "total",
+          "business_cost",
+          "source",
+          "needs_review",
+          "unmatched_lines",
+          "line_count"
+        ],
+        "title": "SupplierOrderSummary",
+        "type": "object"
+      },
+      "SupplierOrderUpdate": {
+        "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "received_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received On"
+          },
+          "review_done": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Clear the review note once checked",
+            "title": "Review Done"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupplierOrderStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "SupplierOrderUpdate",
+        "type": "object"
+      },
+      "SupplierProductOut": {
+        "properties": {
+          "catalog_item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Item Id"
+          },
+          "catalog_item_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Item Name"
+          },
+          "external_ref": {
+            "title": "External Ref",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_cost": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Cost"
+          },
+          "matched": {
+            "title": "Matched",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "not_for_business": {
+            "title": "Not For Business",
+            "type": "boolean"
+          },
+          "size_ml": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Ml"
+          },
+          "suggested_catalog_item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Catalog Item Id"
+          },
+          "times_ordered": {
+            "default": 0,
+            "title": "Times Ordered",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "external_ref",
+          "name",
+          "size_ml",
+          "catalog_item_id",
+          "catalog_item_name",
+          "not_for_business",
+          "matched",
+          "suggested_catalog_item_id",
+          "times_ordered",
+          "last_cost"
+        ],
+        "title": "SupplierProductOut",
+        "type": "object"
+      },
+      "SyncStatus": {
+        "properties": {
+          "enabled": {
+            "description": "A supplier login is set on the server",
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "last_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Message"
+          },
+          "last_ok": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Ok"
+          },
+          "last_run_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run At"
+          },
+          "running": {
+            "title": "Running",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled",
+          "running",
+          "last_run_at",
+          "last_ok",
+          "last_message"
+        ],
+        "title": "SyncStatus",
         "type": "object"
       },
       "Token": {
@@ -3929,6 +4814,501 @@
         "summary": "Register",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/stock": {
+      "get": {
+        "operationId": "stock_overview_api_v1_stock_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Stock Overview",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/api/v1/stock/adjustments": {
+      "post": {
+        "operationId": "adjust_stock_api_v1_stock_adjustments_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockAdjustmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Adjust Stock Api V1 Stock Adjustments Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Adjust Stock",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/api/v1/stock/counts": {
+      "post": {
+        "description": "Set the stock of each listed remedy to what is on the shelf on that day.",
+        "operationId": "record_count_api_v1_stock_counts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockCount"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Record Count Api V1 Stock Counts Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Record Count",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/api/v1/supplier/order-lines/{line_id}": {
+      "patch": {
+        "operationId": "update_line_api_v1_supplier_order_lines__line_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "line_id",
+            "required": true,
+            "schema": {
+              "title": "Line Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderLineUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierOrderDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Update Line",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/api/v1/supplier/orders": {
+      "get": {
+        "operationId": "list_orders_api_v1_supplier_orders_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SupplierOrderSummary"
+                  },
+                  "title": "Response List Orders Api V1 Supplier Orders Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "List Orders",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/api/v1/supplier/orders/paste": {
+      "post": {
+        "description": "Save an order copied from the supplier's site. New products then wait for matching.",
+        "operationId": "paste_order_api_v1_supplier_orders_paste_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PastedOrder"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierOrderDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Paste Order",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/api/v1/supplier/orders/{order_id}": {
+      "get": {
+        "operationId": "get_order_api_v1_supplier_orders__order_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "order_id",
+            "required": true,
+            "schema": {
+              "title": "Order Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierOrderDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Get Order",
+        "tags": [
+          "stock"
+        ]
+      },
+      "patch": {
+        "operationId": "update_order_api_v1_supplier_orders__order_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "order_id",
+            "required": true,
+            "schema": {
+              "title": "Order Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierOrderUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierOrderDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Update Order",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/api/v1/supplier/products": {
+      "get": {
+        "operationId": "list_products_api_v1_supplier_products_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "unmatched_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unmatched Only",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SupplierProductOut"
+                  },
+                  "title": "Response List Products Api V1 Supplier Products Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "List Products",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/api/v1/supplier/products/{product_id}/match": {
+      "post": {
+        "description": "Remember what a supplier product is. Applies to every order, past and future.",
+        "operationId": "match_product_api_v1_supplier_products__product_id__match_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "title": "Product Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductMatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierProductOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Match Product",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/api/v1/supplier/sync": {
+      "post": {
+        "operationId": "sync_now_api_v1_supplier_sync_post",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearerWithCookie": []
+          }
+        ],
+        "summary": "Sync Now",
+        "tags": [
+          "stock"
         ]
       }
     },

@@ -1,0 +1,6 @@
+Sales Order - S00990
+Order Date: 05/11/2026
+Products	Quantity	Unit Price	Amount
+Toilet Blocker 5ml	2.00 Units	₹ 600	₹ 1,200
+Door Blocker 15ml	1.00 Units	₹ 900	₹ 900
+Total	₹ 2,100

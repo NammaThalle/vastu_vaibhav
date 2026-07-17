@@ -4,12 +4,13 @@ import * as React from "react"
 import { Plus } from "lucide-react"
 
 import { Empty, ErrorMessage, Field, Loading, NativeSelect, PageHeader } from "@/components/common"
+import { StockBadge, StockPanel } from "@/components/stock/StockPanel"
 import { FormDialog } from "@/components/FormDialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { api, unwrap, type CatalogItem } from "@/lib/api/client"
+import { api, unwrap, type CatalogItem, type StockItem } from "@/lib/api/client"
 import { rupees } from "@/lib/format"
-import { useAction, useCatalog } from "@/lib/queries"
+import { useAction, useCatalog, useStock } from "@/lib/queries"
 import { cn } from "@/lib/utils"
 
 type Kind = "remedy" | "service"
@@ -54,7 +55,7 @@ function AddItem({ kind, open, onOpenChange }: { kind: Kind; open: boolean; onOp
 }
 
 /** Tap a price to change it. New prices only apply to charges added from now on. */
-function ItemRow({ item }: { item: CatalogItem }) {
+function ItemRow({ item, stock }: { item: CatalogItem; stock?: StockItem }) {
     const [editing, setEditing] = React.useState(false)
     const [price, setPrice] = React.useState(String(item.unit_price))
     const update = useAction(
@@ -73,7 +74,13 @@ function ItemRow({ item }: { item: CatalogItem }) {
             <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{item.name}</div>
                 {item.kind === "remedy" && (
-                    <div className="text-xs text-muted-foreground">{item.size_ml ? `${item.size_ml}ml bottle` : "Per piece"}</div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                        <span>{item.size_ml ? `${item.size_ml}ml bottle` : "Per piece"}</span>
+                        {stock && <StockBadge inStock={stock.in_stock} low={stock.low} counted={Boolean(stock.counted_on)} />}
+                        {stock?.avg_cost != null && (
+                            <span>cost {rupees(stock.avg_cost)} · earns <span className="font-medium text-emerald-700 dark:text-emerald-300">{rupees(stock.margin ?? 0)}</span></span>
+                        )}
+                    </div>
                 )}
             </div>
             {editing ? (
@@ -98,6 +105,8 @@ export default function CatalogPage() {
     const [showHidden, setShowHidden] = React.useState(false)
     const [adding, setAdding] = React.useState(false)
     const catalog = useCatalog(true)
+    const stock = useStock()
+    const stockById = new Map((stock.data?.items ?? []).map((s) => [s.catalog_item_id, s]))
 
     if (catalog.isPending) return <Loading />
     if (catalog.isError) return <ErrorMessage error={catalog.error} />
@@ -111,6 +120,7 @@ export default function CatalogPage() {
                 subtitle="Tap a price to change it. Old bills keep the price they were sold at."
                 action={<Button onClick={() => setAdding(true)}><Plus className="mr-1 h-4 w-4" /> Add</Button>}
             />
+            {stock.data && <StockPanel overview={stock.data} />}
             <div className="mb-4 grid grid-cols-2 gap-1 rounded-lg bg-secondary p-1">
                 {(["remedy", "service"] as const).map((k) => (
                     <button key={k} onClick={() => setKind(k)}
@@ -123,7 +133,7 @@ export default function CatalogPage() {
                 <Empty>An empty shelf. Add the first item above.</Empty>
             ) : (
                 <ul className="divide-y divide-amber-900/5 glass-card dark:divide-white/[0.06]">
-                    {items.map((item) => <ItemRow key={item.id} item={item} />)}
+                    {items.map((item) => <ItemRow key={item.id} item={item} stock={stockById.get(item.id)} />)}
                 </ul>
             )}
             {hiddenCount > 0 && (
