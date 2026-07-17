@@ -4,12 +4,16 @@ The password is only ever sent to the portal's sign-in form; it is never logged 
 anywhere but the server's .env. Requests go one at a time with a short pause.
 """
 import asyncio
+import logging
 import re
 
 import httpx
 from bs4 import BeautifulSoup
 
 USER_AGENT = "Mozilla/5.0 (compatible; order-sync/1.0)"
+
+# httpx logs every request URL at INFO; order links carry access tokens, so keep them out of logs.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 MAX_LIST_PAGES = 20
 
 
