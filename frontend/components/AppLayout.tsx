@@ -25,7 +25,7 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { WifiOff } from "lucide-react"
-import { authToken, configApi } from "@/services/api"
+import { configApi, authApi } from "@/services/api"
 
 const navItems = [
     { path: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -64,13 +64,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }, [isAuthPage])
 
     React.useEffect(() => {
-        const token = authToken.get()
-        if (!token && !isAuthPage) {
-            router.push("/login")
-        } else if (token && isAuthPage) {
-            router.push("/")
+        if (isAuthPage) {
+            setIsCheckingAuth(false)
+            return
         }
-        setIsCheckingAuth(false)
+
+        authApi.getMe()
+            .then(() => {
+                setIsCheckingAuth(false)
+            })
+            .catch(() => {
+                router.push("/login")
+            })
     }, [normalizedPathname, isAuthPage, router])
 
     // ── Offline detection ──────────────────────────────────────────────
@@ -88,8 +93,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }, [])
 
     const handleLogout = () => {
-        authToken.clear()
-        router.push("/login")
+        authApi.logout().finally(() => {
+            router.push("/login")
+        })
     }
 
     if (isCheckingAuth) {

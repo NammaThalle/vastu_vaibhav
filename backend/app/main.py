@@ -1,5 +1,8 @@
 
 from fastapi import FastAPI
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+from app.core.limiter import limiter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import asyncio
@@ -17,6 +20,8 @@ from app.utils.logger import setup_logging, logger
 setup_logging()
 
 app = FastAPI(title=settings.PROJECT_NAME, version="1.0.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 logger.info("Initializing %s API", settings.PROJECT_NAME)
 
@@ -24,8 +29,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.BACKEND_CORS_ORIGINS if hasattr(settings, "BACKEND_CORS_ORIGINS") and settings.BACKEND_CORS_ORIGINS else [],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 app.include_router(api_router, prefix="/api/v1")
@@ -86,7 +91,7 @@ static_dir = "/app/static"
 @app.get("/health")
 def health_check():
     logger.debug("Health check requested")
-    return {"status": "ok", "db_type": "sqlite"}
+    return {"status": "ok"}
 
 # API must differ from UI routes. 
 # Since Next.js export creates .html files, we need to handle routing carefully.

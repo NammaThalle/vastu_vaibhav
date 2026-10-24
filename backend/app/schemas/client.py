@@ -21,7 +21,6 @@ class ClientCreate(ClientBase):
 
 class ClientUpdate(ClientBase):
     full_name: Optional[str] = None
-    created_at: Optional[datetime] = None
 
 class ClientInDBBase(ClientBase):
     id: str

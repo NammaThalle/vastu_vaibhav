@@ -1,8 +1,5 @@
-import { authToken } from '@/services/api';
-
 type LogLevel = 'debug' | 'info' | 'warning' | 'error' | 'critical';
 
-// Use an empty string for relative paths if API is served from the same origin (standard in our Docker setup)
 const API_BASE_URL = '';
 
 const remoteLog = async (level: LogLevel, message: string, context?: any) => {
@@ -10,14 +7,13 @@ const remoteLog = async (level: LogLevel, message: string, context?: any) => {
     if (typeof window !== 'undefined' && window.location.pathname.startsWith('/login')) {
       return;
     }
-    const token = authToken.get();
     // Non-blocking fire and forget
     fetch(`${API_BASE_URL}/api/v1/utils/logs/frontend`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
+      credentials: 'include',
       body: JSON.stringify({ level, message, context: context || {} }),
     }).catch(() => {}); // Catch network errors silently
   } catch (error) {

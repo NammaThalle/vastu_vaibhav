@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { authApi, authToken } from "@/services/api"
+import { authApi } from "@/services/api"
 import { toast } from "sonner"
 import { logger } from "@/lib/logger"
 
@@ -32,8 +32,7 @@ export default function LoginPage() {
 
         try {
             logger.info(`Login attempt: ${email}`)
-            const data = await authApi.login({ email, password })
-            authToken.set(data.access_token)
+            await authApi.login({ email, password })
             logger.info(`Login successful: ${email}`)
             toast.success("Welcome back, Consultant!")
             router.push("/")
